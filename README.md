@@ -1,48 +1,48 @@
-# ShipShape — DevOps Lessons (Astro + Starlight)
+# 🚢 ShipShape — DevOps & Containerization
 
-Welcome to **ShipShape**, Professor Solo’s no-nonsense (but still neon) guide to **`DevOps and Containerization` **.
+**ShipShape** is a short, practical introduction to the **DevOps workflow**: taking an application from a developer laptop to a live deployment.
 
-This repo is the **LESSONS** layer (Astro Starlight). Demos and videos live in their own homes.
+Built with a **neon-retro classroom vibe**, this site guides students through four focused days of modern delivery workflow: **local development → containerization → deployment**.
+
+The emphasis is on **practical confidence**, not exhaustive coverage.
 
 ---
 
 ## 💥 Modules
 
-| Module | Title                      | Description                                                                |
-| ------ | -------------------------- | -------------------------------------------------------------------------- |
-| 00     | **Course Introduction**    | Goals, workflow, tooling, and how we’ll build confidence fast.             |
-| 01     | **Node Runtime Basics**    | What Node is, how it runs JS, and how to think in “server mode.”           |
-| 02     | **Modules & Packages**     | ESM vs CJS, imports/exports, and how Node resolves modules.                |
-| 03     | **npm Like a Pro**         | `package.json`, scripts, semver, dependencies, and sane installs.          |
-| 04     | **The Filesystem**         | Read/write files, paths, streams (lightly), and real-world patterns.       |
-| 05     | **Async Control**          | Promises, `async/await`, concurrency basics, and avoiding async spaghetti. |
-| 06     | **Events & Timers**        | EventEmitter mental model, timers, and “what’s actually happening.”        |
-| 07     | **HTTP Fundamentals**      | Build a simple HTTP server with Node core (no frameworks).                 |
-| 08     | **Routing & JSON APIs**    | Request parsing, responses, status codes, and clean API shape.             |
-| 09     | **Environment & Config**   | `.env` patterns, secrets, and config that won’t betray you later.          |
-| 10     | **Error Handling**         | Operational vs programmer errors, crashes, and recovery strategies.        |
-| 11     | **Testing Basics**         | Node’s built-in test runner + pragmatic test structure.                    |
-| 12     | **Debugging Toolbox**      | Inspector, logging discipline, and tracing “where the heck is it failing.” |
-| …      | _More modules coming soon_ | Databases, auth, deployment, and production patterns (when we’re ready).   |
+| Module | Title                                             | Description                                                                                                                                                                                                                                              |
+| ------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 00     | **Course Introduction**                           | Overview of DevOps concepts, course workflow, and the modern application lifecycle from development to production.                                                                                                                                       |
+| 01     | **Containers with Docker**                        | Introduction to containers, images, and the Docker runtime. Students write a Dockerfile and run their Node application inside a container.                                                                                                               |
+| 02     | **Multi-Service Development with Docker Compose** | Running full application stacks locally using Docker Compose. Students connect their Node API to MongoDB in a multi-container environment and learn about environment variables and persistent volumes.                                                  |
+| 03     | **Deployment with Render & MongoDB Atlas**        | Preparing an application for production and deploying it to the internet. Students configure environment variables, connect to MongoDB Atlas, and deploy their Node application as a Render Web Service.                                                 |
+| 04     | **Production Awareness & Wrap-Up**                | A lightweight final session discussing production realities: logging, monitoring, versioning, deployment history, and the broader DevOps ecosystem. The program concludes with reflection on the full application lifecycle from laptop to live service. |
 
 ---
 
-## 🧠 Learning Philosophy
+## 🎯 Learning Outcome
 
-> “Make it work. Make it clean. Make it ship.” — _Professor Solo_
+By the end of the course, students will understand how to:
 
-Each lesson is built in [Astro](https://astro.build/) with [Starlight](https://starlight.astro.build/), with code-first examples and practice tasks you can actually run.
-
----
-
-## ✅ Prerequisites
-
-- Node.js (LTS recommended)
-- npm (or your preferred package manager)
+- containerize a Node.js application with Docker
+- run multi-service application stacks locally with Docker Compose
+- manage environment configuration for production systems
+- deploy a containerized application to a cloud platform
+- understand the core workflow that moves software from **development → deployment → operation**
 
 ---
 
-## 🏃 Run locally
+## 🧠 Teaching Approach
+
+ShipShape keeps the focus on the essentials.
+
+Students are not expected to master the full DevOps universe in four days. Instead, they build a working mental model of how applications move from source code to running service, with just enough tooling to make that journey real and repeatable.
+
+The tone is practical, visual, and intentionally a little electric: **retro terminal glow, classroom energy, and clean deployment thinking**.
+
+---
+
+## 🏃 Run Locally
 
 ```bash
 npm install
@@ -55,6 +55,15 @@ Build + preview:
 npm run build
 npm run preview
 ```
+
+---
+
+## 🛠 Tech Stack
+
+- [Astro](https://astro.build/)
+- [Starlight](https://starlight.astro.build/)
+- Markdown / MDX
+- Vercel for deployment
 
 ---
 
@@ -79,4 +88,6 @@ For licensing inquiries, contact:
 
 ---
 
-> _“Node2Know — because ‘it works on my machine’ is not a deployment strategy.”_
+**ShipShape** focuses on the essential DevOps skills developers need to confidently **ship software into the real world**.
+
+> _“Build it. Containerize it. Deploy it. Keep it shipshape.”_
