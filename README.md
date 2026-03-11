@@ -1,49 +1,82 @@
-# Starlight Starter Kit: Basics
+# ShipShape — DevOps Lessons (Astro + Starlight)
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Welcome to **ShipShape**, Professor Solo’s no-nonsense (but still neon) guide to **`DevOps and Containerization` **.
 
+This repo is the **LESSONS** layer (Astro Starlight). Demos and videos live in their own homes.
+
+---
+
+## 💥 Modules
+
+| Module | Title                      | Description                                                                |
+| ------ | -------------------------- | -------------------------------------------------------------------------- |
+| 00     | **Course Introduction**    | Goals, workflow, tooling, and how we’ll build confidence fast.             |
+| 01     | **Node Runtime Basics**    | What Node is, how it runs JS, and how to think in “server mode.”           |
+| 02     | **Modules & Packages**     | ESM vs CJS, imports/exports, and how Node resolves modules.                |
+| 03     | **npm Like a Pro**         | `package.json`, scripts, semver, dependencies, and sane installs.          |
+| 04     | **The Filesystem**         | Read/write files, paths, streams (lightly), and real-world patterns.       |
+| 05     | **Async Control**          | Promises, `async/await`, concurrency basics, and avoiding async spaghetti. |
+| 06     | **Events & Timers**        | EventEmitter mental model, timers, and “what’s actually happening.”        |
+| 07     | **HTTP Fundamentals**      | Build a simple HTTP server with Node core (no frameworks).                 |
+| 08     | **Routing & JSON APIs**    | Request parsing, responses, status codes, and clean API shape.             |
+| 09     | **Environment & Config**   | `.env` patterns, secrets, and config that won’t betray you later.          |
+| 10     | **Error Handling**         | Operational vs programmer errors, crashes, and recovery strategies.        |
+| 11     | **Testing Basics**         | Node’s built-in test runner + pragmatic test structure.                    |
+| 12     | **Debugging Toolbox**      | Inspector, logging discipline, and tracing “where the heck is it failing.” |
+| …      | _More modules coming soon_ | Databases, auth, deployment, and production patterns (when we’re ready).   |
+
+---
+
+## 🧠 Learning Philosophy
+
+> “Make it work. Make it clean. Make it ship.” — _Professor Solo_
+
+Each lesson is built in [Astro](https://astro.build/) with [Starlight](https://starlight.astro.build/), with code-first examples and practice tasks you can actually run.
+
+---
+
+## ✅ Prerequisites
+
+- Node.js (LTS recommended)
+- npm (or your preferred package manager)
+
+---
+
+## 🏃 Run locally
+
+```bash
+npm install
+npm run dev
 ```
-npm create astro@latest -- --template starlight
+
+Build + preview:
+
+```bash
+npm run build
+npm run preview
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+---
 
-## 🚀 Project Structure
+## 🔒 License
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+© 2026 **Joshua Solomon (Professor Solo)**  
+Licensed for educational and learner use under the **Professor Solo Learner License 1.0**  
+(**ProfessorSolo-LEARN-1.0**).
 
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
-```
+Full terms in [LICENSE](./LICENSE)
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+For licensing inquiries, contact:  
+📧 [writesideup@joshinbox.com](mailto:writesideup@joshinbox.com)
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+---
 
-Static assets, like favicons, can be placed in the `public/` directory.
+## 📬 Contact
 
-## 🧞 Commands
+**Professor Solo**  
+🌐 [professorsolo.com](https://professorsolo.com)  
+💬 [github.com/ProfessorSolo](https://github.com/ProfessorSolo)
 
-All commands are run from the root of the project, from a terminal:
+---
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+> _“Node2Know — because ‘it works on my machine’ is not a deployment strategy.”_
