@@ -1,40 +1,58 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
-hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
-  actions:
-    - text: Example Guide
-      link: /guides/example/
-      icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
-      icon: external
-      variant: minimal
+title: Welcome to ShipShape
+description: A fast, practical launchpad for learning DevOps and Containerization — from local app to live deployment.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import HeroBanner from "../../components/HeroBanner.astro";
 
-## Next steps
+<HeroBanner />
 
-<CardGrid stagger>
-	<Card title="Update content" icon="pencil">
-		Edit `src/content/docs/index.mdx` to see this page change.
-	</Card>
-	<Card title="Change page layout" icon="document">
-		Delete `template: splash` in `src/content/docs/index.mdx` to display a
-		sidebar on this page.
-	</Card>
-	<Card title="Add new content" icon="add-document">
-		Add Markdown or MDX files to `src/content/docs` to create new pages.
-	</Card>
-	<Card title="Configure your site" icon="setting">
-		Edit your `sidebar` and other config in `astro.config.mjs`.
-	</Card>
-	<Card title="Read the docs" icon="open-book">
-		Learn more in [the Starlight Docs](https://starlight.astro.build/).
-	</Card>
-</CardGrid>
+## 🚀 What We'll Learn
+
+We’re going from “wait… how does this app actually get deployed?” to “yep, I shipped that”:
+
+- 🐳 **Containers with Docker** — images, containers, Dockerfiles, and repeatable environments
+- 🧩 **Multi-Service Development** — Docker Compose, networks, volumes, and app + database workflow
+- ☁️ **Deployment** — preparing apps for production and getting them live on the internet
+- 🔐 **Configuration** — environment variables, secrets, and sane production setup
+- 📦 **Delivery Workflow** — the path from laptop to running service
+- 👀 **Production Awareness** — logging, monitoring, versioning, and deployment history
+
+---
+
+## 🧠 The Mindset
+
+This isn’t “memorize DevOps.”  
+It’s learning how modern application delivery _works_ — so you can reason about packaging, deployment, and runtime behavior with confidence.
+
+We’ll use:
+
+- 🤖 **AI-assisted learning** (Watts still clocks in on time)
+- 🧱 **Hands-on builds** — small steps, real deployment outcomes
+- 🧭 **Practical patterns** — workflows that make sense outside the classroom too
+
+---
+
+## 🔧 Prerequisites
+
+Bring:
+
+- A code editor
+- Basic comfort with JavaScript and Node.js
+- Git/GitHub familiarity
+- A willingness to break stuff… and then ship it cleanly 🔥
+
+---
+
+## 🎬 Next Steps
+
+Ready to go from local app to deployed service?  
+👉 [**Course Introduction**](./00-course-introduction/)
+
+---
+
+<div align="center">
+  <sub>
+    © 2026 Professor Solo — ShipShape is where software gets ready to sail.
+  </sub>
+</div>
