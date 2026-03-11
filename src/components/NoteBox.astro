@@ -1,0 +1,41 @@
+---
+const { title } = Astro.props;
+---
+
+<div class="note-box">
+  {title && <div class="note-title">{title}</div>}
+  <div class="note-content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .note-box {
+    border: 2px solid #00e5ff; /* Electric Cyan */
+    background: #e0faff; /* Very Light Cyan */
+    color: #006064; /* Dark Cyan Text for contrast */
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .note-title {
+    background: #00e5ff;
+    color: #00363a;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+
+  .note-content {
+    padding: 1rem;
+  }
+
+  /* Make code blocks inside pop */
+  .note-content :global(code) {
+    background-color: #b2ebf2;
+    color: #006064;
+  }
+</style>

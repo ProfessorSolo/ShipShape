@@ -1,0 +1,19 @@
+<div class="caution">
+  <slot />
+</div>
+
+<style>
+  .caution {
+    border: 2px solid #c00;
+    background: #ffeaea;
+    color: #900;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+  }
+
+  .caution :global(code) {
+    color: white;
+    background-color: #900;
+  }
+</style>

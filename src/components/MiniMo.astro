@@ -1,0 +1,40 @@
+---
+/**
+ * MiniMo – embedded demo frame
+ *
+ * Props:
+ * - src   (string, required)  – iframe src (relative or absolute)
+ * - title (string, optional)  – accessible title, defaults to "MiniMo demo"
+ * - height (string, optional) – iframe height (e.g. "420px", "60vh"), defaults to "420px"
+ */
+
+interface Props {
+  src: string;
+  title?: string;
+  height?: string;
+}
+
+const { src, title = 'MiniMo demo', height = '420px' } = Astro.props as Props;
+---
+
+<div class="minimo-frame">
+  <iframe
+    src={src}
+    title={title}
+    loading="lazy"
+    style={`width: 100%; height: ${height}; border: 0; border-radius: 1rem; overflow: hidden;`}
+  ></iframe>
+</div>
+
+<style>
+  .minimo-frame {
+    margin-block: 1.5rem 2rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    background: radial-gradient(circle at top, rgba(15,23,42,0.95), rgba(2,6,23,0.98));
+    box-shadow:
+      0 0 0 1px rgba(15, 23, 42, 0.6),
+      0 22px 60px rgba(15, 23, 42, 0.9);
+  }
+</style>
