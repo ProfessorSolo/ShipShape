@@ -9,7 +9,14 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-{/* T.A. Watts Note: A diagram of a high-level CI/CD pipeline flow (Code -> Build -> Test -> Deploy) would absolutely earn its keep here. */}
+<img
+  src="/assets/lessons/01-devops-foundations/04-ci-cd-pipeline-flow.png"
+  alt="A clean, technical isometric flowchart diagram of a high-level CI/CD pipeline flow progressing from Code to Build to Test to Deploy."
+  width="1600"
+  loading="lazy"
+/>
+
+_Fig 1: High-Level CI/CD Pipeline Flow_
 
 ## The pipeline idea
 
@@ -60,7 +67,9 @@ That means problems get caught:
 - with less confusion
 
 <CautionBox title="The Hidden Cost of Delay">
-  Finding a bug five minutes after you wrote the code is a minor annoyance. Finding a bug three weeks later during a massive integration push is an expensive nightmare.
+  Finding a bug five minutes after you wrote the code is a minor annoyance.
+  Finding a bug three weeks later during a massive integration push is an
+  expensive nightmare.
 </CautionBox>
 
 ## Continuous Delivery / Continuous Deployment
@@ -76,7 +85,9 @@ That might include:
 - restarting services with the new version
 
 <NoteBox title="Delivery vs. Deployment">
-  The difference between **delivery** and **deployment** usually comes down to whether the final production release is still a manual approval step (Delivery) or fully automatic (Deployment).
+  The difference between **delivery** and **deployment** usually comes down to
+  whether the final production release is still a manual approval step
+  (Delivery) or fully automatic (Deployment).
 </NoteBox>
 
 For this course, the important part is the concept: software moves through a **repeatable release pipeline** rather than a pile of improvised manual steps.

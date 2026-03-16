@@ -1,0 +1,152 @@
+---
+title: "The Docker Bay Six"
+description: "Detailed breakdown of the six core Dockerfile instructions."
+sidebar:
+  order: 8
+  label: "The Docker Bay Six"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Let's look at the key instructions from our recipe, piece by piece.
+
+These six instructions are not the only ones available, but they are the most common and fundamental instructions used in a Dockerfile.
+
+## `FROM`
+
+```dockerfile
+FROM node:20-alpine
+```
+
+This sets the **base image**.
+
+We are saying: "Start from an image that already includes Node.js 20, and use the Alpine Linux variant to keep the file size much smaller."
+
+<CautionBox title="Official or Bust">
+  In a professional environment, always prioritize "Official" images (verified
+  by Docker) over random community ones. It's a matter of security. We **don't**
+  want to build our infrastructure on a foundation that we don't trust.
+</CautionBox>
+
+## `WORKDIR`
+
+```dockerfile
+WORKDIR /app
+```
+
+This sets the **working directory** inside the image.
+
+After this line runs, any later `COPY`, `RUN`, or `CMD` instructions will execute relative to `/app` inside the container. If the folder doesn't exist, Docker creates it.
+
+<NoteBox title="WORKDIR">
+  The `WORKDIR` instruction is not strictly necessary, but it is a good
+  practice to use it. It makes the Dockerfile easier to read and understand.
+
+Also, WORKDIR does not define the **root** directory of the image. It only
+defines the working directory for subsequent instructions.
+
+</NoteBox>
+
+## `COPY`
+
+```dockerfile
+COPY package*.json ./
+```
+
+This copies the package manifest files from our host machine into the working directory of the image. The `./` points directly to the `WORKDIR` we just established.
+
+Later, the command:
+
+```dockerfile
+COPY . .
+```
+
+copies the rest of the application code across to the image.
+
+<CautionBox title="Dot Dot Dot">
+  The two dots in `COPY . .` refers to the **build context**, which is the set of
+  files and directories that are copied from the host machine to the image.
+
+This is not the same as `..` which refers to the parent directory. It's
+important to understand the difference between the two.
+
+If you forget the space between the two dots, Docker will try to copy a file
+named `..` to the current directory, which will likely fail.
+
+</CautionBox>
+
+## `RUN`
+
+```dockerfile
+RUN npm install
+```
+
+This executes a shell command _during the image build phase_.
+
+In this case, it installs the NPM dependencies and burns the resulting `node_modules` directory permanently into the image.
+
+<NoteBox title="RUN">
+  We _can_ use as many `RUN` instructions as we need in order to build the
+  image. Most of the time, we will only need one or two, such as installing
+  dependencies (`npm install`) and building the application (`npm run build`).
+
+</NoteBox>
+
+## `EXPOSE`
+
+```dockerfile
+EXPOSE 3000
+```
+
+This documents the container’s intended listening port in the image metadata. It does not publish the port to your host on its own.
+
+<CautionBox title="Documentation Only">
+  `EXPOSE` does **not** actually publish that port to the host machine by
+  itself. It's essentially a polite sticky note to developers and automation
+  tools saying "I listen on port 3000." We still have to map the ports manually
+  when running the container AND the application inside the container has to be
+  configured to listen on that port too.
+</CautionBox>
+
+We'll see how to publish ports later.
+
+## `CMD`
+
+```dockerfile
+CMD ["npm", "start"]
+```
+
+This defines the default command used when the container finally starts up.
+
+<CautionBox title="Only One CMD Allowed">
+
+There can be only one `CMD` instruction in a Dockerfile.
+
+</CautionBox>
+
+<NoteBox title="RUN vs CMD">
+  `RUN` happens when the image is **built**. 
+    
+  `CMD` is a **single** runtime launch instruction that fires **only once** when a container is **started**.
+
+`CMD` **_can_** be overridden by the user when running the container.
+
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/build/building/best-practices/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Dockerfile Best Practices
+</LinkButton>
+
+### ⏭ Caching and Order of Operations

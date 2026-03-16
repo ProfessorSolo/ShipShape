@@ -1,0 +1,86 @@
+---
+title: "Image vs Container"
+description: "Clearing up a very common terminology mix-up."
+sidebar:
+  order: 6
+  label: "Image vs Container"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## A Static Blueprint vs. A Living Process
+
+The distinction between an image and a container is the single most important concept in the Docker workflow. If you get this wrong, you'll find yourself trying to "save" changes to a running container, which is like trying to rewrite a blueprint by rearranging the furniture in your living room.
+
+### The Image: The Packaged Truth
+
+An **image** is a collection of read-only layers. It is the finished, immutable artifact that you ship. It contains the OS files, the Node runtime, and your application code.
+
+When we talk about images, we use verbs like:
+
+- **Build**: Creating the image from a Dockerfile.
+- **Tag**: Assigning a version or name (like `v1.0.0`).
+- **Push/Pull**: Moving the static file to and from a registry.
+
+### The Container: The Writable Instance
+
+A **container** is a live environment where your code actually executes. When you start a container, the Docker Engine takes that read-only image and adds a tiny **writable layer** on top of it.
+
+This is the "magic" of Docker: you can start fifty containers from the exact same image. Each container has its own private writable layer, but they all share the same massive read-only files from the image on your disk.
+
+When we talk about containers, we use verbs like:
+
+- **Create/Run**: Spawning a new instance from an image.
+- **Start/Stop**: Resuming or pausing the process.
+- **Remove**: Deleting the instance and its writable layer.
+- **Log**: Viewing the output from the running application.
+
+<CautionBox title="Ephemeral by Design">
+  Manual changes made inside a running container are **lost** when the container
+  is removed. This is a feature, not a bug. It ensures that our runtime
+  environments are always predictable and reproducible. If a container gets
+  "weird," we don't debug it—we kill it and spawn a fresh one from the image.
+</CautionBox>
+
+## The Blueprint Analogy
+
+Think of an image like a **blueprint** for a standardized shipping container house.
+
+- The blueprint defines exactly where the walls are, what the wiring looks like, and what appliances are included.
+- You can use that same blueprint to build a hundred identical houses.
+- If a tenant paints the walls of their house (the "writable layer" of the container), the blueprint (the image) remains completely unchanged.
+- If that house is demolished (the container is removed), the "paint" is gone. If you want every new house to have that paint job, you have to update the **blueprint**.
+
+<NoteBox title="The Golden Rule">
+**We build images, and we run containers.**
+
+If you remember that images are for _storage and distribution_ and containers are for _execution_, the rest of the CLI commands will make much more sense.
+
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/image/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker CLI: Image Commands
+</LinkButton>
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/container/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker CLI: Container Commands
+</LinkButton>
+
+### ⏭ The Build Recipe

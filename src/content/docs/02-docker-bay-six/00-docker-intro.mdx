@@ -1,0 +1,58 @@
+---
+title: "Welcome to the Docker Bay"
+description: "Packaging and running a Node application with Docker in a clean, repeatable way."
+sidebar:
+  order: 0
+  label: "Welcome to the Docker Bay"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## From Theory to the Docks
+
+This lesson takes the DevOps workflow concepts from Lesson 01 and makes them concrete. We are moving from high-level pipeline theory into a practical runtime model: **containers**.
+
+The goal here is simple: define the exact environment our Node application needs, package it consistently, and run it exactly the same way across different machines.
+
+### What is Docker, Anyway?
+
+Before we start hauling cargo, let's look at the crane. **Docker** is a platform that lets you package an application with all of its dependencies into a standardized, isolated unit for software delivery.
+
+Think of it like the standardized steel shipping containers down at the docks. Before shipping containers, loading a cargo vessel was a chaotic, custom job for every single item—barrels, loose crates, assorted sacks—all crammed together. It was slow, and cargo often got crushed. The standardized container changed global trade because the crane doesn't care if the box is holding high-end electronics or bulk coffee beans; it just grabs the standard dimensions and locks it onto the ship.
+
+Docker does exactly this for our code. It wraps our application, the Node runtime, and any system libraries it needs into a standardized, portable box. A container runs exactly the same way under the Electric Indigo glow of your local dev machine as it does on a Midnight Graphite production server. The days of "it works on my machine" excuses are officially over.
+
+By the end of this lesson, we should be able to:
+
+- explain the difference between virtual machines and containers
+- identify the core parts of Docker: Engine, images, containers, layers, and registries
+- explain why containers help reduce **environment drift**
+- write a basic `Dockerfile` for a Node app
+- build and run a containerized Node application locally
+- map host and container ports correctly
+- use `.dockerignore` to keep builds cleaner and faster
+- understand the basics of Docker layer caching
+
+<NoteBox title="The Dockmaster's Promise">
+  We are no longer trusting the weather. We are packing the application to
+  travel properly. Runtime consistency is something we can design, not just
+  something we hope for.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/get-started/docker-overview/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Official Overview
+</LinkButton>
+
+### ⏭ The Local-Dev Trap

@@ -15,11 +15,11 @@ const COURSE_MODULES = [
 		directory: '01-devops-foundations',
 		released: false,
 	},
-	//   {
-	//     label: 'Server Express Way',
-	//     directory: '02-server-express-way',
-	//     released: true,
-	//   },
+	{
+		label: 'Docker Bay Six',
+		directory: '02-docker-bay-six',
+		released: false,
+	},
 	//   {
 	//     label: 'Revving View Engines - EJS',
 	//     directory: '03-rev-up-view-engines-ejs',

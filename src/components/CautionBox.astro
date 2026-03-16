@@ -1,19 +1,41 @@
-<div class="caution">
-  <slot />
+---
+const { title } = Astro.props;
+---
+
+<div class="caution-box">
+  {title && <div class="caution-title">{title}</div>}
+  <div class="caution-content">
+    <slot />
+  </div>
 </div>
 
 <style>
-  .caution {
+  .caution-box {
     border: 2px solid #c00;
     background: #ffeaea;
     color: #900;
-    padding: 1rem;
     border-radius: 0.5rem;
-    font-weight: 500;
+    overflow: hidden;
+    margin: 1.5rem 0;
   }
 
-  .caution :global(code) {
-    color: white;
-    background-color: #900;
+  .caution-title {
+    background: #f0c4c4;
+    color: #900;
+    font-weight: bold;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+
+  .caution-content {
+    padding: 1rem;
+    margin-top: 0;
+  }
+
+  .caution-content :global(code) {
+    color: #900;
+    background-color: #f0c4c4;
   }
 </style>

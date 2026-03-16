@@ -9,36 +9,38 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-{/* T.A. Watts Note: A diagram of the Dev vs Ops split (Change vs Stability incentives) would absolutely earn its keep here. */}
-
 ## The older split: Dev vs Ops
 
 Historically, many organizations separated software work into two broad groups: **Development** and **Operations**.
 
-### Development
-Focused on:
+| Development       | Operations       |
+| :---------------- | :--------------- |
+| Building features | Servers          |
+| Fixing bugs       | Uptime           |
+| Writing code      | Deployment       |
+| Moving quickly    | Networking       |
+| Shipping changes  | Backups          |
+|                   | Security         |
+|                   | System stability |
 
-- building features
-- fixing bugs
-- writing code
-- moving quickly
-- shipping changes
+<img
+  src="/assets/lessons/01-devops-foundations/01-dev-vs-ops-split.png"
+  alt="An isometric diagram showing the split between Development (Change) on the left and Operations (Stability) on the right, separated by a structural wall representing their conflicting incentives."
+  width="1600"
+  loading="lazy"
+/>
 
-### Operations
-Focused on:
-
-- servers
-- uptime
-- deployment
-- networking
-- backups
-- security
-- system stability
+_Fig 1: The Dev vs. Ops Split (Change vs. Stability)_
 
 Both groups were doing legitimate work. The problem was that they often had conflicting incentives.
 
 <CautionBox title="The Incentive Conflict">
-  Developers were rewarded for **change**. Operations teams were rewarded for **stability**.<br/><br/>That creates tension fast. Every new change a developer introduces is a potential threat to the stability the operations team is evaluated on.
+  Developers were rewarded for **change**. Operations teams were rewarded for
+  **stability**.
+
+That created tension fast. Every new change a developer introduced was a
+potential threat to the stability the operations team was evaluated on.
+
 </CautionBox>
 
 ## The "throw it over the wall" problem

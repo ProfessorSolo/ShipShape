@@ -1,0 +1,63 @@
+---
+title: "Common Gotchas"
+description: "Troubleshooting standard Docker bumps in the road."
+sidebar:
+  order: 13
+  label: "Common Gotchas"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Here's the part that bites people on their first outing.
+
+## The Container Exits Immediately
+
+A container only stays alive as long as its primary foreground process stays alive. If the command in your `CMD` instruction (like `npm start`) errors out or finishes immediately, the container will instantly exit.
+
+If `npm start` is missing from your `package.json`, or if the Node app crashes on boot because of a typo, the container will just stop right away.
+
+## The App is Unreachable
+
+If the container runs but the browser can't hit it, check three things:
+
+1. **Internal Port Binding:** Did your Node app accidentally bind to `localhost` or `127.0.0.1` inside the container? It often needs to bind to `0.0.0.0` to receive external traffic.
+2. **Missing Flag:** Did you forget the `-p 3000:3000` mapping flag entirely when running?
+3. **Wrong Target:** Did you map traffic to `3000`, but your Node code is actually listening on `8080`?
+
+<CautionBox title="Port Mapping is Manual">
+Remember, the `EXPOSE` instruction in the Dockerfile doesn't do the publishing. It's just documentation. You *must* supply the `-p` flag at runtime.
+</CautionBox>
+
+## Missing Files
+
+If `server.js` or some other crucial file is mysteriously missing inside the container, double-check your `COPY` commands. If your instructions are wrong, the application code won't be in the expected path inside the image.
+
+## Host Contamination
+
+If strange, operating-system-specific errors pop up during `npm rebuild` steps, there is a very high probability you forgot your `.dockerignore` file. Your host laptop's `node_modules` snuck into the build context and corrupted the build environment.
+
+## Environment Variables
+
+Some apps crash if they don't have database connection strings or secret keys. A container does not magically inherit your laptop's `.bash_profile` or local `.env` variables unless you explicitly pass them in during the `docker run` command.
+
+<NoteBox title="Debugging Triage">
+If a container fails, run `docker logs <container-id>`. The Node error stack trace will be sitting right there.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/desktop/troubleshoot/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Desktop Troubleshooting
+</LinkButton>
+
+### ⏭ Operational Mindset

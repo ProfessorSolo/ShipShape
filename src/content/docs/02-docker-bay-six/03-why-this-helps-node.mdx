@@ -1,0 +1,67 @@
+---
+title: "Containers and Node.js"
+description: "Solving Node-specific runtime assumptions with containers."
+sidebar:
+  order: 3
+  label: "Containers and Node.js"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Node.js Environmental Drift
+
+Node apps are especially good examples for this discussion because they often depend on a long list of environment details, such as:
+
+- the exact Node.js version
+- dependency installation state
+- startup commands
+- expected filesystem paths
+- environment variables
+- open ports
+- background services or databases
+
+Even when our `package.json` is perfectly accurate, two machines can still behave entirely differently, and this can break the world.
+
+<CautionBox title="The Weirdness of Host Environments">
+  That behavioral drift can happen because of OS differences, lingering version
+  mismatches, local leftovers from past installs, machine-specific
+  configuration, or host `node_modules` weirdness.
+</CautionBox>
+
+## What Containers Give Us
+
+With containers, we can define a more standardized, predictable runtime story.
+
+Instead of saying:
+
+> “Clone the repo, install the right version of Node, hope your setup roughly matches mine, and run it like this.”
+
+we can move toward a much safer position:
+
+> “Build this **image** from this recipe, then run it.”
+
+That is a much stronger software delivery model.
+
+<NoteBox title="A Shared Truth">
+  It forces the environment configuration to exist in code, not in someone's
+  head. You don't have to guess what version of Node the app needs; it says
+  exactly what version it needs directly in the build recipe.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://nodejs.org/en/docs/guides/nodejs-docker-webapp/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Node.js Official Docker Guide
+</LinkButton>
+
+### ⏭ Installing Docker

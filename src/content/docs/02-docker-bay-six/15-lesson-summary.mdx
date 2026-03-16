@@ -1,0 +1,64 @@
+---
+title: "Lesson Set Sails"
+description: "Wrapping up our initial foray into Docker packaging."
+sidebar:
+  order: 15
+  label: "Lesson Set Sails"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Ground Covered
+
+Over the course of this lesson we moved from theory into packaging our code for shipping.
+
+We've learned to define environments explicitly and to escape the local-development trap.
+
+Waypoints:
+
+- why containers reduce silent environment drift
+- the architectural difference between virtual machines and containers
+- the difference between rigid images and running containers
+- Docker Engine, images, registries, and layers
+- the critical role of a `Dockerfile`
+- the noise-reducing purpose of `.dockerignore`
+- why the order of instructions affects Docker layer caching
+- how to build an image and boot a container for a standard Node app
+- how port mapping connects the isolated app back to the host machine
+
+<CautionBox title="Rote Memorization isn't the Goal">
+  You don't need to memorize the Docker CLI right now. You just need to solidify
+  the mental model: "I am taking my code, injecting it into an isolated template
+  with a fixed runtime, and executing that template."
+</CautionBox>
+
+<NoteBox title="A Stable Foundation">
+  If you can build an image locally and run it successfully, you have already
+  cleared one of the largest early hurdles in modern application delivery.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Documentation Hub
+</LinkButton>
+
+### ⏭ Bearing for the Next Leg
+
+At this point, we can define, package, and run a single, isolated Node application in a Docker container.
+
+But... what happens when one container is no longer enough?
+
+What happens when we need a database container and our Node container to talk to each other simultaneously?
+
+That is where multi-container orchestration starts to matter, and where our next lesson will begin.

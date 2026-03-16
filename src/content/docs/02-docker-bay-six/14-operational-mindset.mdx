@@ -1,0 +1,59 @@
+---
+title: "DevOps Mindset Starts Here"
+description: "Why containerization is about more than just remembering commands."
+sidebar:
+  order: 14
+  label: "DevOps Mindset Starts Here"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## This is Not “Just Docker Stuff”
+
+It is extremely easy to treat this lesson as just a list of syntax and commands to memorize. But the deeper point of this exercise is much bigger than a CLI.
+
+By reaching for containers early, we are actively practicing critical operational habits:
+
+- defining the runtime environment clearly
+- packaging the whole delivery payload intentionally
+- reducing local-machine assumptions
+- making builds predictable and repeatable
+- creating a significantly cleaner path toward automated deployment
+
+That is DevOps thinking in action.
+
+<CautionBox title="The Anti-Pattern">
+  Building an application without thinking about how it will run creates silent,
+  brittle dependencies. At best, that might necessitate writing a huge README
+  just to teach a new developer how to un-break their local environment.
+</CautionBox>
+
+## A Better Standard
+
+The containerized version of our application gives us a stronger operational story than "it works fine on my laptop."
+
+Instead of relying on the specific, invisible state of one machine, we now have a strict, encoded runtime recipe that travels with the code.
+
+<NoteBox title="Professional Shipping">
+  That is a serious leap in maturity, even before we get anywhere near actual
+  production server infrastructure. We're packing the cargo properly so the ship
+  actually leaves the dock.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/build-release-run"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  The Twelve-Factor App: Build, Release, Run
+</LinkButton>
+
+### ⏭ Lesson Summary

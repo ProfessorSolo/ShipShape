@@ -1,0 +1,94 @@
+---
+title: "Installing Docker Desktop"
+description: "Setting up the Docker Engine and preparing your local shipyard."
+sidebar:
+  order: 4
+  label: "Installing Docker"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Before we can start packing containers, we need to install the crane. For local development, the easiest and most comprehensive tool is **Docker Desktop**. It includes the Docker Engine (which runs the containers), the Docker CLI (how we give commands), and Docker Compose (which we will use later to manage multi-container setups).
+
+## Getting the Installer
+
+Head over to the official Docker site and grab the installer for your operating system.
+
+<LinkButton
+  href="https://www.docker.com/products/docker-desktop/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Download Docker Desktop
+</LinkButton>
+
+---
+
+## Mac Installation
+
+Installing on a Mac is straightforward, but there is one crucial detail to verify: **Apple Silicon vs. Intel**.
+
+1. Download the correct `.dmg` file. If you are on an M1, M2, or newer Mac, you **must** select the "Apple Silicon" option. Using the Intel binary on Apple Silicon causes major performance penalties and architectural translation headaches.
+2. Open the `.dmg` and drag the Docker icon into your `Applications` folder.
+3. Launch Docker from your Applications folder. It will ask for elevated privileges the first time to install networking components and symlinks. Allow it.
+4. You should see a whale icon appear in your top menu bar. When the animation stops and the icon is solid, the Docker Engine is running.
+
+<NoteBox title="A Note on Mac Resource Limits">
+Docker on Mac actually spins up a hidden, lightweight Linux virtual machine under the hood to run the containers (since containers share the Linux kernel). You can adjust how much CPU and memory that hidden VM is allowed to use via the Docker Desktop Settings (the gear icon) under "Resources."
+</NoteBox>
+
+---
+
+## Windows Installation
+
+Windows requires a bit more setup because it relies on the Windows Subsystem for Linux (WSL).
+
+### Step 1: Enable WSL 2
+Docker Desktop on Windows heavily prefers **WSL 2** as its backend. It is significantly faster and more stable than the older Hyper-V backend.
+
+If you don't have WSL installed:
+1. Open PowerShell as Administrator.
+2. Run the command: `wsl --install`
+3. Restart your computer if prompted.
+
+### Step 2: Install Docker Desktop
+1. Run the `.exe` installer you downloaded.
+2. During the installation, ensure the **"Use WSL 2 instead of Hyper-V"** option is checked.
+3. Finish the installation and launch Docker Desktop from the Start menu.
+4. You will see the whale icon in your system tray (bottom right).
+
+<CautionBox title="Windows Home vs Pro">
+Docker Desktop works on both Windows Home and Windows Pro, but Windows Home *requires* the WSL 2 backend. Make sure WSL is humming along smoothly before fighting with Docker errors.
+</CautionBox>
+
+---
+
+## Verifying the Shipyard
+
+Once the visual Docker Desktop application is running, let's make sure the command-line tools are wired up correctly. Open your terminal of choice—whether that's an Electric Indigo-themed iTerm or a Midnight Graphite Windows Terminal—and run:
+
+```bash
+docker --version
+```
+
+You should see an output similar to `Docker version 24.0.5, build ced0996`.
+
+Next, let's run a test container to ensure the engine can pull images and execute them.
+
+```bash
+docker run hello-world
+```
+
+If everything is working, Docker will:
+1. Look for the `hello-world` image locally.
+2. Realize it doesn't have it, and pull it down from Docker Hub.
+3. Run the container.
+4. Print a success message ("Hello from Docker!") to your terminal.
+
+If you see that message, your dockyard is fully operational. Let's start moving some real cargo.
+
+### ⏭ Parts of the Engine

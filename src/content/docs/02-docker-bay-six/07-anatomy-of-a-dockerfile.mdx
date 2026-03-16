@@ -1,0 +1,99 @@
+---
+title: "Anatomy of a Dockerfile"
+description: "The baseline recipe used to build an image."
+sidebar:
+  order: 7
+  label: "Anatomy of a Dockerfile"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## The Build Recipe
+
+A **`Dockerfile`** is the literal text file recipe used to build an image. It tells the Docker Engine exactly what to start with, what to do, and which command to run when an instance finally starts up.
+
+Here is a super-simple, standard `Dockerfile` for a basic Node application:
+
+```dockerfile title="Dockerfile"
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+<NoteBox title="Dockerfile">
+  Docker Engine will look for this Dockerfile, automatically, in the project
+  root.
+</NoteBox>
+
+This is small, but it does a massive amount of heavy lifting.
+
+It translates directly to:
+
+- start from a lightweight Node 20 base image
+- set up shop inside an `/app` directory
+- copy only the package manifest files first
+- install the `node_modules` dependencies
+- copy the rest of the application files over
+- document that the app listens on port 3000
+- define the default start command
+
+With just those lines, we've defined exactly how our application should be packaged.
+
+<CautionBox title="Capitalization Matters">
+  By strict convention, a `Dockerfile` must be named exactly that. This means a
+  capital `D` and no file extension.
+</CautionBox>
+
+---
+
+## The Foundation: Base Images
+
+Every shipyard starts with a foundation. In a `Dockerfile`, that foundation is defined by the **`FROM`** instruction.
+
+A **Base Image** is a pre-packaged environment that already contains the basic OS tools and runtime you need. Instead of manually installing Linux and Node.js from scratch every time, you start with an image that has them ready to go.
+
+### Where do they come from?
+
+Most base images are pulled from **Docker Hub**, the central registry for the Docker world.
+
+When you see `node:20-alpine`, you are looking at:
+
+- **`node`**: The official Node.js repository.
+- **`20`**: The major version of the runtime.
+- **`alpine`**: A specific variant based on Alpine Linux, which is incredibly tiny (around 5MB) compared to standard distributions. This keeps your final image fast and secure by removing "bloat."
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/dockerfile/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Dockerfile Reference Docs
+</LinkButton>
+---
+<LinkButton
+  href="https://hub.docker.com/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Browse Docker Hub
+</LinkButton>
+
+### ⏭ The Six-Pack

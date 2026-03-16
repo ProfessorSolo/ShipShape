@@ -1,0 +1,76 @@
+---
+title: "Why Containers Matter"
+description: "Moving from DevOps theory to runtime reality."
+sidebar:
+  order: 1
+  label: "Why Containers Matter"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## From DevOps Theory to Runtime Reality
+
+In Lesson 01, we looked at the workflow problems DevOps tries to solve:
+
+- inconsistent environments
+- manual deployment steps
+- unclear runtime expectations
+- hidden setup knowledge
+- unreliable releases
+
+Containers help with those problems by giving us a way to package an application together with the runtime conditions it needs.
+
+That means we can explicitly define:
+
+- what environment the app starts from
+- what files it includes
+- how dependencies get installed
+- what command starts it
+- what port it listens on
+
+That does not solve every production problem, but it solves a very important class of environment problems.
+
+<NoteBox title="Operational Check, mate">
+  When we use containers, we package the runtime *with* the code. We aren't just
+  shipping the application; we are shipping the environment it will need to
+  survive in the wild.
+</NoteBox>
+
+## The Local-Dev Trap
+
+A Node app often feels finished simply because it runs locally.
+
+But “locally” usually includes a bunch of invisible assumptions:
+
+- the right Node.js version is already installed
+- the right npm version is available
+- dependencies were installed successfully at some point
+- the current machine already has the right folder structure
+- the correct `.env` values exist
+- no one has tested it on a clean machine lately
+
+<CautionBox title="The 'Works on My Machine' Problem">
+  Relying on a local environment is a dangerous way to ship software. What works
+  on your heavily customized, specific laptop almost certainly won't work the
+  same way on a fresh server or a teammate's machine.
+</CautionBox>
+
+Containers give us a way to stop relying so heavily on those assumptions. By isolating the app from the host machine's quirks, we guarantee a predictable baseline.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/dev-prod-parity"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  The Twelve-Factor App: Dev/Prod Parity
+</LinkButton>
+
+### ⏭ Containers vs Virtual Machines

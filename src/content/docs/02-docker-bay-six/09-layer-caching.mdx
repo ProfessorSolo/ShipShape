@@ -1,0 +1,92 @@
+---
+title: "Layer Caching"
+description: "Why the order of your Dockerfile instructions dictates build speed."
+sidebar:
+  order: 9
+  label: "Layer Caching"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Docker Builds in Layers
+
+Many instructions in a `Dockerfile` create a discrete **layer**.
+
+You can think of a layer as a snapshot of the **filesystem** within the image at a specific point in time.
+
+That's where caching comes in.
+
+Docker can often reuse previously built layers from its cache if the relevant inputs (the files we are copying or the commands we are running) have not changed.
+
+<NoteBox title="Layer Caching">
+
+We want to put the instructions that change the least frequently at the top
+of the Dockerfile, and the instructions that change the most frequently at
+the bottom of the Dockerfile, so that Docker can reuse the cached layers as
+much as possible.
+
+</NoteBox>
+
+## The Standard Node.js Pattern
+
+Here is why we usually split up our copying into two steps:
+
+```dockerfile {1} {3}
+COPY package*.json ./
+RUN npm install
+COPY . .
+```
+
+That exact sequencing is intentional.
+
+{/* T.A. Watts Note: A flowchart diagram showing the layer cache invalidating at the `COPY . .` step (but preserving the `npm install` layer) would be perfect here. */}
+
+## Why It Helps
+
+If `package.json` and `package-lock.json` have not changed since our last build, Docker will safely reuse the cached layer where dependencies were `npm install`ed.
+
+Then, if we only change our application source code (e.g. `server.js`), the cache only invalidates at the _second_ `COPY` step. Docker can skip re-running `npm install` entirely.
+
+That makes our day-to-day rebuilds exponentially faster.
+
+<NoteBox title="Intentional Architecture">
+  It's a tiny structural choice, but it holds a very real time payoff. Good
+  Dockerfiles are ordered from least-frequently-changed (base images,
+  dependencies) to most-frequently-changed (source code).
+</NoteBox>
+
+## The Less Helpful Version
+
+If you do this instead, it will _technically_ work:
+
+```dockerfile {1}
+COPY . .
+RUN npm install
+```
+
+...but it breaks the caching model.
+
+<CautionBox title="Slower and Annoying">
+  If we copy everything first, then even a tiny modification to a minor route
+  file will invalidate that `COPY` layer. As a result, Docker has to re-run our
+  `npm install`, and every subsequent step each and every single time we make
+  even the slightest change to any code.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/build/cache/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Build Caching
+</LinkButton>
+
+### ⏭ `.dockerignore`

@@ -1,0 +1,81 @@
+---
+title: ".dockerignore"
+description: "Keeping your build context clean and fast."
+sidebar:
+  order: 10
+  label: ".dockerignore"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## What it is
+
+A `.dockerignore` file tells Docker which files and folders must **not** be included in the build context. It is essentially identical in spirit to `.gitignore`, but for the Docker build daemon instead of Git.
+
+## Why it matters
+
+Without a `.dockerignore`, the build context will zip up and send everything in your project directory over to the Docker Engine. That often includes things we really do not want inside an image, such as:
+
+- `node_modules`
+- `.git` histories
+- local error logs
+- editor config files
+- temporary build files
+- coverage output
+- local `.env` files with secret keys
+
+That kind of useless sprawl makes your builds:
+
+- slower
+- larger
+- noisier
+- **much less secure**
+- far less predictable
+
+<CautionBox title="Host Contamination">
+This step is especially critical for Node development.
+
+We do **not** want to copy your host machine's `node_modules` into the final image. Doing so completely defeats the purpose of building in a clean, isolated environment, and can cause strange architecture mismatch errors.
+
+Sound familiar? The above is why I insist that you remove `node_modules` from your assignments before submitting them.
+
+</CautionBox>
+
+<CautionBox title="Leaky Secrets">
+
+We **definitely** do **not** want to copy our host machine's `.env` file into the final image.
+
+To do so would be to invite disaster.
+
+We will discuss how to handle environment variables in a more secure manner later.
+
+</CautionBox>
+
+## A Standard Example
+
+```gitignore title=".dockerignore"
+node_modules
+.git
+.env
+npm-debug.log
+.DS_Store
+coverage
+```
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/build/concepts/context/#dockerignore-files"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Docs: .dockerignore files
+</LinkButton>
+
+### ⏭ Building the Image

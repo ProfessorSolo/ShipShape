@@ -1,0 +1,125 @@
+---
+title: "Building the Image"
+description: "Executing the build command to create our package."
+sidebar:
+  order: 11
+  label: "Building the Image"
+  draft: false
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+With our files in place, it's time to actually construct the image.
+
+## Step 0: Create and Test an App
+
+Let’s make a tiny Node app so that we have something to containerize and play with.
+
+In terminal, run the following:
+
+```bash
+mkdir my-simple-server
+cd my-simple-server
+npm init -y
+```
+
+Then, create a super-simple server.js that greets us:
+
+```javascript title="server.js"
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Hello from Node inside Docker!\n");
+});
+
+server.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+```
+
+Make sure we have a `start` script in `package.json`:
+
+```json title="package.json"
+"scripts": {
+  "start": "node server.js"
+}
+```
+
+## Step 1: Create the Dockerfile
+
+At the root of our Node project, create the `Dockerfile` exactly as discussed:
+
+```dockerfile title="Dockerfile"
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+## Step 2: Create the .dockerignore
+
+Right next to it, let's create our `.dockerignore`:
+
+```gitignore title=".dockerignore"
+node_modules
+.git
+.env
+npm-debug.log
+.DS_Store
+```
+
+## Step 3: Build the Image
+
+Now we tell Docker Engine to read our recipe (Dockerfile) and construct our image.
+
+From the terminal, at the root of the project:
+
+```bash
+docker build -t my-simple-server .
+```
+
+<CautionBox title="Don't Forget the Dot">
+  The trailing `.` is not a typo. It is the path to the build context. If you
+  forget it, Docker will error out because it won't know where to look for the
+  files.
+</CautionBox>
+
+### Breakdown
+
+- `docker build`: tells the engine to start an image build process.
+- `-t my-simple-server`: “tags” the resulting image with a recognizable name.
+- `.`: tells Docker to use the current directory (`.`) as the build context.
+
+<NoteBox title="Not Running Yet">
+  Wait! What?? Why don't we see the console log from our app? At this point, we
+  have successfully packaged the image, but it is **not** running yet. It's just
+  built. It is sitting in our local Docker registry, ready and waiting for us to
+  run it. **Remember the difference between RUN and CMD!**
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/buildx/build/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker CLI: build
+</LinkButton>
+
+### ⏭ Running the Container

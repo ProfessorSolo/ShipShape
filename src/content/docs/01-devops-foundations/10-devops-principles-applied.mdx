@@ -16,32 +16,47 @@ Take a typical Node/Express app.
 A DevOps-aware version of thinking about that app includes questions like:
 
 ### Build
+
 - Can someone else build this the same way I do?
 - Are dependencies declared clearly in `package.json`?
 
 ### Configuration
+
 - Are environment variables separated from source code?
 - Is configuration explicit?
 
 ### Runtime
+
 - What starts the process (`npm start`, `node index.js`)?
 - Which port is exposed?
 - What runtime version of Node is expected?
 
 ### Deployment
+
 - Can I package this app consistently?
 - Can I release it without ad hoc manual setup?
 
 ### Operations
+
 - If it crashes, how do I know?
 - Where do logs go?
 - Can I inspect what happened?
 
 <NoteBox title="Micro-DevOps">
-  That is DevOps in miniature. It’s about predictability, consistency, and visibility.
+  That is DevOps in miniature. It’s about predictability, consistency, and
+  visibility.
 </NoteBox>
 
-## Important message
+## Small Habits, Big Impact
+
+<img
+  src="/assets/lessons/01-devops-foundations/10-devops-at-any-scale.png"
+  alt="An isometric comparison showing a small, elegant node server labeled 'Small Habits' on the left and a massive, chaotic server cluster labeled 'Giant Complexity' on the right."
+  width="1600"
+  loading="lazy"
+/>
+
+_Fig 1: Small Habits vs. Giant Complexity_
 
 DevOps is not only for giant cloud-native systems with 40 dashboards and seven teams yelling in Kubernetes.
 
@@ -54,7 +69,9 @@ It starts with small habits:
 - design for consistency
 
 <CautionBox title="Foundation First">
-  If you can't reliably deploy a simple Node/Express application, scaling up to microservices won't solve your problems; it will multiply them. That is exactly the kind of foundation we want to build here.
+  If you can't reliably deploy a simple Node/Express application, scaling up to
+  microservices won't solve your problems; it will multiply them. That is
+  exactly the kind of foundation we want to build here.
 </CautionBox>
 
 ---
@@ -72,4 +89,4 @@ It starts with small habits:
 
 ### ⏭ Clearing the Fog
 
-Before we start applying these principles to containers, let's take a quick moment to dispel some lingering myths. Here is what DevOps emphatically *is not*.
+Before we start applying these principles to containers, let's take a quick moment to dispel some lingering myths. Here is what DevOps emphatically _is not_.

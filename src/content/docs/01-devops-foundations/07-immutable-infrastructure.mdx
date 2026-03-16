@@ -9,7 +9,14 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-{/* T.A. Watts Note: A diagram comparing Mutable (patching an old server) vs Immutable (deploying a shiny new version alongside it and swapping) would absolutely earn its keep here. */}
+<img
+  src="/assets/lessons/01-devops-foundations/07-mutable-vs-immutable.png"
+  alt="An isometric comparison diagram. On the left, 'Mutable' shows a messy, heavily patched server. On the right, 'Immutable' shows a glowing new 'v2' server cleanly replacing a faded 'v1' server."
+  width="1600"
+  loading="lazy"
+/>
+
+_Fig 1: Mutable vs. Immutable Infrastructure_
 
 ## Mutable vs immutable thinking
 
@@ -26,7 +33,9 @@ In a mutable model, a running server is changed over time. People might:
 - leave the environment slightly different after each change
 
 <CautionBox title="The Patchwork Monster">
-  Mutable infrastructure can work for a while, but it gets messy fast. Soon, nobody knows exactly *what* is running on that machine, only that you shouldn't touch it or it will break.
+  Mutable infrastructure can work for a while, but it gets messy fast. Soon,
+  nobody knows exactly *what* is running on that machine, only that you
+  shouldn't touch it or it will break.
 </CautionBox>
 
 ### The Immutable approach
@@ -51,7 +60,9 @@ Immutable workflows are generally:
 - less vulnerable to environment drift
 
 <NoteBox title="A Clean Slate">
-  When you know that the running version is exactly what you defined in code, and not a patched-together survivor of a dozen late-night SSH sessions, confidence goes way up.
+  When you know that the running version is exactly what you defined in code,
+  and not a patched-together survivor of a dozen late-night SSH sessions,
+  confidence goes way up.
 </NoteBox>
 
 ## Connect it to containers
