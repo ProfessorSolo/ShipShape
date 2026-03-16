@@ -1,0 +1,86 @@
+---
+title: "Exploration Lab: The DevOps Mindset"
+description: "A theory and exploration lab focused on deep-dive independent learning and AI-assisted prompt analysis."
+sidebar:
+  order: 15
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+This is an independent exploration lab designed to cement your mental model of DevOps before we start writing Dockerfiles. 
+
+Because we haven't touched real infrastructure code yet, this lab focuses on **AI-assisted theory and diagnosis**. You will use prompt engineering to interrogate an AI partner about real-world scenarios.
+
+## Tier 1 — Maintenance: The "Works on My Machine" Defense
+
+**Objective:** Understand the gap between local development and production environments.
+
+**What to do:**
+Imagine a junior developer named Gary claims his new Node.js authentication route "works perfectly on his machine." When deployed to a staging environment, it crashes immediately on startup.
+
+**Expected outcome:**
+Use your AI partner to understand the common environmental causes of this exact crash scenario.
+
+**Student-to-AI prompt:**
+> "I have a Node.js Express application. It runs perfectly locally using `npm run dev`. When we deploy it to our staging server, it crashes immediately with a vague 'process exited with code 1' error. Based on core DevOps principles, what are the top three environmental differences (not code bugs) that usually cause this specific 'works locally, fails in staging' gap?"
+
+<CautionBox title="Analyze the Output">
+  Don't just accept the AI's answer. Ask yourself: Can I identify which of those issues could have been prevented by using a repeatable pipeline (CI/CD) and Infrastructure as Code?
+</CautionBox>
+
+---
+
+## Tier 2 — Custom Job: Identifying Mutable Drift
+
+**Objective:** Recognize the dangers of mutable infrastructure over time.
+
+**What to do:**
+You have inherited a server that has been running a Node.js application for four years. Over those four years, five different developers have ssh'd into the machine to "tweak" configurations, update global packages, and adjust firewall rules. None of these changes were documented.
+
+**Expected outcome:**
+Understand the risk profile of this server and the difficulty of reproducing it.
+
+**Student-to-AI prompt:**
+> "I've inherited a 'pet' Linux server that has been manually patched and configured by multiple different developers over four years. In DevOps terminology, explain what 'configuration drift' is, why this server is an example of 'mutable infrastructure', and how an 'immutable infrastructure' approach (like containers) would prevent this nightmare if we had to migrate the app to a new host tomorrow."
+
+<NoteBox title="T.A. Watts Note">
+  If you ever hear a senior engineer say "we can't restart that server, we don't know if the app will come back up," you are looking at the exact problem you just prompted the AI about.
+</NoteBox>
+
+---
+
+## Tier 3 — Solo Special: Pipeline Construction
+
+**Objective:** Synthesize CI/CD concepts into a logical workflow.
+
+**What to do:**
+Assume you are tasked with designing the delivery pipeline for a new Node.js API. You need to explain the sequence of events from a developer pushing code to the code running in production.
+
+**Expected outcome:**
+Evaluate a proposed pipeline for missing steps, particularly around testing and observability.
+
+**Student-to-AI prompt:**
+> "I am designing a CI/CD pipeline for a Node.js backend. My proposed steps are: 1. Developer pushes code to GitHub. 2. A script copies the files directly to the production server. 3. The server runs `npm install`. 4. The server runs `pm2 restart app`. As a senior DevOps engineer, critique this pipeline. What crucial CI/CD and observability steps am I missing before and after the deployment? Please provide a safer, more robust 6-step pipeline."
+
+<CautionBox title="The Fix">
+  When the AI responds, note where it places the testing phase and how it handles the build artifact. The difference between copying files directly to production and immutable deployment is what makes a pipeline robust.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://platformengineering.org/blog/what-is-platform-engineering"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  What is Platform Engineering?
+</LinkButton>
+
+### ⏭ Time to Pack the Boxes
+
+Mental model established. Concepts explored. Cargo secured. It's time to stop talking about repeatable runtimes and start actually building one. Let's move on to Docker.

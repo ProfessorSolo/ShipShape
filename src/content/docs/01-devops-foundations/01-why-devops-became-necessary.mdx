@@ -1,0 +1,95 @@
+---
+title: "Why DevOps Became Necessary"
+description: "The historical split between Development and Operations created tension between change and stability. DevOps emerged to bridge this gap."
+sidebar:
+  order: 2
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+{/* T.A. Watts Note: A diagram of the Dev vs Ops split (Change vs Stability incentives) would absolutely earn its keep here. */}
+
+## The older split: Dev vs Ops
+
+Historically, many organizations separated software work into two broad groups: **Development** and **Operations**.
+
+### Development
+Focused on:
+
+- building features
+- fixing bugs
+- writing code
+- moving quickly
+- shipping changes
+
+### Operations
+Focused on:
+
+- servers
+- uptime
+- deployment
+- networking
+- backups
+- security
+- system stability
+
+Both groups were doing legitimate work. The problem was that they often had conflicting incentives.
+
+<CautionBox title="The Incentive Conflict">
+  Developers were rewarded for **change**. Operations teams were rewarded for **stability**.<br/><br/>That creates tension fast. Every new change a developer introduces is a potential threat to the stability the operations team is evaluated on.
+</CautionBox>
+
+## The "throw it over the wall" problem
+
+A classic anti-pattern looked like this:
+
+1. Developers build the application.
+2. Developers say, "It works on my machine."
+3. The code gets handed off to operations.
+4. Operations now has to somehow make it run in an unfamiliar environment.
+
+That handoff often included missing information, vague instructions, or tribal knowledge like:
+
+- "Oh, you need Node 18, not Node 20."
+- "It only works if that config file is present."
+- "You need to run this command first."
+- "The app writes files into a folder we forgot to create."
+- "The environment variable names are slightly different in production."
+
+<NoteBox title="Chaos Relay">
+  That is not a strong delivery model. That is a chaos relay race.
+</NoteBox>
+
+## What DevOps changed
+
+DevOps developed as a response to that friction.
+
+The goal was not to erase all roles or make everyone identical. The goal was to create:
+
+- tighter collaboration
+- shared ownership
+- automation where possible
+- faster feedback
+- more reliable delivery
+- more predictable operations
+
+In other words: stop treating deployment and operations as an awkward after-party after the "real" development work is done.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.atlassian.com/devops/what-is-devops/history-of-devops"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Atlassian: A Brief History of DevOps
+</LinkButton>
+
+### ⏭ Beyond a Job Title
+
+So, we're not just throwing code over walls anymore. But if DevOps isn't just a role, what does the actual workflow look like?

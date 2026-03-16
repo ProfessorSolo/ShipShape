@@ -1,0 +1,99 @@
+---
+title: "CI/CD at a High Level"
+description: "A pipeline is a sequence of repeatable steps that move software from source code toward deployment."
+sidebar:
+  order: 5
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+{/* T.A. Watts Note: A diagram of a high-level CI/CD pipeline flow (Code -> Build -> Test -> Deploy) would absolutely earn its keep here. */}
+
+## The pipeline idea
+
+One of the central concepts in DevOps is the **pipeline**.
+
+A pipeline is a sequence of repeatable steps that move software from source code toward deployment.
+
+The most common umbrella term is **CI/CD**.
+
+CI/CD stands for:
+
+- **Continuous Integration**
+- **Continuous Delivery** or **Continuous Deployment**
+
+## Continuous Integration (CI)
+
+Continuous Integration means changes are integrated into shared source control regularly, and automated checks help verify that the project still works.
+
+Typical CI steps might include:
+
+- install dependencies
+- run linting
+- run tests
+- build the app
+- verify configuration
+- package artifacts
+
+For a Node app, that might look like:
+
+```bash
+npm ci
+npm test
+npm run build
+```
+
+if those scripts exist in the project.
+
+### Why CI matters
+
+CI reduces the risk of teams drifting apart in hidden ways.
+
+Instead of waiting until the end of a week or sprint to discover that multiple changes conflict or break the app, CI creates earlier feedback.
+
+That means problems get caught:
+
+- sooner
+- more cheaply
+- with less confusion
+
+<CautionBox title="The Hidden Cost of Delay">
+  Finding a bug five minutes after you wrote the code is a minor annoyance. Finding a bug three weeks later during a massive integration push is an expensive nightmare.
+</CautionBox>
+
+## Continuous Delivery / Continuous Deployment
+
+After CI verifies the build, CD handles moving the application toward a running environment.
+
+That might include:
+
+- building a deployable package
+- creating a container image
+- pushing that image to a registry
+- deploying to a host or platform
+- restarting services with the new version
+
+<NoteBox title="Delivery vs. Deployment">
+  The difference between **delivery** and **deployment** usually comes down to whether the final production release is still a manual approval step (Delivery) or fully automatic (Deployment).
+</NoteBox>
+
+For this course, the important part is the concept: software moves through a **repeatable release pipeline** rather than a pile of improvised manual steps.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://martinfowler.com/articles/continuousIntegration.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Martin Fowler: Continuous Integration
+</LinkButton>
+
+### ⏭ Memory Leaks
+
+We’ve seen what a pipeline looks like. But why is it so much better than just remembering how to deploy an app? Let's talk about the fragility of human memory in operations.

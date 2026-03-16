@@ -1,0 +1,63 @@
+---
+title: "Bridge to Docker"
+description: "How Docker helps us fulfill the goals of a DevOps workflow by creating a repeatable runtime."
+sidebar:
+  order: 13
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Why Docker comes next
+
+Once we understand the DevOps motivation, the next obvious question is:
+
+> "Okay, so how do we make our Node app run consistently across environments?"
+
+<NoteBox title="Enter Containers">
+  That is exactly where containers become useful. Docker helps us define a repeatable runtime by packaging the application and its world together.
+</NoteBox>
+
+Using tools like a Dockerfile (Infrastructure as Code) and generating an image (Immutable Infrastructure), we can package:
+
+- the app
+- its dependencies
+- its execution environment
+- its startup behavior
+
+That makes Docker a incredibly strong entry point into the practical, hands-on side of DevOps.
+
+## The handoff to Lesson 02
+
+Lesson 02 will take these ideas and make them concrete through:
+
+- containers vs virtual machines
+- Docker Engine, images, containers, and layers
+- writing a `Dockerfile`
+- using `.dockerignore`
+- building an image
+- running a container
+- mapping ports
+- getting the Node app running in Docker
+
+<CautionBox title="Theory to Practice">
+  This is the shift from **why this matters** to **how we do it**. You need the theory to build reliable systems, but you need the practice to actually ship them.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.docker.com/why-docker/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker: Why Docker?
+</LinkButton>
+
+### ⏭ Plotting the Course
+
+We've covered a lot of ground in this foundational lesson. Let's recap the core ideas before we step onto the deck and start working with containers.

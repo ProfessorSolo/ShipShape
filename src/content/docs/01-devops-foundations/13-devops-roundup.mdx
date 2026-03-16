@@ -1,0 +1,61 @@
+---
+title: "Lesson Summary"
+description: "Professional software needs a delivery story, an environment story, and an operations story."
+sidebar:
+  order: 14
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## What we've covered
+
+We laid the foundational philosophy needed before we start wiring up tools. By the end of this lesson, we have covered:
+
+- DevOps as an approach to improving how software is **built, shipped, run, and improved**
+- the old Dev vs Ops split and the friction between **change** and **stability**
+- **CI/CD** and repeatable pipeline thinking
+- **Infrastructure as Code** as a move away from memory-based setup
+- **immutable infrastructure** as a way to reduce fragile manual patching
+- **observability** as a way to understand running systems after deployment
+- how these ideas apply even to a **simple Node app**, not just giant enterprise systems
+
+## Bearing for the next leg
+
+The main point of this lesson is this:
+
+<NoteBox title="The Real Finish Line">
+  **Software is not done when the code works on one machine.** Professional software needs a delivery story, an environment story, and an operations story.
+</NoteBox>
+
+That is the course we are setting before we start packaging the application.
+
+## Suggested Discussion Prompts
+
+1. Why is “it works on my machine” not an acceptable finish line?
+2. What kinds of problems happen when setup lives only in someone’s memory?
+3. Why might operations teams resist constant change?
+4. Why is a repeatable build/deploy process more valuable than a clever undocumented one?
+5. Why do logs matter after deployment?
+
+<CautionBox title="Checkpoint">
+  Can you confidently answer the discussion prompts above? If not, review the previous pages. This foundation is necessary before we begin building Docker containers.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/azure/architecture/framework/devops/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Azure: Operational Excellence
+</LinkButton>
+
+### ⏭ Time to Practice
+
+This was the mental model lesson. Before we package the app in Lesson 02, let's explore these concepts a bit deeper with an independent exploration lab to cement the foundation.

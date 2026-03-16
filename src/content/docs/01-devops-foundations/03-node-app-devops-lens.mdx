@@ -1,0 +1,77 @@
+---
+title: "Through a DevOps Lens"
+description: "An application is not just its source files. It is the source files plus the conditions required for those files to run correctly."
+sidebar:
+  order: 4
+  label: "Through a DevOps Lens"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Apps are not just code
+
+A Node app is not only:
+
+- routes
+- views
+- models
+- API endpoints
+
+<NoteBox title="Runtime Context">
+  All real-world running applications depend on and are affected by their
+  **surrounding runtime environment.**
+</NoteBox>
+
+For example, a Node app may strongly depend on:
+
+- a specific Node version
+- npm dependencies
+- environment variables
+- an open port
+- a backing database
+- a filesystem path
+- a startup command
+- logs for debugging
+- process restarts if it crashes
+
+Once we look at it that way, the application is not just source files. It is source files **plus the conditions required for those files to run correctly**.
+
+That is a very DevOps-flavored realization.
+
+<CautionBox title="Missing Conditions">
+  If you ship the files but neglect the environment conditions, the software
+  fails. The code might be perfect, but the app is still down.
+</CautionBox>
+
+## Real-world version of "it works"
+
+A stronger, professional definition of "it works" is:
+
+- it **runs consistently**
+- it **starts predictably**
+- it **can be built repeatedly**
+- its **config is understood**
+- it **can be deployed without guesswork**
+- its **failures are visible**
+- it **can be updated without drama**
+
+That is the shift we want to make.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  The Twelve-Factor App
+</LinkButton>
+
+### ⏭ Pipeline Automation
+
+Okay, we know we need more than just the code. How do we reliably ensure those conditions are met every time we deploy? The answer involves pipelines.

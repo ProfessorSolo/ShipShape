@@ -1,0 +1,64 @@
+---
+title: "Why Observability Matters"
+description: "We don't have local browser tools in production. The system has to tell us what is happening."
+sidebar:
+  order: 10
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## The debugging shift
+
+We are used to debugging locally with:
+
+- console output
+- browser tools
+- code edits
+- restarts on our own machine
+
+<NoteBox title="The Production Reality">
+  That is fine for development. But once software is deployed, we often do not have the luxury of poking it manually in the same way. The system has to tell us what is happening.
+</NoteBox>
+
+## Invisible failure is the worst kind
+
+An app that fails loudly is annoying.
+
+An app that fails silently is evil.
+
+If software crashes, slows down, or returns errors and we have no usable logs or indicators, diagnosis gets painful very quickly.
+
+<CautionBox title="Diagnosing Silence">
+  Trying to debug an undocumented, silent system outage at 2:00 AM is the fastest way to burn out an engineering team.
+</CautionBox>
+
+That is why observability is not "advanced bonus fluff." It is a core part of running software responsibly in the wild.
+
+## Keep it proportional
+
+At this stage, we do not need deep distributed tracing theory.
+
+We just need the right instinct:
+
+**If a system is running somewhere, we need ways to understand its behavior.**
+
+That instinct is gold.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://honeycomb.io/observability"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Honeycomb: The Guide to Observability
+</LinkButton>
+
+### ⏭ Mini-DevOps In Action
+
+We have explored the big concepts: pipelines, declarative environments, and system visibility. Let's ground all of this by looking at how a DevOps philosophy applies to a simple, everyday Node.js application.

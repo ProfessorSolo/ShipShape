@@ -11,8 +11,8 @@ const googleAnalyticsId = 'G-D2FGLZE0C8'; // your GA4 Measurement ID
 // Define all course modules here:
 const COURSE_MODULES = [
 	{
-		label: 'Intro to DevOps',
-		directory: '01-intro-to-devops',
+		label: 'DevOps Foundations',
+		directory: '01-devops-foundations',
 		released: false,
 	},
 	//   {

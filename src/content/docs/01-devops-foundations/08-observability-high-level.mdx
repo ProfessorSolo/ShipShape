@@ -1,0 +1,67 @@
+---
+title: "Observability at a High Level"
+description: "Once an application is running, we need ways to understand its behavior from the outside."
+sidebar:
+  order: 9
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Once it is running, now what?
+
+Getting software deployed is not the end of the story.
+
+A running system still needs to be understood.
+
+<NoteBox title="Observability">
+  That is where **observability** comes in. It is the broad practice of making a system understandable from the outside by exposing useful information about what it is doing.
+</NoteBox>
+
+## Questions observability helps answer
+
+When a system is live, we want to be able to answer things like:
+
+- Is the application running?
+- Is it healthy?
+- Is it responding slowly?
+- Are requests failing?
+- Are errors increasing?
+- What happened before the crash?
+- Which part of the system is having trouble?
+
+## High-level building blocks
+
+At an introductory level, observability is commonly discussed in terms of:
+
+- **logs** — records of events and errors
+- **metrics** — counts, timings, memory usage, request rates
+- **traces** — request flow across systems and services
+
+<CautionBox title="Black Box Deploys">
+  Deploying an application without logs or metrics is like driving a car at night with a shattered windshield and the dashboard taped over. You might be moving, but you won't know you have a problem until you hit the wall.
+</CautionBox>
+
+For this course, logs are the easiest entry point.
+
+If a Node app is running in a Docker container and writes to standard output, we can inspect that output with tooling rather than guessing blindly.
+
+That is a baby step into operational visibility, and it matters.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://newrelic.com/resources/what-is-observability"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  New Relic: What is Observability?
+</LinkButton>
+
+### ⏭ The Cost of Silence
+
+We see the building blocks, but what happens when they are missing? We need to look at why invisible failure is so punishing to development teams.

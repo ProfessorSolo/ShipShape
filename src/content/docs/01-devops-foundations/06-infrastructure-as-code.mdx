@@ -1,0 +1,83 @@
+---
+title: "Infrastructure as Code (IaC)"
+description: "Infrastructure as Code means defining environment and infrastructure behavior in files instead of relying on people to remember setup steps."
+sidebar:
+  order: 7
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## The core idea
+
+**Infrastructure as Code** means defining environment and infrastructure behavior in files instead of relying on people to remember and manually perform setup steps.
+
+Instead of this:
+
+> "Open the server, install these things, tweak these settings, create this folder, edit this config, and don't forget the secret extra step Gary knows about."
+
+we move toward this:
+
+- configuration lives in files
+- setup steps are documented in code/config
+- environments can be recreated more consistently
+- changes can be version controlled
+
+## Why it matters
+
+Manual infrastructure setup is fragile because it is:
+
+- hard to repeat
+- easy to misconfigure
+- hard to audit
+- hard to reproduce later
+
+IaC improves that by making environment setup more visible and repeatable.
+
+<CautionBox title="The Danger of Unwritten Rules">
+  If the only place the production server configuration exists is inside the head of one developer, the company is one vacation away from an unrecoverable outage.
+</CautionBox>
+
+## Examples we may encounter
+
+Broader DevOps ecosystems use tools like:
+
+- Terraform
+- CloudFormation
+- Kubernetes manifests
+- CI workflow YAML files
+- Docker Compose files
+
+For this course, the first major taste of IaC thinking will be the **Dockerfile**.
+
+A Dockerfile is not "all of infrastructure," obviously, but it absolutely belongs to this mindset.
+
+It declares things like:
+
+- what runtime to start from
+- where the app lives
+- what files get copied
+- how dependencies are installed
+- what command starts the app
+
+<NoteBox title="A Step Up">
+  Declaring setup steps inside a file is already miles better than "set stuff up manually and hope nobody forgets."
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://martinfowler.com/bliki/InfrastructureAsCode.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Martin Fowler: Infrastructure As Code
+</LinkButton>
+
+### ⏭ Stop Fixing Servers
+
+Once we describe our infrastructure in files, the way we handle updates changes dramatically. We move away from mutating servers toward something much sturdier.

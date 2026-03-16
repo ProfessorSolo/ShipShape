@@ -1,0 +1,58 @@
+---
+title: "What DevOps Is Not"
+description: "Dispelling the myths: DevOps is not just an excuse to ignore architecture, security, or testing."
+sidebar:
+  order: 12
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Helpful correction section
+
+People can get weird ideas about DevOps fast, so it is worth saying this directly.
+
+DevOps is **not**:
+
+- a replacement for software engineering fundamentals
+- a single platform or vendor
+- only about deployment
+- only about operations
+- only about automation
+- a guarantee that software will never fail
+- an excuse to ignore architecture, security, or testing
+
+<CautionBox title="The Tooling Illusion">
+  Tooling is a means to an end. It is dangerously easy to install twenty tools and call yourself a DevOps master while your actual deployments are still broken and your team is miserable.
+</CautionBox>
+
+## What it actually is
+
+DevOps is better understood as:
+
+- a workflow mindset
+- a collaboration model
+- a reliability-oriented delivery approach
+- a set of practices for building, shipping, and operating software more effectively
+
+<NoteBox title="Why This Framing Matters">
+  That framing matters before Docker enters the picture. Because otherwise, Docker can start to look like "the DevOps part" instead of one useful tool inside a larger, healthier workflow story.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://devops.com/what-devops-is-not/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  DevOps.com: What DevOps Is Not
+</LinkButton>
+
+### ⏭ Meeting the Foreman
+
+So if DevOps is the philosophy and the workflow, what are the tools we use to actually implement this mindset? It's time to build the bridge to Docker.

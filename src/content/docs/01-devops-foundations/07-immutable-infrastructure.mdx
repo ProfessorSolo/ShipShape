@@ -1,0 +1,80 @@
+---
+title: "Immutable Infrastructure"
+description: "Instead of manually changing a running environment to fix it, create a fresh version and replace the old one."
+sidebar:
+  order: 8
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+{/* T.A. Watts Note: A diagram comparing Mutable (patching an old server) vs Immutable (deploying a shiny new version alongside it and swapping) would absolutely earn its keep here. */}
+
+## Mutable vs immutable thinking
+
+This is a very important DevOps idea that changes how you respond to production issues.
+
+### The Mutable approach
+
+In a mutable model, a running server is changed over time. People might:
+
+- log in manually
+- edit config files directly
+- install packages by hand
+- patch things in place
+- leave the environment slightly different after each change
+
+<CautionBox title="The Patchwork Monster">
+  Mutable infrastructure can work for a while, but it gets messy fast. Soon, nobody knows exactly *what* is running on that machine, only that you shouldn't touch it or it will break.
+</CautionBox>
+
+### The Immutable approach
+
+Instead of manually changing the running environment, we create a fresh version and replace the old one entirely.
+
+That means:
+
+- build a new artifact
+- deploy the new artifact
+- run the new version
+- discard the old one
+
+## Why immutable thinking is powerful
+
+Immutable workflows are generally:
+
+- easier to reproduce
+- easier to reason about
+- easier to roll back
+- less dependent on manual patching
+- less vulnerable to environment drift
+
+<NoteBox title="A Clean Slate">
+  When you know that the running version is exactly what you defined in code, and not a patched-together survivor of a dozen late-night SSH sessions, confidence goes way up.
+</NoteBox>
+
+## Connect it to containers
+
+Containers are a great teaching bridge into immutable thinking.
+
+Rather than treating a running server as a pet that gets endlessly hand-fed and hand-fixed, we treat the container runtime more like a replaceable unit built from a known recipe (our Dockerfile).
+
+That is a much healthier model for building reliable applications.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.hashicorp.com/resources/what-is-mutable-vs-immutable-infrastructure"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  HashiCorp: Mutable vs Immutable Infrastructure
+</LinkButton>
+
+### ⏭ Keeping the Lights On
+
+So we build our app, we define its environment, we package it immutably, and we run it. Are we done? Not quite. We need to know what it is doing out there in the wild.

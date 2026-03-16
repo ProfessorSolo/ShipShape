@@ -1,0 +1,75 @@
+---
+title: "DevOps Principles Applied"
+description: "DevOps is not only for giant enterprise systems. It starts with small habits applied to simple Node apps."
+sidebar:
+  order: 11
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Let's connect the concepts
+
+Take a typical Node/Express app.
+
+A DevOps-aware version of thinking about that app includes questions like:
+
+### Build
+- Can someone else build this the same way I do?
+- Are dependencies declared clearly in `package.json`?
+
+### Configuration
+- Are environment variables separated from source code?
+- Is configuration explicit?
+
+### Runtime
+- What starts the process (`npm start`, `node index.js`)?
+- Which port is exposed?
+- What runtime version of Node is expected?
+
+### Deployment
+- Can I package this app consistently?
+- Can I release it without ad hoc manual setup?
+
+### Operations
+- If it crashes, how do I know?
+- Where do logs go?
+- Can I inspect what happened?
+
+<NoteBox title="Micro-DevOps">
+  That is DevOps in miniature. It’s about predictability, consistency, and visibility.
+</NoteBox>
+
+## Important message
+
+DevOps is not only for giant cloud-native systems with 40 dashboards and seven teams yelling in Kubernetes.
+
+It starts with small habits:
+
+- define your environment clearly
+- automate repeatable steps
+- avoid mystery setup
+- make failures visible
+- design for consistency
+
+<CautionBox title="Foundation First">
+  If you can't reliably deploy a simple Node/Express application, scaling up to microservices won't solve your problems; it will multiply them. That is exactly the kind of foundation we want to build here.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://martinfowler.com/articles/serverless.html#WhatIsServerless"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Martin Fowler: Scale vs Simplicity
+</LinkButton>
+
+### ⏭ Clearing the Fog
+
+Before we start applying these principles to containers, let's take a quick moment to dispel some lingering myths. Here is what DevOps emphatically *is not*.

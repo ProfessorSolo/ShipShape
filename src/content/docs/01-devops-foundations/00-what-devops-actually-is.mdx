@@ -1,0 +1,89 @@
+---
+title: "What DevOps Actually Is"
+description: "DevOps is not a single tool. It is a way of thinking about how software gets built, tested, shipped, operated, and improved."
+sidebar:
+  order: 1
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+DevOps is not a single tool.
+
+It is not Docker.  
+It is not GitHub Actions.  
+It is not AWS.  
+It is not "the deployment team."  
+And it is definitely not a magic sticker you slap on a project to make it sound enterprise.
+
+**DevOps** is a way of thinking about **how software gets built, tested, shipped, operated, and improved**.
+
+At its core, DevOps is about reducing friction between:
+
+- development work
+- operations work
+- release processes
+- production systems
+- feedback after deployment
+
+In simple terms, DevOps asks:
+
+- how do we get code from a developer's machine into a running environment safely?
+- how do we do that repeatedly?
+- how do we reduce manual errors?
+- how do we know what is happening after deployment?
+- how do we recover quickly when something breaks?
+
+That is the real territory.
+
+## Ground it in the Node app
+
+Think about a Node app we have already built.
+
+Locally, it may have:
+
+- Node installed
+- dependencies already working
+- `.env` variables set up
+- the right version of npm
+- a local database connection
+- files sitting in exactly the expected places
+
+So locally, the app may feel "done."
+
+<CautionBox title="The Local Trap">
+  The second that app needs to run anywhere else, new questions appear. "It works on my machine" is not an acceptable finish line in professional software engineering.
+</CautionBox>
+
+When moving from local development to a running environment, we need to answer:
+
+- what version of Node is required?
+- how are dependencies installed?
+- how is configuration injected?
+- what command starts the app?
+- what port does it listen on?
+- how do we restart it if it crashes?
+- where do logs go?
+- how do we deploy changes without chaos?
+
+<NoteBox title="The DevOps Gap">
+  That gap between **works locally** and **runs reliably in a repeatable way** is where DevOps starts doing real work.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://aws.amazon.com/devops/what-is-devops/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  AWS: What is DevOps?
+</LinkButton>
+
+### ⏭ The Old Divide
+
+We know what DevOps is trying to fix. But how did development and operations get so misaligned in the first place? Let's look at why DevOps became necessary.

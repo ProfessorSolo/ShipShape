@@ -1,0 +1,82 @@
+---
+title: "DevOps Is a Workflow"
+description: "DevOps asks teams to think about software as a full lifecycle, moving beyond just writing the code."
+sidebar:
+  order: 3
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## Common misunderstanding
+
+People hear "DevOps engineer" and assume DevOps is just a specialized technical role.
+
+That role can exist, sure. But the broader concept matters more.
+
+<CautionBox title="The Title Trap">
+  DevOps is a **workflow model** and an **operating mindset**. Don't think of it
+  as a person you hire to deal with servers. Think of it as a way an engineering
+  team behaves.
+</CautionBox>
+
+It asks teams to think about software as a full lifecycle:
+
+- **write it**
+- **test it**
+- **package it**
+- **deploy it**
+- **run it**
+- **observe it**
+- **improve it**
+
+That full chain matters.
+
+## Practical DevOps questions
+
+A DevOps mindset leads to questions like:
+
+- Can we build this app the same way every time?
+- Can we test it before release?
+- Can we automate repetitive steps?
+- Can we deploy without manually reconfiguring everything?
+- Can we monitor what happens after release?
+- Can we roll forward or recover quickly if a release goes badly?
+
+These are **workflow questions**, not just code questions.
+
+## Why this matters
+
+It is easy to think software ends when the code "works."
+
+In real environments, that is only part of the story. Professional software work also includes:
+
+- packaging
+- deployment
+- configuration
+- environment consistency
+- logging
+- debugging in production
+- release confidence
+
+<NoteBox title="Why We're Here">
+  That is why DevOps belongs in the conversation even for a simple Node app.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/devops/what-is-devops"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Microsoft: What is DevOps?
+</LinkButton>
+
+### ⏭ The Lifecycle Lens
+
+How does this full lifecycle approach apply directly to the applications we build? Let's zoom in on a Node app from a DevOps perspective.

@@ -1,0 +1,68 @@
+---
+title: "Why Pipelines Beat Memory"
+description: "Good delivery workflows are designed, not improvised."
+sidebar:
+  order: 6
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+## The bad workflow
+
+A non-pipeline release process often sounds like this:
+
+> "Okay, copy the files over, install dependencies, make sure the env file is right, maybe rebuild, maybe restart the process, maybe clear something, and hopefully this is the right version."
+
+That is not engineering confidence. That is ritual plus panic.
+
+<CautionBox title="The Improvised Release">
+  If your deployment process relies on one specific developer remembering twelve undocumented steps, you don't have a deployment process. You have a hostage situation.
+</CautionBox>
+
+## Why manual release steps are risky
+
+Manual release processes create problems like:
+
+- forgotten steps
+- inconsistent environments
+- version mismatches
+- undocumented setup
+- hard-to-repeat deployments
+- fragile troubleshooting
+- one-person knowledge bottlenecks
+
+## What a pipeline gives us
+
+A pipeline turns deployment from memory-driven behavior into a defined sequence.
+
+That gives us:
+
+- repeatability
+- consistency
+- easier onboarding
+- less hidden knowledge
+- faster troubleshooting
+- more confidence in releases
+
+<NoteBox title="Designed Delivery">
+  The key takeaway is simple:<br/><br/>**Good delivery workflows are designed, not improvised.**
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://aws.amazon.com/devops/continuous-delivery/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  AWS: What is Continuous Delivery?
+</LinkButton>
+
+### ⏭ Writing the Rules Down
+
+Pipelines are great for the steps we take to move code. But what about the environment that code eventually lands in? That brings us to Infrastructure as Code.
