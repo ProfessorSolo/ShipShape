@@ -18,7 +18,7 @@ const COURSE_MODULES = [
 	{
 		label: 'Docker Bay Six',
 		directory: '02-docker-bay-six',
-		released: true,
+		released: false,
 	},
 	{
 		label: 'Multi-Container Docker',
