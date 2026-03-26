@@ -1,0 +1,88 @@
+---
+title: "Development Workflow and Debugging"
+description: "Common Docker Compose workflows and troubleshooting strategies."
+sidebar:
+  order: 8
+  label: "Dev Workflow & Debugging"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It isn't a genuine engineering environment until something breaks. Developing the intuition to navigate complex, composed architectures is what will ultimately accelerate our output.
+
+Orchestrators execute our configurations precisely. If we deliver flawed instructions, they will obediently build a flawed environment. Let's look at how we iterate and troubleshoot when things don't go according to plan.
+
+## Rebuilds and Iteration
+
+A common point of frustration occurs when we modify our Node.js code, run `docker compose up -d`, and realize our changes aren't reflected in the browser.
+
+When we initialize an environment, Compose checks if an image for our service already **exists**. If it finds one, it starts the container using that existing image. It does not automatically watch our local filesystem for code changes.
+
+If we "mutate the DNA" of our codebase, we must explicitly tell Compose to reconstruct the image:
+
+```bash
+docker compose up --build -d
+```
+
+{/* T.A. Watts Image Placeholder: A technical flowchart illustrating the iterative loop: Modify Code -> Compose Up --build -> Analyze Logs -> Repeat. */}
+
+## Executing Actions Inside a Service
+
+Sometimes, logs aren't enough, and we need to "step inside" a service to see what’s happening. We use the `exec` command just like we did with standalone containers, but with a major advantage: we use the **service name** defined in our YAML instead of a random container ID.
+
+```bash
+docker compose exec api_service sh
+```
+
+This drops us directly into the container's shell. From here, we can verify environment variables, inspect the filesystem, or test network connectivity to our database.
+
+<NoteBox title="Targeted Restarts">
+  If we only need to cycle one part of our stack—for example, our database—we
+  don't have to restart everything. We can target a specific microservice:
+  `docker compose restart db_service`
+</NoteBox>
+
+## Troubleshooting Port Conflicts
+
+If `docker compose up` fails with an error stating a port is **"already allocated,"** it means something on our host machine is already using that port.
+
+This usually happens because:
+
+1. We are running the application natively on our laptop (e.g., `npm start` is running in another tab).
+2. An "orphaned" container from a previous session is still holding onto the port.
+
+We can use `docker ps` to find the culprit and `docker stop` to clear the way.
+
+<CautionBox title="The 'Ghost' Container">
+  Always check for running containers before starting a new project. A stray
+  container from yesterday's lab can sit quietly in the background, squatting on
+  port 3000 and preventing our new stack from launching.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/faq/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Workflow FAQ
+</LinkButton>
+
+<LinkButton
+  href="https://docs.docker.com/compose/how-tos/networking/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Advanced Networking & Troubleshooting
+</LinkButton>
+
+### ⏭ Reinforcement Lab: The Deckhand's Drill
+
+We’ve covered the theory and the workflow. It's time to head down to the terminal and prove we can orchestrate a multi-container stack from scratch.

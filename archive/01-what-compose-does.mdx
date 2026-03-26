@@ -1,0 +1,66 @@
+---
+title: "The Role of Docker Compose"
+description: "Understanding what Docker Compose is and the specific problem it solves in our workflow."
+sidebar:
+  order: 2
+  label: "What Compose Does"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We can now set aside the imperative `docker run` commands and look at the broader architectural schematic.
+
+Docker Compose acts as the central coordinator for our local development workflow. Rather than manually issuing fragile, one-off instructions to individual containers as we need them, we provide the orchestration engine with a **declarative master plan**. Compose reads that document, maps the dependencies across our tech stack, and spins up our complete environment in a single synchronized action.
+
+## Defining Our Engineering Domains
+
+A common point of confusion we encounter is whether learning Compose means we can stop using a `Dockerfile`.
+
+As engineers, we need to distinguish between these two technologies. They solve fundamentally different problems in our lifecycle.
+
+### The Service Blueprint (Dockerfile)
+
+This artifact dictates the assembly of **one specific service**. It takes our Node.js source code, installs the required dependencies, and seals it inside a container image. It answers the question: _How is this isolated application built?_
+
+### The System Topology (Docker Compose)
+
+This artifact defines the **network topology** for our entire application stack. It doesn't manage how our Node application is compiled; instead, it commands the Docker engine to launch our API alongside a database or a cache, wiring them into the same communication grid. It answers the question: _How does our fleet of services interoperate as a single system?_
+
+<NoteBox title="Orchestration Synergy">
+  Compose bridges the gap between our custom code and external infrastructure.
+  The orchestrator can trigger a fresh rebuild of our specific API image while
+  simultaneously pulling a stable, production-grade database image from a public
+  registry.
+</NoteBox>
+
+## Infrastructure as Code (IaC)
+
+Why is this shift essential for our team? Because relying on manual setup steps is unreliable. When we onboard a new developer to our project, the setup process transforms from an hour of troubleshooting documentation into a single, deterministic command.
+
+With Compose handling the coordination, our local network topology, persistent storage volumes, environment variables, and boot sequences are all automated and locked into version control.
+
+<CautionBox title="The Engine Only Obeys Orders">
+  Compose is efficient, but it lacks intuition. If our map misconfigures a port
+  or a database hostname, the engine will execute that flawed logic and allow
+  the application to fail. We are still the architects; the engine simply
+  handles the execution.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/features-uses/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Features & Use Cases
+</LinkButton>
+
+### ⏭ Anatomy of a compose.yaml File
+
+Now that we understand the "why," let's open the map and decode the exact syntax rules required to make this orchestration engine work for us.

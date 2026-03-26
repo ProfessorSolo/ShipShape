@@ -1,0 +1,69 @@
+---
+title: "The Single Vessel Problem"
+description: "Understanding the shift from monolithic containers to distributed systems."
+sidebar:
+  order: 0
+  label: "The Single Vessel Problem"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Up until now, we’ve treated Docker as a high-powered packaging tool. We’ve taken our Node.js code, wrapped it in a container, and successfully launched it. In that isolated world, our application felt complete.
+
+However, in the real world of software engineering, a single container is rarely enough.
+
+## The Myth of the "Do-It-All" Container
+
+When we first start building, it's tempting to try and shove everything into a single image: our Node.js API, a MongoDB database, and maybe a Redis cache. This creates a **Monolithic Container**. While this might seem convenient at first, it breaks the core philosophy of containerization: **One process per container.**
+
+If we put our database inside the same container as our API, we run into several critical engineering failures:
+
+- **Scaling:** We can't scale our API to handle more traffic without also duplicating the database unnecessarily.
+- **Updates:** We can't update our Node version without potentially taking our database offline.
+- **Isolation:** If our API crashes and corrupts the container's filesystem, our database data might vanish with it.
+
+[Image of Monolithic vs. Microservices Architecture]
+
+## Shifting to a Distributed Fleet
+
+To build professional, resilient applications, we have to move toward a **Distributed System**. Instead of one massive vessel, we operate a fleet of specialized services that communicate over a network.
+
+In this lesson, we are going to build a classic two-tier architecture:
+
+1.  **The API Service:** A Node.js runtime that handles our business logic.
+2.  **The Database Service:** A dedicated MongoDB instance that handles our persistent data.
+
+This separation allows each service to do one thing perfectly. Our API focuses on code; our database focuses on data.
+
+{/* T.A. Watts Image Placeholder: A technical schematic showing the transition from a single, cluttered container 'skiff' to a coordinated 'fleet' of two distinct, specialized service nodes. */}
+
+## The Coordination Friction
+
+As soon as we move to two containers, we face a new set of challenges. How do they find each other? How do we ensure the database starts before the API? How do we share data between them securely?
+
+Before we look at the automated tools that solve these problems, we are going to do it the hard way. We are going to launch these services manually, connect them manually, and feel the friction of a "Manual Orchestra." This will help us understand exactly why professional engineers rely on orchestration tools like Docker Compose.
+
+<NoteBox title="The Engineering Mindset">
+  Our goal isn't just to "make it work." Our goal is to create a **deterministic
+  environment**—a setup that behaves exactly the same way every time, regardless
+  of whose laptop it's running on.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://microservices.io/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Introduction to Microservices
+</LinkButton>
+
+### ⏭ Service A: The Database
+
+Our fleet needs a foundation. Let’s start by launching our first specialized service: a dedicated MongoDB instance.

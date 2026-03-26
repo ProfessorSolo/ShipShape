@@ -1,9 +1,9 @@
 ---
-title: "Dockside Reference"
+title: "Container Compendium"
 description: "High-density quick reference for Docker Bay Six."
 sidebar:
   order: 99
-  label: "Dockside Reference"
+  label: "Container Compendium"
   draft: false
 ---
 
@@ -17,17 +17,17 @@ Here is your high-density field manual for the core Docker terminology and Node.
 
 ## Syntax Chart
 
-| Syntax | Purpose | Example |
-| :--- | :--- | :--- |
-| `FROM` | Defines the base image foundation | `FROM node:20-alpine` |
-| `WORKDIR` | Sets the internal execution directory | `WORKDIR /app` |
-| `COPY` | Copies files from the host to the image | `COPY package*.json ./` |
-| `RUN` | Executes a command *during the build* | `RUN npm install` |
-| `EXPOSE` | Documents the expected internal port | `EXPOSE 3000` |
-| `CMD` | Defines the default runtime command | `CMD ["npm", "start"]` |
-| `docker build` | Constructs the image from the recipe | `docker build -t app-name .` |
-| `docker run` | Starts a container from an image | `docker run -p 8080:3000 app-name` |
-| `-p` flag | Maps host port to container port | `-p 8080:3000` |
+| Syntax         | Purpose                                 | Example                            |
+| :------------- | :-------------------------------------- | :--------------------------------- |
+| `FROM`         | Defines the base image foundation       | `FROM node:20-alpine`              |
+| `WORKDIR`      | Sets the internal execution directory   | `WORKDIR /app`                     |
+| `COPY`         | Copies files from the host to the image | `COPY package*.json ./`            |
+| `RUN`          | Executes a command _during the build_   | `RUN npm install`                  |
+| `EXPOSE`       | Documents the expected internal port    | `EXPOSE 3000`                      |
+| `CMD`          | Defines the default runtime command     | `CMD ["npm", "start"]`             |
+| `docker build` | Constructs the image from the recipe    | `docker build -t app-name .`       |
+| `docker run`   | Starts a container from an image        | `docker run -p 8080:3000 app-name` |
+| `-p` flag      | Maps host port to container port        | `-p 8080:3000`                     |
 
 ---
 
@@ -44,13 +44,13 @@ The required baseline pieces to package a standard Node.js application:
 
 ## The Hazard Map
 
-| Problem | Likely Cause | Quick Fix |
-| :--- | :--- | :--- |
-| **Build is incredibly slow** | Incorrect instruction order invalidating cache | Move `COPY package*.json ./` and `RUN npm install` *before* `COPY . .` |
-| **Strange Node module errors** | Host `node_modules` were copied into the Linux image | Add `node_modules` to your `.dockerignore` file |
-| **Container exits instantly** | The default `CMD` process failed or finished immediately | Check `package.json` for a missing or crashing `start` script |
-| **"Cannot connect" in browser** | Traffic isn't crossing from the host into the container | Verify you used `-p hostPort:containerPort` (e.g. `-p 3000:3000`) |
-| **Build fails immediately** | Docker can't find the build context | Ensure you included the trailing `.` in the `docker build -t name .` command |
+| Problem                         | Likely Cause                                             | Quick Fix                                                                    |
+| :------------------------------ | :------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Build is incredibly slow**    | Incorrect instruction order invalidating cache           | Move `COPY package*.json ./` and `RUN npm install` _before_ `COPY . .`       |
+| **Strange Node module errors**  | Host `node_modules` were copied into the Linux image     | Add `node_modules` to your `.dockerignore` file                              |
+| **Container exits instantly**   | The default `CMD` process failed or finished immediately | Check `package.json` for a missing or crashing `start` script                |
+| **"Cannot connect" in browser** | Traffic isn't crossing from the host into the container  | Verify you used `-p hostPort:containerPort` (e.g. `-p 3000:3000`)            |
+| **Build fails immediately**     | Docker can't find the build context                      | Ensure you included the trailing `.` in the `docker build -t name .` command |
 
 ---
 
@@ -58,13 +58,16 @@ The required baseline pieces to package a standard Node.js application:
 
 - **Images vs Containers:** You **build** static images. You **run** live containers. An image is the class; a container is the object.
 - **Documentation only:** `EXPOSE` does absolutely nothing operational by itself. It's a sticky note for other developers. You must manually map the ports when running.
-- **Cache invalidation:** A change to line X in a Dockerfile invalidates the cache for line X *and every single line below it*.
+- **Cache invalidation:** A change to line X in a Dockerfile invalidates the cache for line X _and every single line below it_.
 - **Local Dev vs Containers:** Don't rely on your laptop's invisible configuration. Push your requirements into the `Dockerfile` so the app is self-sufficient.
 
 <NoteBox title="Pack it Right">
-Consistency is the goal. When you ship the environment alongside the code, you strip away an entire category of stressful deployment errors.
+  Consistency is the goal. When you ship the environment alongside the code, you
+  strip away an entire category of stressful deployment errors.
 </NoteBox>
 
 <CautionBox title="Immutability Rule">
-If you ever find yourself "logging into" a running container to manually fix a configuration file, you have failed the test. Fix the `Dockerfile` and rebuild the image.
+  If you ever find yourself "logging into" a running container to manually fix a
+  configuration file, you have failed the test. Fix the `Dockerfile` and rebuild
+  the image.
 </CautionBox>

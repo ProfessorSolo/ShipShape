@@ -23,7 +23,23 @@ FROM node:20-alpine
 
 This sets the **base image**.
 
-We are saying: "Start from an image that already includes Node.js 20, and use the Alpine Linux variant to keep the file size much smaller."
+### The Foundation: Base Images
+
+A **Base Image** is a pre-packaged environment that already contains the basic OS tools and runtime we need.
+
+Instead of manually installing Linux and Node.js from scratch every time, we start with an image that has them ready to go.
+
+### Where do they come from?
+
+Most base images are pulled from **Docker Hub**, the central registry for the Docker world.
+
+When we specify `FROM node:20-alpine`, we are saying:
+
+- **`node`**: The official Node.js repository.
+- **`20`**: The major version of the runtime.
+- **`alpine`**: A specific variant based on Alpine Linux, which is incredibly tiny (around 5MB) compared to standard distributions. This keeps our final image fast and secure by removing "bloat."
+
+---
 
 <CautionBox title="Official or Bust">
   In a professional environment, always prioritize "Official" images (verified
@@ -64,9 +80,9 @@ Later, the command:
 COPY . .
 ```
 
-copies the rest of the application code across to the image.
+copies the rest of our application code across to the image.
 
-<CautionBox title="Dot Dot Dot">
+<CautionBox title="Dot Space Dot">
   The two dots in `COPY . .` refers to the **build context**, which is the set of
   files and directories that are copied from the host machine to the image.
 
@@ -101,38 +117,86 @@ In this case, it installs the NPM dependencies and burns the resulting `node_mod
 EXPOSE 3000
 ```
 
-This documents the container’s intended listening port in the image metadata. It does not publish the port to your host on its own.
+This records the container’s intended listening port in the image metadata.
+
+It does **not** publish the port to your computer by itself.
 
 <CautionBox title="Documentation Only">
-  `EXPOSE` does **not** actually publish that port to the host machine by
-  itself. It's essentially a polite sticky note to developers and automation
-  tools saying "I listen on port 3000." We still have to map the ports manually
-  when running the container AND the application inside the container has to be
-  configured to listen on that port too.
+  `EXPOSE` does **not** make the app reachable from your browser on its own.
+
+Think of it as a note attached to the image that says, “This container expects to listen on port 3000.”
+
+To actually reach the app from outside the container, we will still need to:
+
+1. map a host port to the container port when we run the container
+2. make sure the application inside the container is actually listening on that port
+
 </CautionBox>
 
-We'll see how to publish ports later.
+We’ll publish ports when we run the container a little later.
 
 ## `CMD`
 
 ```dockerfile
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
 ```
 
-This defines the default command used when the container finally starts up.
+This sets the default command Docker runs when the container starts.
 
-<CautionBox title="Only One CMD Allowed">
+In this lesson, we want our container to start the Vite development server, so this is the command we use.
 
-There can be only one `CMD` instruction in a Dockerfile.
+<CautionBox title="Only One CMD">
+  A Dockerfile should have only **one** active `CMD`.
+
+If you write more than one, Docker uses only the **last** one.
 
 </CautionBox>
 
-<NoteBox title="RUN vs CMD">
-  `RUN` happens when the image is **built**. 
-    
-  `CMD` is a **single** runtime launch instruction that fires **only once** when a container is **started**.
+### Running npm Scripts with `CMD`
 
-`CMD` **_can_** be overridden by the user when running the container.
+If our `package.json` contains this script:
+
+```json
+"scripts": {
+  "dev": "vite --host 0.0.0.0"
+}
+```
+
+then this Dockerfile instruction:
+
+```dockerfile
+CMD ["npm", "run", "dev"]
+```
+
+tells Docker to run that script when the container starts.
+
+<NoteBox title="Why does `start` look different?">
+If package.json has a script named "start", we _can_ use `CMD ["npm", "start"]`.
+
+`start` is a special npm script name.
+
+Both `npm start` and `npm run start` do the same thing.
+
+</NoteBox>
+
+### Container gotcha: `0.0.0.0` vs `localhost`
+
+Inside a container, `localhost` means “inside the container itself.”
+
+So if Vite listens only on `localhost`, the dev server may be running, but our browser outside the container still won’t be able to connect to it.
+
+That’s why our script uses:
+
+```json
+"dev": "vite --host 0.0.0.0"
+```
+
+This tells Vite to listen on all network interfaces inside the container, making it reachable through the mapped port.
+
+<NoteBox title="RUN vs CMD">
+  `RUN` happens when the image is **built**.
+
+`CMD` happens when a container is **started** from that image.
 
 </NoteBox>
 
@@ -150,3 +214,7 @@ There can be only one `CMD` instruction in a Dockerfile.
 </LinkButton>
 
 ### ⏭ Caching and Order of Operations
+
+Layers are cached and only rebuilt when the instructions they depend on change.
+
+This means that the order of instructions in a Dockerfile matters.

@@ -19,13 +19,15 @@ You can think of a layer as a snapshot of the **filesystem** within the image at
 
 That's where caching comes in.
 
-Docker can often reuse previously built layers from its cache if the relevant inputs (the files we are copying or the commands we are running) have not changed.
+Docker _can_ reuse previously built layers from its cache **if** the relevant inputs (the files we are copying or the commands we are running) have not changed.
 
 <NoteBox title="Layer Caching">
 
 We want to put the instructions that change the least frequently at the top
 of the Dockerfile, and the instructions that change the most frequently at
-the bottom of the Dockerfile, so that Docker can reuse the cached layers as
+the bottom of the Dockerfile.
+
+This way, Docker can reuse the cached layers as
 much as possible.
 
 </NoteBox>
@@ -90,3 +92,5 @@ RUN npm install
 </LinkButton>
 
 ### ⏭ `.dockerignore`
+
+It's not just git that gets to ignore files. Docker does, too.

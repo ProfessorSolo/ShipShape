@@ -1,0 +1,87 @@
+---
+title: "Defining a Two-Service Stack"
+description: "Configuring a Node.js API and MongoDB with secure environment variables."
+sidebar:
+  order: 4
+  label: "Two Services: App + Database"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It’s time to move from theory to implementation. We are defining a standard two-tier architecture: our custom Node.js application and a MongoDB database.
+
+Instead of juggling manual commands, we define our services as equal citizens in a shared ecosystem. More importantly, we do this without hard-coding sensitive configuration strings directly into our primary blueprint.
+
+## The Service Configuration
+
+In our `compose.yaml`, we use two different methods to source our images. Our API is built from local source code, while our database is pulled from an official registry.
+
+```yaml
+services:
+  # Our custom application service
+  api_service:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+
+  # Our persistent data service
+  db_service:
+    image: mongo:7.0
+```
+
+### Variable Substitution and the .env File
+
+Docker Compose automatically looks for a file named `.env` in the same directory as our `compose.yaml`. By using the `${VARIABLE_NAME}` syntax, we tell Compose to "reach out" to our environment file and pull the value at runtime.
+
+This keeps our secrets out of our version-controlled YAML and allows every developer on the team to have their own local configuration without breaking the master blueprint.
+
+{/* T.A. Watts Image Placeholder: A technical diagram showing the flow of data from a local .env file being injected into a compose.yaml template, which then initializes a container with the correct runtime environment variables. */}
+
+<NoteBox title="Service Names as Hostnames">
+  The keys we choose (like `db_service`) are more than just labels. They become
+  the **hostnames** our services use to find each other on the internal network.
+  Notice that in our `.env` file, the connection string will use `db_service` as
+  the address, not `localhost`.
+</NoteBox>
+
+## Build vs. Image
+
+- **`build: .`**: This tells Compose our `api_service` doesn't exist as a pre-made image. It looks in the current directory (`.`) for a `Dockerfile` and builds the image for us.
+- **`image: mongo:7.0`**: This tells Compose the `db_service` is a standard component. We pull version `7.0` from Docker Hub. We don't need a Dockerfile here because we aren't changing the internal logic of the database; we're just running it.
+
+<CautionBox title="Version Pinning is Non-Negotiable">
+  We explicitly specified `mongo:7.0` instead of `mongo:latest`. In a
+  professional environment, `latest` is a moving target. If the maintainers push
+  a breaking update to the registry, our environment could break overnight. We
+  always pin our versions to ensure our local environment remains deterministic.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Variable Interpolation
+</LinkButton>
+
+<LinkButton
+  href="https://hub.docker.com/_/mongo"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Official MongoDB Image
+</LinkButton>
+
+### ⏭ Powering Up the Stack
+
+We’ve drafted the manifest and secured our variables. It’s time to execute the command that turns this text file into a living, breathing multi-container environment.

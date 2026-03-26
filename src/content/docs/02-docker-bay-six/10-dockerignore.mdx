@@ -13,11 +13,13 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ## What it is
 
-A `.dockerignore` file tells Docker which files and folders must **not** be included in the build context. It is essentially identical in spirit to `.gitignore`, but for the Docker build daemon instead of Git.
+A `.dockerignore` file tells Docker which files and folders must **not** be included in the build context.
+
+It is essentially identical in spirit to `.gitignore`, but for the Docker build daemon instead of Git.
 
 ## Why it matters
 
-Without a `.dockerignore`, the build context will zip up and send everything in your project directory over to the Docker Engine. That often includes things we really do not want inside an image, such as:
+Without a `.dockerignore`, the build context will zip up and send everything in our project directory over to the Docker Engine. That often includes things we really do not want inside an image, such as:
 
 - `node_modules`
 - `.git` histories
@@ -27,7 +29,7 @@ Without a `.dockerignore`, the build context will zip up and send everything in 
 - coverage output
 - local `.env` files with secret keys
 
-That kind of useless sprawl makes your builds:
+That kind of sprawl makes our builds:
 
 - slower
 - larger

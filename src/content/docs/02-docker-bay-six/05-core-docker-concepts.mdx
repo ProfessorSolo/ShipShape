@@ -11,15 +11,18 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-Before we start hauling cargo, we need a functional vocabulary for the machinery in play. Here are the four core pillars of the Docker ecosystem.
+To start shipping cargo, we need a functional vocabulary for the machinery in play.
+
+Let's break down the four core pillars of the Docker ecosystem.
 
 ## Docker Engine
 
-**Docker Engine** is the foreman of the shipyard. It is the underlying software that manages the entire lifecycle of your images and containers. 
+**Docker Engine** is the foreman of the shipyard. It is the underlying software that manages the entire lifecycle of our images and containers.
 
-When you install Docker Desktop, you are primarily installing the Engine. It handles:
-- **Building**: Transforming your text-based build recipes into packaged images.
-- **Orchestration**: Starting, stopping, and monitoring the status of your containers.
+Docker engine handles:
+
+- **Building**: Transforming our text-based build recipes into packaged images.
+- **Orchestration**: Starting, stopping, and monitoring the status of our containers.
 - **Resource Management**: Assigning CPU, memory, and networking to isolated processes.
 - **Storage**: Keeping track of local images and persistent data volumes.
 
@@ -27,35 +30,46 @@ It is the operational brain that makes containerization possible.
 
 ## Images
 
-An **image** is a packaged, read-only template used to create containers. 
+An **image** is a packaged, read-only template that we use to create containers.
 
-Think of an image as a "snapshot" of a filesystem at a specific point in time. For a Node application, that snapshot includes the base OS, the specific Node.js runtime, your source code, and every single dependency in `node_modules`.
+Think of an image as a "snapshot" of a filesystem at a specific point in time.
+
+For a Node application, that snapshot includes the base OS, the specific Node.js runtime, the source code, and every single dependency in `node_modules`.
 
 <CautionBox title="Images Are Static">
-An image is not "running." It is a cold, packaged archive sitting on your disk. You cannot "talk" to an image or execute code inside it; you must first use it to spawn a container.
+  An image is not "running." It is a cold, packaged archive sitting on disk. We
+  cannot "talk" to an image or execute code inside it; we only use it to spawn a
+  container.
 </CautionBox>
 
 ## Containers
 
-A **container** is the live, operational manifestation of an image. 
+A **container** is the live, operational manifestation of an image.
 
-While the image is a blueprint, the container is the physical structure where the work happens. When you "run" a container, Docker adds a thin, writable layer on top of the static image and starts your application process.
+While the image is a blueprint, the container is the physical structure where the work happens.
+
+When we "run" a container, Docker adds a thin, writable layer on top of the static image and starts your application process.
 
 From the application's perspective, it is running in its own private world:
+
 - **Isolated Filesystem**: It sees only what was packaged in the image.
 - **Isolated Network**: It has its own virtual IP address and port space.
 - **Shared Kernel**: It uses the host machine's OS kernel for performance, but it is effectively blind to other processes running on the host.
 
-This isolation is why we can run a "broken" experiment in one container without crashing the rest of the shipyard.
+This isolation is why we can run a "broken" experiment in one container without crashing the rest of the system.
 
 ## Layers
 
-Docker images are not single, monolithic files; they are built in **layers**. 
+Docker images are not single, monolithic files; they are built in **layers**.
 
-Each instruction in your build recipe creates a new layer. This architecture is the secret to Docker's speed. Because these layers are immutable and stackable, Docker can cache them individually. If you change a line of code but your dependencies don't change, Docker simply reuses the cached dependency layers and only rebuilds the final "code" layer.
+Each instruction in our build recipe creates a new layer. This architecture is the secret to Docker's speed. Because these layers are immutable and stackable, Docker can cache them individually.
+
+If we change a line of code but our dependencies don't change, Docker simply reuses the cached dependency layers and only rebuilds the final "code" layer.
 
 <NoteBox title="Structure Matters">
-Because Docker relies so heavily on layer caching, the order of instructions in your build recipe dictates how fast your subsequent builds will be. We'll examine this closer soon.
+  Because Docker relies so heavily on layer caching, the order of instructions
+  in our build recipe dictates how fast our subsequent builds will be. We'll
+  examine this closer soon.
 </NoteBox>
 
 ---
@@ -71,4 +85,6 @@ Because Docker relies so heavily on layer caching, the order of instructions in 
   Docker Architecture Docs
 </LinkButton>
 
-### ⏭ Blueprint vs. Building
+### ⏭ Images vs. Containers
+
+We have the basic concepts down, but let's take a closer look at images and containers.

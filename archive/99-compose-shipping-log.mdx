@@ -1,0 +1,73 @@
+---
+title: "Shipping Manifest"
+description: "Key takeaways and concepts from our multi-container development lesson."
+sidebar:
+  order: 99
+  label: "Shipping Manifest"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+{/* T.A. Watts Image Placeholder: A clean, technical reference manual titled "The Orchestration Manifest," displaying a summarized view of a multi-container stack architecture. */}
+
+## Tactical Command Syntax
+
+| Command / Key            | Purpose                                                  | Example                              |
+| :----------------------- | :------------------------------------------------------- | :----------------------------------- |
+| `services:`              | The root key that defines our individual containers.     | `services:`                          |
+| `build:`                 | Tells Compose to build a custom image from a local path. | `build: .`                           |
+| `image:`                 | Tells Compose to pull a pre-built image from a registry. | `image: mongo:7.0`                   |
+| `depends_on:`            | Sets the startup order for our services.                 | `depends_on: ["db_service"]`         |
+| `volumes:`               | Defines persistent storage docks or mount paths.         | `- mongo_data:/data/db`              |
+| `environment:`           | Injects configuration or secrets into the container.     | `- PORT=${WEB_PORT}`                 |
+| `docker compose up -d`   | Boots the full application stack in the background.      | `docker compose up -d`               |
+| `docker compose down -v` | Stops the stack and removes containers and volumes.      | `docker compose down -v`             |
+| `docker compose exec`    | Runs a command inside a specific running service.        | `docker compose exec api_service sh` |
+| `docker compose logs -f` | Tails the combined log streams of all active services.   | `docker compose logs -f`             |
+
+---
+
+## The Master Blueprint Setup
+
+- **The compose.yaml File:** This is our primary orchestrator map. We keep it in our project root alongside our `Dockerfile` and `.env` files.
+- **Service Name as Hostname:** Within the Compose network, our containers communicate using the service names we define. If we name our database `db_service`, our API connects to `mongodb://db_service:27017`.
+- **The .env Layer:** We use a local `.env` file to store our sensitive variables. Compose automatically injects these into our YAML via the `${VARIABLE_NAME}` syntax.
+- **Volume Registration:** Any named volumes used by our services must be explicitly declared at the root level of the file under the `volumes:` key.
+
+---
+
+## Dockyard Hazard Map (Troubleshooting)
+
+| Problem                                         | Likely Cause                                                                   | Quick Fix                                                                          |
+| :---------------------------------------------- | :----------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| `ECONNREFUSED` on `localhost:27017`.            | Attempting to find the database inside the API's own isolated container.       | Change the hostname to the database service name (`db_service`).                   |
+| Code changes aren't appearing in the container. | Compose is using a cached image instead of rebuilding from our updated source. | Force a reconstruction with `docker compose up --build`.                           |
+| Compose fails to parse the YAML file.           | Indentation error. YAML relies on strict space-based nesting.                  | Verify your indentation. Ensure `ports` and `build` are nested under the service.  |
+| Database data is lost after a restart.          | Missing a named volume or using the `-v` flag on `down`.                       | Define a volume in `compose.yaml` and avoid `-v` unless you want to wipe the data. |
+
+---
+
+## Pro-Notes for the Field
+
+- **Startup vs. Readiness:** The `depends_on` flag only ensures a container has _started_. It doesn't mean the database is ready to accept connections. We should always include retry logic in our application code to handle this delay.
+- **The Principle of Least Exposure:** Avoid publishing ports to our host machine unless we need to access them directly (e.g., from a browser or a GUI). Keep internal traffic, like database queries, strictly inside the private Compose network.
+- **Local vs. Production Secrets:** While `.env` files are excellent for local hygiene and preventing Git leaks, we should remember they are a gateway to more robust secrets management tools used in production environments.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Reference Index
+</LinkButton>
+
+### ⏭ Beyond the Harbor
+
+We’ve mastered running coordinated services on our own machines. But local development is just the start of the lifecycle. Next, we'll look at how we take these containerized applications and prepare them for the realities of production deployment.

@@ -11,17 +11,17 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-With our files in place, it's time to actually construct the image.
+We've dissected the Dockerfile and discussed the .dockerignore file.
 
-## Step 0: Create and Test an App
+Let's put it all together and build an image that is ready to run.
 
-Let’s make a tiny Node app so that we have something to containerize and play with.
+First, let's make a tiny Node app so that we have something to containerize and test.
 
 In terminal, run the following:
 
 ```bash
-mkdir my-simple-server
-cd my-simple-server
+mkdir node-aboard
+cd node-aboard
 npm init -y
 ```
 
@@ -47,6 +47,13 @@ Make sure we have a `start` script in `package.json`:
   "start": "node server.js"
 }
 ```
+
+<NoteBox title="Why are we using `start` here?">
+  In this example, we use `npm start` instead of `npm run dev`.
+
+That helps reinforce an important idea: `dev` scripts are great while we’re building and testing, but `start` is often a better fit when we're containerizing the app to ship it.
+
+</NoteBox>
 
 ## Step 1: Create the Dockerfile
 
@@ -87,7 +94,7 @@ Now we tell Docker Engine to read our recipe (Dockerfile) and construct our imag
 From the terminal, at the root of the project:
 
 ```bash
-docker build -t my-simple-server .
+docker build -t node-aboard .
 ```
 
 <CautionBox title="Don't Forget the Dot">
@@ -99,7 +106,7 @@ docker build -t my-simple-server .
 ### Breakdown
 
 - `docker build`: tells the engine to start an image build process.
-- `-t my-simple-server`: “tags” the resulting image with a recognizable name.
+- `-t node-aboard`: “tags” the resulting image with a recognizable name.
 - `.`: tells Docker to use the current directory (`.`) as the build context.
 
 <NoteBox title="Not Running Yet">
@@ -123,3 +130,5 @@ docker build -t my-simple-server .
 </LinkButton>
 
 ### ⏭ Running the Container
+
+Our image is ready to roll. Let's bring it to life as a container.

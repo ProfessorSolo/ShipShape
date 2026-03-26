@@ -1,0 +1,82 @@
+---
+title: "Workflow & Debugging"
+description: "Mastering the iteration loop and troubleshooting common orchestration failures."
+sidebar:
+  order: 9
+  label: "Workflow & Debugging"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It isn't a genuine engineering environment until something breaks. Orchestrators like Docker Compose are precise—they execute your configurations exactly as written. If your instructions are flawed, your environment will be too. 
+
+To work efficiently, you must master the **Iteration Loop** and know how to "look under the hood" when a service fails to start.
+
+## 1. The Iteration Loop: Why `--build`?
+
+A common point of frustration: You modify your `server.js` code, run `docker compose up -d`, and realize your changes aren't appearing in the browser. 
+
+This happens because Compose is "smart." It checks if an image for your `api_service` already exists. If it finds one, it simply starts a container using that **old image**. It does not automatically watch your local filesystem for code changes. 
+
+If you change your code, you must force Compose to reconstruct the image:
+
+```bash
+docker compose up --build -d
+```
+
+
+
+## 2. Deep Diagnostics with `exec`
+
+Sometimes, logs (via `docker compose logs -f`) don't give you enough information. You may need to "step inside" a service to inspect its environment or test its connectivity. 
+
+Because we are using Compose, we don't need to hunt down randomized container IDs. We use the **Service Name** directly:
+
+```bash
+docker compose exec api_service sh
+```
+
+Once inside the shell, you can:
+* Run `env` to see if your `.env` variables were injected correctly.
+* Run `ls` to ensure your files were copied into the correct `WORKDIR`.
+* Ping the database: `ping db_service` to verify the internal DNS is working.
+
+{/* T.A. Watts Image Placeholder: A technical visual of an engineer 'remoting' into a specific service node within the cluster grid to run diagnostic commands. */}
+
+## 3. Common Failure: The Port Conflict
+
+If `docker compose up` suddenly fails with an error stating a port is **"already allocated,"** it means something else on your laptop is already using that port.
+
+**Common Culprits:**
+1.  **Native Apps:** You might still have a Node.js process running natively (e.g., in a hidden terminal tab).
+2.  **Orphaned Containers:** A standalone container from an earlier lab might still be "squatting" on port 3000.
+
+Run `docker ps` to find the offender and `docker stop` to clear the way.
+
+<NoteBox title="Targeted Service Restarts">
+  If you only need to restart one part of your stack—for example, if your database crashed but your API is fine—you don't have to cycle the whole fleet. You can target a single service:
+  `docker compose restart db_service`
+</NoteBox>
+
+<CautionBox title="The Zombie Process">
+  If your API refuses to start even after a `--build`, check your `docker compose ps` status. If a service says `Exited (1)`, the problem is likely a syntax error in your code, not a Docker failure. Always check the specific service logs: `docker compose logs api_service`.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/faq/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Workflow FAQ
+</LinkButton>
+
+### ⏭ Reinforcement Lab: The Two-Container Shuffle
+
+We’ve covered the architecture, the networking, the persistence, and the troubleshooting. It’s time to head to the terminal and prove you can orchestrate this entire stack from scratch in our Drill Lab.

@@ -1,0 +1,121 @@
+---
+title: "Reinforcement Lab: The Two-Container Shuffle"
+description: "Practice building and running a two-service setup from scratch."
+sidebar:
+  order: 98
+  label: "Reinforcement Lab"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Welcome to the **Dry Dock**. We've discussed the theory of manifests, service networks, and harbor coordination. But a dockyard map is irrelevant unless you can actually bring the ships into the harbor.
+
+It’s time to get your hands dirty with real configurations.
+
+{/* T.A. Watts Image Placeholder: A gritty, glowing terminal window hovering over an organized, neon-lit dockyard showing shipping containers snapping into place. */}
+
+## Maintenance Tier: The Basic Spin-Up
+
+**Objective:** Start a pre-configured Compose environment and verify its health.
+
+**Instructions:**
+
+1. Create a `compose.yaml` file that defines an `api_service` and a `db_service`.
+2. Use the official `mongo:7.0` image for the database.
+3. Map port `3000:3000` for the Node application.
+4. Run `docker compose up -d` in your terminal to bring the fleet online in the background.
+
+**Expected Outcome:**
+You should see Compose build a default network, pull the Mongo image, and launch the two services side-by-side. Running `docker compose ps` should list both containers as "Up."
+
+<NoteBox title="Student-to-AI: Concept Check">
+  **Prompt:** "Explain how `docker compose up -d` differs from `docker run -d`
+  when it comes to the internal network it creates, using simple technical
+  language."
+</NoteBox>
+
+---
+
+## Custom Job Tier: The Persisted Cargo
+
+**Objective:** Combine service networking with long-term Volume persistence and security.
+
+**Instructions:** 1. Modify your `compose.yaml` to include a named volume called `mission_data`. 2. Map that volume directly to MongoDB's internal directory: `/data/db`. 3. Create a `.env` file with a `MONGO_USER` and `MONGO_PASS`. 4. Map these into the database service configuration using the `${VAR}` syntax. 5. Execute a `docker compose down` followed by a `docker compose up -d` to reload the configuration.
+
+**Expected Outcome:**
+When inspecting `docker compose logs db_service`, you should see MongoDB initializing with your injected credentials. Even if you destroy the containers with `down`, your `mission_data` volume should remain safely on your host.
+
+<NoteBox title="Student-to-AI: Verification Prompt">
+  **Prompt:** "What is the specific Docker CLI command to confirm whether my
+  named volume `mission_data` exists on my host machine independently of any
+  running containers?"
+</NoteBox>
+
+---
+
+## Solo's Special: The Sabotaged Connection
+
+**Objective:** Diagnose and fix a broken connection caused by incorrect service discovery.
+
+**Instructions:**
+
+1. Given that both `api_service` and `db_service` are on the same network, identify why `localhost` in your `server.js` is causing the connection to fail.
+2. Fix the connection string and rebuild your image using `docker compose up --build -d`.
+3. Prove your fix by executing a shell command inside the running container: `docker compose exec api_service sh`.
+
+**Expected Outcome:**
+Your updated connection string should utilize the Compose service name (`mongodb://db_service:27017/shipshape`), successfully linking the backend app directly to the database.
+
+<NoteBox title="Student-to-AI: Debug Prompt">
+  **Prompt:** "If my application container crashes because the database takes 10
+  seconds to start, what are the best practices for handling this delay in
+  Node.js instead of relying solely on `depends_on`?"
+</NoteBox>
+
+---
+
+## ⚡️ Bonus Tier: The Live-Sync Pipeline
+
+**Objective:** Use **Bind Mounts** to enable "Hot Reloading" so you don't have to rebuild the image for every code change.
+
+**Instructions:**
+
+1. Update your `api_service` in `compose.yaml` to include a volume that maps your current local directory to the container's `WORKDIR`:
+   ```yaml
+   volumes:
+     - .:/app
+   ```
+2. Modify your `Dockerfile` or `compose.yaml` to use a watcher like `nodemon` or Node 20's native `--watch` flag:
+   ```bash
+   # Example command change
+   node --watch server.js
+   ```
+3. Change a message in your `server.js` (like the "Connected" log) and save the file.
+
+**Expected Outcome:**
+The API container should automatically restart and reflect your changes **instantly** without you ever typing `docker compose up --build`. This is the professional "Gold Standard" for local development.
+
+<NoteBox title="Student-to-AI: The Bind Mount Prompt">
+  **Prompt:** "Explain the technical difference between a **Named Volume** (like
+  `mission_data`) and a **Bind Mount** (like `./app`). When should I use one
+  over the other in a professional production environment?"
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/gettingstarted/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Quickstart Guide
+</LinkButton>
+
+### ⏭ Shipping Log
+
+You survived the shipyard. Let's record the final coordinates in our Codex to lock these concepts down securely.

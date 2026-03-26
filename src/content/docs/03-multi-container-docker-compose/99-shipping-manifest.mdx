@@ -1,0 +1,73 @@
+---
+title: "The Shipping Manifest Log: Docker Compose"
+description: "Key takeaways and tactical command recap for multi-container orchestration."
+sidebar:
+  order: 99
+  label: "The Shipping Manifest"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+{/* T.A. Watts Image Placeholder: A sleek, glowing datapad titled "The Orchestration Manifest," displaying a summarized view of a multi-container stack architecture. */}
+
+## Tactical Command Syntax
+
+| Command / Key            | Purpose                                                          | Example                      |
+| :----------------------- | :--------------------------------------------------------------- | :--------------------------- |
+| `services:`              | The root YAML key defining our individual containers.            | `services:`                  |
+| `build: .`               | Tells Compose to build a custom image from the local Dockerfile. | `build: .`                   |
+| `image:`                 | Tells Compose to pull a pre-made image from Docker Hub.          | `image: mongo:7.0`           |
+| `depends_on:`            | Sets the startup order (e.g., DB starts before API).             | `depends_on: ["db_service"]` |
+| `volumes:`               | Defines persistent storage or local directory syncing.           | `- db_data:/data/db`         |
+| `environment:`           | Injects configuration variables (often via `.env`).              | `- PORT=${PORT}`             |
+| `docker compose up -d`   | Launches the entire stack in the background.                     | `docker compose up -d`       |
+| `docker compose down`    | Stops and removes containers and networks.                       | `docker compose down`        |
+| `docker compose build`   | Forces a reconstruction of custom images.                        | `docker compose build`       |
+| `docker compose logs -f` | Tails the unified log stream from all services.                  | `docker compose logs -f`     |
+
+---
+
+## The Master Blueprint Setup
+
+- **The compose.yaml File:** The single source of truth for your infrastructure. It should live in your project root alongside your `Dockerfile`.
+- **Service Discovery:** Within the Compose network, containers talk to each other using the service names defined in the YAML as hostnames (e.g., `mongodb://db_service`).
+- **The .env Layer:** Keep secrets out of your manifest. Use a `.env` file for sensitive data and ensure it is listed in your `.gitignore`.
+- **Persistent Anchors:** Use Named Volumes for databases to ensure your data survives a `docker compose down`.
+
+---
+
+## Dockyard Hazard Map (Troubleshooting)
+
+| Problem                             | Likely Cause                                               | Quick Fix                                           |
+| :---------------------------------- | :--------------------------------------------------------- | :-------------------------------------------------- |
+| `ECONNREFUSED` on `localhost`.      | The API is looking for a DB inside its own container.      | Change hostname to the service name (`db_service`). |
+| Code changes aren't showing up.     | Compose is using a cached, outdated image.                 | Run `docker compose up --build -d`.                 |
+| "Port is already allocated."        | A native app or orphan container is squatting on the port. | Run `docker ps` and stop the conflicting process.   |
+| Database data is gone after `down`. | No persistent volume was defined or mounted.               | Add a `volumes:` entry mapping to `/data/db`.       |
+
+---
+
+## Solo's Pro-Notes
+
+- **Internal vs. External:** Don't expose your database port to the host machine (`27017:27017`) unless you absolutely need to query it from a local GUI. Keep it private within the Compose network.
+- **The Readiness Myth:** `depends_on` only means the container has _started_, not that the software inside is ready. Always include reconnection logic in your Node.js code.
+- **Declarative Power:** Treat your `compose.yaml` as code. If you need a change, change the file, don't run a manual command.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Official Compose Documentation
+</LinkButton>
+
+### ⏭ Beyond the Harbor
+
+We have mastered local orchestration. But the world doesn't live on our laptops. In the next module, we’ll explore how to take these coordinated fleets and prepare them for the vast, unpredictable waters of production deployment.

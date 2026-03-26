@@ -15,11 +15,12 @@ Let's make sure the cargo is packed right. These drills will help you lock in th
 
 ---
 
-## Tier 1 — Maintenance: The Basic Build
+## Tier 1: The Basic Build
 
 **Objective:** Write a standard Dockerfile and successfully build an image.
 
 **What to do:**
+
 1. Create a `Dockerfile` for a simple Node app (if you don't have one, just `npm init -y` an empty folder).
 2. Write the standard instructions: `FROM`, `WORKDIR`, `COPY`, `RUN`, `COPY`, `EXPOSE`, and `CMD`.
 3. Create a `.dockerignore` file and add `node_modules` to it.
@@ -29,32 +30,36 @@ Let's make sure the cargo is packed right. These drills will help you lock in th
 Docker successfully builds the image. The output should show the daemon stepping through your instructions layer by layer.
 
 **Student-to-AI Prompt:**
+
 > "I just built a Docker image for my Node app. Can you explain to me, in very simple terms, what my `.dockerignore` file actually protected me from doing?"
 
 ---
 
-## Tier 2 — Custom Job: Port Mapping and Traffic
+## Tier 2: Port Mapping and Traffic
 
 **Objective:** Run the built image and map traffic correctly.
 
 **What to do:**
+
 1. Assume the Node app inside your image from Tier 1 is listening on port `3000`.
 2. Start the container, but intentionally map the host port to `8080`.
 3. Navigate to `http://localhost:8080` in your browser to verify it connects.
 
 **Expected Outcome:**
-The container starts cleanly. You can reach the app via port `8080` on your host machine, while the app internally believes it is running on `3000`. 
+The container starts cleanly. You can reach the app via port `8080` on your host machine, while the app internally believes it is running on `3000`.
 
 **Student-to-AI Prompt:**
+
 > "I ran my Docker container with `-p 8080:3000`. If I wanted to run a second instance of this exact same image at the same time, what command would I need to use to avoid a port collision?"
 
 ---
 
-## Tier 3 — Solo Special: Caching Diagnostics
+## Tier 3: Caching Diagnostics
 
 **Objective:** Force cache invalidation to see the performance cost.
 
 **What to do:**
+
 1. Modify your Dockerfile to use the "less helpful" order we discussed in the caching section:
    ```dockerfile
    COPY . .
@@ -75,16 +80,20 @@ The container starts cleanly. You can reach the app via port `8080` on your host
 You should visibly see `npm install` being skipped (using cache) when the Dockerfile is structured correctly, and you should see it forcefully re-running when the structure is wrong.
 
 **Student-to-AI Prompt:**
+
 > "I'm looking at output from a `docker build` command. Can you help me understand how Docker decides whether it can use the cache for a specific layer, or if it has to rebuild it from scratch?"
 
 ---
 
 <NoteBox title="Repetition is the Job">
-Getting fast at writing these foundational `Dockerfiles` pays massive dividends later when we start chaining multiple containers together.
+  Getting fast at writing these foundational `Dockerfiles` pays massive
+  dividends later when we start chaining multiple containers together.
 </NoteBox>
 
 <CautionBox title="Clean Up">
 Don't forget to stop your running containers when you are done. `docker ps` will show you what is running, and `docker stop <id>` will shut them down.
 </CautionBox>
 
-### ⏭ Dockside Reference
+### ⏭ Container Compendium
+
+Quick reference for the commands used in this lesson.

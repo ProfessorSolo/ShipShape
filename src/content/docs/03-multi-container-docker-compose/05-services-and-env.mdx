@@ -1,0 +1,86 @@
+---
+title: "Services & Environment"
+description: "A deep dive into the services block and securing your stack with .env."
+sidebar:
+  order: 5
+  label: "Services & Environment"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+In our initial manifest, we kept things simple. But as engineers, we don't just want things to run; we want them to be secure, portable, and easy to modify. This is where the **Environment** layer comes in.
+
+## 1. The Service Anatomy
+
+Let’s look at our two services again. One is **Custom** (our API) and one is **Standard** (MongoDB).
+
+* **`build: .`**: This tells Compose, "There is no pre-made image for this. Look in the current folder, find the `Dockerfile`, and build it for me."
+* **`image: mongo:7.0`**: This tells Compose, "Don't build anything. Go to Docker Hub and pull this specific, version-pinned blueprint."
+
+## 2. The Security Buffer: `.env`
+
+Remember how we hardcoded `mongodb://db_service:27017` in our `server.js`? That’s fine for a hostname, but what about database passwords, API keys, or even the port number? 
+
+We never put secrets in our `compose.yaml`. If we commit that file to Git, our secrets are leaked to the world. Instead, we use a **`.env` file**.
+
+Create a file named `.env` in your project root:
+
+```bash
+# .env
+PORT=3000
+MONGO_USER=solo_admin
+MONGO_PASS=shipshape_secret_123
+```
+
+
+
+## 3. Variable Interpolation
+
+Now, we update our `compose.yaml` to use these variables. We use the `${VARIABLE_NAME}` syntax. Compose will automatically "reach out" to your `.env` file and swap these placeholders for real values at runtime.
+
+```yaml
+services:
+  api_service:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - DB_USER=${MONGO_USER}
+      - DB_PASS=${MONGO_PASS}
+
+  db_service:
+    image: mongo:7.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS}
+```
+
+{/* T.A. Watts Image Placeholder: A sleek, technical visual showing a .env "manifest" injecting glowing variables into the compose.yaml template, which then deploys to the containers. */}
+
+<NoteBox title="The .gitignore Rule">
+  This only works if you keep your `.env` file out of your repository. **Always** add `.env` to your `.gitignore`. Your `compose.yaml` is the public blueprint; your `.env` is the private key.
+</NoteBox>
+
+<CautionBox title="The Node Connection String">
+  Now that we've added a username and password to MongoDB, your `server.js` connection string needs to change again to include those credentials:
+  `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@db_service:27017/shipshape`
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/environment-variables/set-environment-variables/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Env Vars in Docker Compose
+</LinkButton>
+
+### ⏭ Compose: Up and Down
+
+Our manifest is drafted and our secrets are locked away. It’s time to stop talking about the fleet and actually launch it. Let's master the commands that control the lifecycle of our stack.

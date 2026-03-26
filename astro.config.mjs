@@ -20,11 +20,11 @@ const COURSE_MODULES = [
 		directory: '02-docker-bay-six',
 		released: false,
 	},
-	//   {
-	//     label: 'Revving View Engines - EJS',
-	//     directory: '03-rev-up-view-engines-ejs',
-	//     released: true,
-	//   },
+	{
+		label: 'Multi-Container Docker',
+		directory: '03-multi-container-docker-compose',
+		released: false,
+	},
 	//   {
 	//     label: 'Sleek Templating with Pug',
 	//     directory: '04-sleek-templating-with-pug',

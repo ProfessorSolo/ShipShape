@@ -1,0 +1,106 @@
+---
+title: "Service A: The Database"
+description: "Launching and seeding our first specialized service: MongoDB."
+sidebar:
+  order: 1
+  label: "Service A: The Database"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Before we can build our API, we need a place to store our data. We’re moving away from the "all-in-one" mindset and launching our database as a standalone, specialized service.
+
+For this project, we are using **MongoDB 7.0**. It is a NoSQL database that stores data in flexible, JSON-like documents—perfect for our Node.js environment.
+
+## Launching the Foundation
+
+To get started, we need to pull the official image from Docker Hub and run it. We want this service to run in the background and have a recognizable name so we can find it later.
+
+Run the following command in your terminal:
+
+```bash
+docker run -d --name db_service mongo:7.0
+```
+
+### Breaking Down the Command:
+
+- **`-d`**: Runs the container in "detached" mode (the background).
+- **`--name db_service`**: Assigns a human-readable name to the container. Without this, Docker would assign a random name like `vibrant_einstein`.
+- **`mongo:7.0`**: Specifies the exact version of the image we want to pull.
+
+<NoteBox title="The Automatic Pull">
+  If we see a series of "Pulling from library/mongo" progress bars, don't
+  worry—our terminal hasn't frozen. If docker run doesn't find the requested
+  image in our local cache, it automatically reaches out to Docker Hub to fetch
+  it for us. This "lazy loading" ensures we have the correct blueprint before
+  the container engine attempts to ignite.
+</NoteBox>
+
+## Seeding the Cargo
+
+A database without data is just an empty warehouse. To make our upcoming API useful, we need to "seed" the database with some initial records.
+
+First, create a file on your local machine named `shipments.json` and paste the following "seed data" inside:
+
+```json
+[
+  { "item": "Navigational Computer", "status": "In Transit", "quantity": 5 },
+  { "item": "Fusion Core", "status": "Docked", "quantity": 2 },
+  { "item": "Plasma Shield", "status": "Processing", "quantity": 10 }
+]
+```
+
+Now, we need to get this file **into** the container and import it into a collection called `inventory`.
+
+```bash
+# 1. Copy the file into the running container
+docker cp shipments.json db_service:/tmp/shipments.json
+
+# 2. Run the import tool inside the container
+docker exec db_service mongoimport --db shipshape --collection inventory --file /tmp/shipments.json --jsonArray
+```
+
+{/* T.A. Watts Image Placeholder: A technical terminal view showing the 'docker cp' command successfully moving a data payload from the host machine into the isolated database container. */}
+
+## Verification
+
+We need to be certain our data is actually there before we try to connect an API to it. We can "remote into" the database service and query the collection directly.
+
+```bash
+docker exec -it db_service mongosh shipshape --eval "db.inventory.find()"
+```
+
+If you see your three JSON objects printed in the terminal, your foundation is secure.
+
+<NoteBox title="Why 27017?">
+  By default, MongoDB listens on port `27017`. Since we didn't use the `-p` flag
+  in our `docker run` command, this port is currently **only accessible** from
+  inside the Docker environment. Our laptop's OS cannot see it yet. This is
+  intentional—we want our data "moored" securely.
+</NoteBox>
+
+<CautionBox title="Ephemeral Warning">
+  Because we launched this container without a volume, any data we just imported
+  is **temporary**. If we stop and remove this container (`docker rm -f
+  db_service`), our seed data will vanish. We'll solve this "Persistence
+  Problem" later in the lesson.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/manual/tutorial/getting-started/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  MongoDB: The Basics
+</LinkButton>
+
+### ⏭ Service B: The API
+
+The data is waiting. Now we need to build the "Service B" vessel: a Node.js API designed to reach out and fetch these records.

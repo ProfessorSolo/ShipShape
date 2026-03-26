@@ -1,0 +1,70 @@
+---
+title: "Service Discovery and Internal Networking"
+description: "Understanding how services communicate within the Docker network."
+sidebar:
+  order: 5
+  label: "Internal Networking"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It’s a common rite of passage in the dockyards: we boot our orchestrated environment, everything looks perfect for three seconds, and then our terminal starts screaming `ECONNREFUSED`.
+
+The culprit is almost always a misunderstanding of how containers "see" the world. If we naively hardcode `localhost:27017` inside our Node app, we are setting ourselves up for a collision.
+
+<CautionBox title="Localhost is an Introspective Trap">
+  Within a container, `localhost` strictly refers to *that specific container's
+  isolated boundary*. When our Node app pings `localhost`, it is effectively
+  pinging itself in a mirror. It will never independently detect the MongoDB
+  service idling on the other side of the virtual network.
+</CautionBox>
+
+## Welcome to the Walled Garden
+
+The beauty of Docker Compose is what it executes silently in the background. The moment we trigger the `up` command, Compose dynamically provisions a private, virtual-bridge network. It then attaches every declared service firmly onto that internal grid.
+
+More importantly, the Docker engine automatically activates **Service Discovery** via an embedded DNS server.
+
+As engineers, we want to avoid managing static IP addresses. Hardware scales and IPs shift; hardcoding digits creates brittle infrastructure. Compose solves this by allowing our services to find one another using the literal **Service Name** we defined in our YAML.
+
+{/* T.A. Watts Image Placeholder: A technical network topology diagram illustrating a 'backend_api' node connecting to a 'db_service' node using its alphanumeric service tag as a hostname instead of a numeric IP address. */}
+
+Because we labeled our database service `db_service` in our manifest:
+
+```yaml
+db_service:
+  image: mongo:7.0
+```
+
+Our Node code can abandon the concept of `localhost` entirely. We simply provide our connection logic with this deterministic string instead:
+
+`mongodb://db_service:27017/shipshape`
+
+Docker’s internal DNS routing instantly translates the hostname `db_service` into the dynamic internal IP address of the living MongoDB container. This automated capability is why Compose is such a powerful tool for local development.
+
+<NoteBox title="Minimizing the Attack Surface">
+  Because our services converse securely via this sealed internal network, we
+  don't actually need to map MongoDB’s `27017` port to our physical host machine
+  (our Mac or PC). We should only publish ports to the physical host when we
+  explicitly need to access them from an external tool, like a GUI database
+  client. In engineering, minimized exposure is always the superior choice.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/networking/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Networking in Compose
+</LinkButton>
+
+### ⏭ Volumes & Persistent Data
+
+Our communication relays are now transmitting data perfectly. But we need to ask ourselves a critical question: what happens to our records when we power the stack down for the weekend?

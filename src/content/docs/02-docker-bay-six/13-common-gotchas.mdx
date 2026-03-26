@@ -28,7 +28,9 @@ If the container runs but the browser can't hit it, check three things:
 3. **Wrong Target:** Did you map traffic to `3000`, but your Node code is actually listening on `8080`?
 
 <CautionBox title="Port Mapping is Manual">
-Remember, the `EXPOSE` instruction in the Dockerfile doesn't do the publishing. It's just documentation. You *must* supply the `-p` flag at runtime.
+  Remember, the `EXPOSE` instruction in the Dockerfile doesn't do the
+  publishing. It's just documentation. You *must* supply the `-p` flag at
+  runtime.
 </CautionBox>
 
 ## Missing Files
@@ -61,3 +63,5 @@ If a container fails, run `docker logs <container-id>`. The Node error stack tra
 </LinkButton>
 
 ### ⏭ Operational Mindset
+
+It's how you think about the process that matters most. Everything else is just syntax.

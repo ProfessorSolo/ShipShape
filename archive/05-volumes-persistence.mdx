@@ -1,0 +1,94 @@
+---
+title: "Volumes and Persistent Data"
+description: "How we anchor our data so it survives container restarts."
+sidebar:
+  order: 6
+  label: "Volumes & Persistence"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It’s a frustrating rite of passage: we spend forty-five minutes manually inserting test data into our database, run `docker compose down`, restart the stack, and find a completely empty collection. All those intricate payloads are gone, vaporized alongside the container that housed them.
+
+Welcome to the reality of **ephemeral compute architecture**.
+
+By design, the moment a container process terminates or is removed by the orchestration engine, its internal filesystem is wiped clean. If we want our data to survive, we have to change how we handle storage.
+
+{/* T.A. Watts Image Placeholder: A technical diagram illustrating a 'db_service' container linked via a persistent bridge to an external 'Named Volume' located on the host machine's physical drive. */}
+
+## Securing the State
+
+In software engineering, we distinguish between **stateless compute** (our API code, which is expendable) and **stateful data** (our records, which are sacred). To protect our development data, we must explicitly declare a **Volume**.
+
+A volume acts as a persistent storage unit on our host machine that outlives the temporary container assigned to access it.
+
+Let's augment our manifest:
+
+```yaml
+services:
+  api_service:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+    depends_on:
+      - db_service
+
+  db_service:
+    image: mongo:7.0
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+```
+
+### Our Persistence Strategy
+
+1.  **The Named Volume:** At the absolute bottom of the file, we established a `volumes:` block and declared a unit titled `mongo_data`. This commands the Docker engine to reserve a specific, permanent space on our physical drive.
+2.  **The Mount Path:** Inside the `db_service`, we instructed the container exactly where to "plug in" that storage. We mapped our `mongo_data` volume directly to `/data/db`—the internal path where MongoDB stores all its active data.
+
+<NoteBox title="Bulletproof Persistence">
+  Our application state is now stable. We can shut down the stack, rebuild our
+  API image, or even restart our entire computer. When the `db_service`
+  re-initializes, it will reconnect to the `mongo_data` volume and immediately
+  load every document we saved in our previous session.
+</NoteBox>
+
+<CautionBox title="Volumes vs. Bind Mounts">
+  While we are using **Named Volumes** for our database (where Docker manages
+  the storage location), we can also use **Bind Mounts** to link our local
+  source code directly into a container. This allows our Node.js app to update
+  in real-time as we type. However, mastering database persistence is our
+  priority before we attempt the more complex configurations of live-code
+  syncing.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/compose-file/05-services/#volumes"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Mounting Volumes in Compose
+</LinkButton>
+
+<LinkButton
+  href="https://docs.docker.com/engine/storage/volumes/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Storage: Volumes vs Bind Mounts
+</LinkButton>
+
+### ⏭ The Command Suite
+
+The communication relays are transmitting and the database is anchored. It’s time to head to the main control panel and master the commands that actually run this stack.

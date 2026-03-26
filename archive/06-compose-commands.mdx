@@ -1,0 +1,94 @@
+---
+title: "Compose Commands We Actually Use"
+description: "Mastering the lifecycle of our orchestrated application."
+sidebar:
+  order: 7
+  label: "Compose Commands We Use"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We have officially transitioned out of the era of isolated `docker run` commands. With our `compose.yaml` blueprint architected and our variables secured, we can now manage our entire stack as a synchronized unit rather than manually launching individual services.
+
+Let's cover the essential commands we'll rely on for our daily development workflow.
+
+## The Operational Control Suite
+
+### 1. docker compose up
+
+This is our primary command. It reads our `compose.yaml`, creates our networks and volumes, builds any missing images, and boots our services in the correct order.
+
+We should almost always run this in **detached mode** so we don't lock up our terminal session:
+
+```bash
+docker compose up -d
+```
+
+### 2. docker compose down
+
+This command stops our running services and removes the containers and internal networks entirely. It’s a "clean slate" command that we typically run when we're finished with a development session.
+
+```bash
+docker compose down
+```
+
+### 3. docker compose up --build
+
+Docker does not automatically detect changes in our Node.js source code to trigger a new build. If we modify our application logic and want those changes reflected in our container, we must use the `--build` flag. This forces Compose to reconstruct our custom images before launching the stack.
+
+```bash
+docker compose up --build -d
+```
+
+{/* T.A. Watts Image Placeholder: A clean, technical terminal interface displaying the status of multiple services, illustrating the 'Up', 'Down', and 'Build' lifecycle steps in a clear sequence. */}
+
+### 4. docker compose ps
+
+We use this to check the health of our fleet. It lists all containers belonging to our current project, showing their current status (Up, Exited, etc.) and the specific ports they are exposing to our host machine.
+
+```bash
+docker compose ps
+```
+
+<NoteBox title="The Unified Log Stream">
+  Do we need to see exactly what's happening inside our API and Database
+  simultaneously? We can tail the logs for the entire stack by using: `docker
+  compose logs -f` This provides a unified, color-coded stream of output from
+  every service, allowing us to debug inter-service communication in real-time.
+</NoteBox>
+
+<CautionBox title="Destroying Persistent Volumes">
+  The standard `down` command stops services but leaves our **named volumes**
+  intact. If we truly need to wipe our database and start from zero, we use the
+  `-v` flag: `docker compose down -v` This destroys our data volumes along with
+  our containers. Use this only when you are certain you want to delete your
+  persistent state.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/reference/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose CLI Reference
+</LinkButton>
+
+<LinkButton
+  href="https://docs.docker.com/compose/intro/features-uses/#key-features-of-docker-compose"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Key Features
+</LinkButton>
+
+### ⏭ Dev Workflow & Debugging
+
+Now that we can control the stack, it's all fun and games until a silent port conflict or a database connection error crashes our environment. Let's look at how we effectively debug our orchestrated services.

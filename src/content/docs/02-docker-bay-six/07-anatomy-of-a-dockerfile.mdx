@@ -13,9 +13,11 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ## The Build Recipe
 
-A **`Dockerfile`** is the literal text file recipe used to build an image. It tells the Docker Engine exactly what to start with, what to do, and which command to run when an instance finally starts up.
+A **`Dockerfile`** is the literal text file recipe used to build an image.
 
-Here is a super-simple, standard `Dockerfile` for a basic Node application:
+It tells the Docker Engine exactly what to start with, what to do, and which command to run when an instance finally starts up.
+
+Here is a super-simple, example `Dockerfile` for a basic Node application:
 
 ```dockerfile title="Dockerfile"
 FROM node:20-alpine
@@ -32,9 +34,9 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
-<NoteBox title="Dockerfile">
-  Docker Engine will look for this Dockerfile, automatically, in the project
-  root.
+<NoteBox title="Hang Tight">
+  We'll break down each instruction in this Dockerfile in the next section.
+  After that, we'll write our own to containerize an app.
 </NoteBox>
 
 This is small, but it does a massive amount of heavy lifting.
@@ -53,26 +55,12 @@ With just those lines, we've defined exactly how our application should be packa
 
 <CautionBox title="Capitalization Matters">
   By strict convention, a `Dockerfile` must be named exactly that. This means a
-  capital `D` and no file extension.
+  capital `D` and **no file extension**.
+
+Docker Engine will look for this Dockerfile, automatically, in the project
+root.
+
 </CautionBox>
-
----
-
-## The Foundation: Base Images
-
-Every shipyard starts with a foundation. In a `Dockerfile`, that foundation is defined by the **`FROM`** instruction.
-
-A **Base Image** is a pre-packaged environment that already contains the basic OS tools and runtime you need. Instead of manually installing Linux and Node.js from scratch every time, you start with an image that has them ready to go.
-
-### Where do they come from?
-
-Most base images are pulled from **Docker Hub**, the central registry for the Docker world.
-
-When you see `node:20-alpine`, you are looking at:
-
-- **`node`**: The official Node.js repository.
-- **`20`**: The major version of the runtime.
-- **`alpine`**: A specific variant based on Alpine Linux, which is incredibly tiny (around 5MB) compared to standard distributions. This keeps your final image fast and secure by removing "bloat."
 
 ---
 
@@ -97,3 +85,5 @@ When you see `node:20-alpine`, you are looking at:
 </LinkButton>
 
 ### ⏭ The Six-Pack
+
+There are six instructions that are almost always present in a Dockerfile. Next, we'll break them down, one by one.

@@ -13,21 +13,33 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ## Start the App from the Image
 
-We have a built image named `my-simple-server`. To create and run a live container from that image, we run:
+We have a built image named `node-aboard`. To create and run a live container from that image, we run:
 
 ```bash
-docker run -p 3000:3000 my-simple-server
+docker run -p 3000:3000 node-aboard
 ```
 
 ### Breakdown of the command
 
 - `docker run`: creates and starts a new container based on an image.
 - `-p 3000:3000`: maps host port `3000` to container port `3000`.
-- `my-simple-server`: the name (tag) of the image we want to run.
+- `node-aboard`: the name (tag) of the image we want to run.
+
+## Test It Out
+
+If the Node app is listening on the expected port and starts cleanly, it should now be fully reachable.
+
+Navigate to `http://localhost:3000` in a browser and break a bottle of champagne over the server rack bow (No, don't actually do that. It's just a metaphor).
+
+<NoteBox title="A Successful Voyage">
+  That is the big moment: our application is now running cleanly inside an
+  isolated container, totally divorced from whatever weird global tools might be
+  installed on the host machine.
+</NoteBox>
 
 ## Port Mapping Details
 
-Port mapping is one of the most common early confusion points for Docker students.
+Port mapping is one of the most common early confusion points with Docker.
 
 {/* T.A. Watts Note: A clean port mapping diagram showing traffic flowing from Localhost to the Host Port, bridging across to the Container Port, and finally hitting the Node app inside would be invaluable here. */}
 
@@ -37,18 +49,18 @@ The format is always:
 hostPort:containerPort
 ```
 
-So if we ran:
+So, if we ran:
 
 ```bash
-docker run -p 8080:3000 my-node-app
+docker run -p 8080:3000 node-aboard
 ```
 
 That means:
 
-- The host machine (your laptop) listens on port `8080`.
-- Traffic hitting `8080` is forwarded to port `3000` _inside_ the container, which is where your Node app is listening.
+- The host machine (the laptop) listens on port `8080`.
+- Traffic hitting `8080` is forwarded to port `3000` _inside_ the container, which is where our Node app is listening.
 
-You would visit the app at `http://localhost:8080`.
+We would visit the app at `http://localhost:8080`.
 
 <CautionBox title="Port Collisions">
   If another application on your laptop is already using port 3000, `docker run
@@ -57,15 +69,33 @@ You would visit the app at `http://localhost:8080`.
   programmed to listen on.
 </CautionBox>
 
-## Test It Out
+## Stop that Container!
 
-If the Node app is listening on the expected port and starts cleanly, it should now be fully reachable in your browser.
+There are a few ways to stop a running container.
 
-<NoteBox title="A Successful Voyage">
-  That is the big moment: your exact same application is now running cleanly
-  inside an isolated container, totally divorced from whatever weird global
-  tools might be installed on your laptop.
-</NoteBox>
+- Press `Ctrl + C` in the terminal where the container is running in the foreground.
+- From a new terminal with the Docker CLI stop command:
+  - run `docker ps` to list all running containers,
+  - then `docker stop <container_id>`
+- Find and stop the container in Docker Desktop.
+
+## Running and Stopping Detached
+
+Often we want to run a container in the background, without tying up our terminal.
+
+We can do this by adding the `-d` flag to the `docker run` command.
+
+```bash
+docker run -d -p 3000:3000 node-aboard
+```
+
+In this case we can't use `Ctrl + C` to stop the container.
+
+Instead, we use the `docker stop` command:
+
+```bash
+docker stop <container_id>
+```
 
 ---
 
@@ -81,3 +111,5 @@ If the Node app is listening on the expected port and starts cleanly, it should 
 </LinkButton>
 
 ### ⏭ Common Gotchas
+
+What could possibly go wrong?

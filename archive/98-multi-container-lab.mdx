@@ -1,0 +1,97 @@
+---
+title: "Reinforcement Lab: The Two-Container Shuffle"
+description: "Practice building and running a two-service setup."
+sidebar:
+  order: 98
+  label: "Reinforcement Lab"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Welcome to the Dry Dock. We've analyzed the theory of Compose files and internal networking, but now we need to prove we can execute. In this lab, we will transition from blueprints to a living, breathing orchestrated environment.
+
+{/* T.A. Watts Image Placeholder: A technical terminal window displaying a 'docker compose up' sequence where containers are successfully snapping into a synchronized grid. */}
+
+## Tier 1: The Basic Spin-Up
+
+**Objective:** Start a standard Compose environment and verify its health.
+
+**Instructions:**
+
+1. Create a `compose.yaml` file that defines an `api_service` and a `db_service`.
+2. Use the official `mongo:7.0` image for the database.
+3. Map port `3000:3000` for your Node application service.
+4. Run `docker compose up -d` to bring the fleet online in the background.
+
+**Expected Outcome:**
+Compose should create a default network, pull the MongoDB image, and launch both services. Running `docker compose ps` should list both containers as "Up" or "Running."
+
+<NoteBox title="Student-to-AI: Concept Check">
+  **Prompt:** "Explain the technical difference between the networking created
+  by `docker compose up` versus running two separate `docker run` commands
+  manually."
+</NoteBox>
+
+---
+
+## Tier 2: The Persisted Cargo
+
+**Objective:** Combine service networking with long-term Volume persistence and security.
+
+**Instructions:** 1. Modify your `compose.yaml` to include a **Named Volume** called `db_data`. 2. Map that volume to MongoDB's internal data directory: `/data/db`. 3. Create a `.env` file containing a `MONGO_USER` and `MONGO_PASS`. 4. Use `${VAR}` syntax in your `compose.yaml` to inject these secrets into the database environment variables. 5. Execute `docker compose down` followed by `docker compose up -d` to apply the changes.
+
+**Expected Outcome:**
+When checking the logs via `docker compose logs db_service`, you should see MongoDB initializing with your injected credentials. Even if we "destroy the ships" with `down`, our `db_data` volume should remain intact on the host machine.
+
+<CautionBox title="Student-to-AI: Verification Prompt">
+  **Prompt:** "What Docker CLI command can I use to inspect the `db_data` volume
+  specifically to prove it exists independently of any running containers?"
+</CautionBox>
+
+---
+
+## Tier 3: The Sabotaged Connection
+
+**Objective:** Diagnose and fix a broken connection caused by a "Localhost Trap."
+
+**The Problem:**
+Below is a common error in a Node.js `server.js` file. The application is attempting to connect to the database, but it's failing.
+
+```javascript
+// A broken connection string inside the app service
+mongoose.connect("mongodb://localhost:27017/shipshape");
+```
+
+**Instructions:**
+
+1. Given that both services are running on the same Compose network, identify why `localhost` is failing.
+2. Fix the connection string so the API service can find the database service.
+3. Verify the fix by executing a shell inside the running container: `docker compose exec api_service sh`.
+
+**Expected Outcome:**
+Your updated connection string should utilize the **Service Name** (e.g., `mongodb://db_service:27017/shipshape`), allowing Docker’s internal DNS to route the traffic correctly.
+
+<NoteBox title="Student-to-AI: Debug Prompt">
+  **Prompt:** "If my API container starts faster than my database container and
+  crashes because the DB isn't ready to accept connections yet, how should I
+  handle this delay in my Node.js code?"
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/gettingstarted/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Quickstart Guide
+</LinkButton>
+
+### ⏭ Shipping Log
+
+We’ve survived the shipyard. Let's record the final coordinates in our Codex to lock these concepts down for the next voyage.
