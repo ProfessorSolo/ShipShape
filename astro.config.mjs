@@ -13,12 +13,12 @@ const COURSE_MODULES = [
 	{
 		label: 'DevOps Foundations',
 		directory: '01-devops-foundations',
-		released: false,
+		released: true,
 	},
 	{
 		label: 'Docker Bay Six',
 		directory: '02-docker-bay-six',
-		released: false,
+		released: true,
 	},
 	{
 		label: 'Multi-Container Docker',

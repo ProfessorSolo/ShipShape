@@ -44,7 +44,12 @@ COPY . .
 
 That exact sequencing is intentional.
 
-{/* T.A. Watts Note: A flowchart diagram showing the layer cache invalidating at the `COPY . .` step (but preserving the `npm install` layer) would be perfect here. */}
+<img
+  src="/assets/lessons/02-docker-bay-six/09-docker-layer-caching-flow.png"
+  alt="Flowchart diagram showing Docker layer caching, illustrating a cache hit on the npm install step but a cache miss invalidating the subsequent source code COPY step"
+  width="1600"
+  loading="lazy"
+/>
 
 ## Why It Helps
 

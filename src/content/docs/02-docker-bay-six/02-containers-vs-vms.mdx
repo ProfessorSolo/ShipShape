@@ -13,32 +13,39 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ## Virtual Machines: The Heavy Haulers
 
-Virtual Machines (VMs) are the traditional workhorses of infrastructure. When you spin up a VM, you aren't just creating a space for your application—you are simulating an entirely new computer from the ground up. 
+Virtual Machines (VMs) are the traditional workhorses of infrastructure. When you spin up a VM, you aren't just creating a space for your application—you are simulating an entirely new computer from the ground up.
 
 A hypervisor sits on the physical server, dividing up the actual hardware (CPU, memory, disk). On top of those sliced-up resources, every single VM has to boot its own complete Guest Operating System. If you have ten Node applications running in ten VMs, you are running ten full copies of Linux, ten kernels, and ten sets of system background processes before you even execute your first line of JavaScript.
 
 VMs offer incredibly strong isolation, making them secure and robust, but that isolation comes at a severe operational cost:
+
 - They consume massive amounts of disk space and memory just to sustain their own OS.
 - They take minutes to boot because they are literally turning on a virtual computer.
 - They are heavy to move around and difficult to version control.
 
 ## Containers: The Standardized Fleet
 
-Containers take a fundamentally different approach. Instead of virtualizing the hardware to run multiple operating systems, containers virtualize the *operating system* to run multiple applications.
+Containers take a fundamentally different approach. Instead of virtualizing the hardware to run multiple operating systems, containers virtualize the _operating system_ to run multiple applications.
 
 They achieve this by sharing the host machine's OS kernel. A container packages the application, its runtime (like Node), required libraries, and specific filesystem structures into a standardized unit. However, when the container runs, it communicates directly with the host kernel rather than loading its own.
 
 This architectural shift changes the physics of deployment:
+
 - Because there is no guest OS to boot, a container starts in milliseconds.
 - They share resources fluidly, allowing you to pack far more containers onto a single server than VMs.
 - They are remarkably lightweight, often weighing in at a few megabytes instead of gigabytes.
 
 <CautionBox title="Not Just a Tiny VM">
-A container is not merely a "small virtual machine." If you think of it that way, you will misuse them. A container is an isolated application process with its own filesystem and network space, designed to be ephemeral, portable, and easily replaced.
+  A container is not merely a "small virtual machine." If you think of it that
+  way, you will misuse them. A container is an isolated application process with
+  its own filesystem and network space, designed to be ephemeral, portable, and
+  easily replaced.
 </CautionBox>
 
 <NoteBox title="A Lighter Footprint">
-Because containers aren't booting an entire redundant operating system, they spin up in seconds (or less) and share resources much more efficiently than a comparable fleet of VMs. 
+  Because containers aren't booting an entire redundant operating system, they
+  spin up in seconds (or less) and share resources much more efficiently than a
+  comparable fleet of VMs.
 </NoteBox>
 
 ## The Housing Mental Model
@@ -50,7 +57,14 @@ If reading technical definitions leaves you adrift, a cleaner mental model often
 - **Image = The architectural blueprint** for that apartment.
 - **Running Container = An occupied unit** built directly from that blueprint.
 
-{ /* T.A. Watts Note: A side-by-side comparison diagram of a VM architecture vs a Container architecture would absolutely earn its keep here. */ }
+<img
+  src="/assets/lessons/02-docker-bay-six/02-vm-vs-container-architecture.png"
+  alt="Side-by-side technical comparison diagram of Virtual Machine Architecture vs Container Architecture"
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: Virtual Machine Architecture vs Container Architecture_
 
 ---
 
@@ -66,3 +80,5 @@ If reading technical definitions leaves you adrift, a cleaner mental model often
 </LinkButton>
 
 ### ⏭ Solving the Node Problem
+
+The Node.js ecosystem moves fast, really fast. That can be a lot of fun, but it also means that keeping environments consistent across machines is a constant challenge. Let's look at a simple Node app and see how containers help solve those problems.

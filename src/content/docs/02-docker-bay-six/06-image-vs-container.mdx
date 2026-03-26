@@ -44,6 +44,13 @@ When we talk about containers, we use verbs like:
   environments are always predictable and reproducible.{" "}
 </CautionBox>
 
+<img
+  src="/assets/lessons/02-docker-bay-six/06-image-vs-container-layers.png"
+  alt="Technical layer diagram showing a Docker Image as locked read-only layers and a Running Container as those identical layers topped with an active writable layer"
+  width="1600"
+  loading="lazy"
+/>
+
 ## The Blueprint Analogy
 
 Think of an image like a **blueprint** for a standardized shipping container home.
@@ -84,4 +91,6 @@ If we remember that images are for _storage and distribution_ and containers are
 
 ### ⏭ The Build Recipe
 
-How do we actually define and build an image? We use a **Dockerfile**.
+So how do we actually define our image in code?
+
+We use a **Dockerfile**.
