@@ -14,46 +14,71 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ## Tactical Command Syntax
 
-| Command / Key            | Purpose                                                          | Example                      |
-| :----------------------- | :--------------------------------------------------------------- | :--------------------------- |
-| `services:`              | The root YAML key defining our individual containers.            | `services:`                  |
-| `build: .`               | Tells Compose to build a custom image from the local Dockerfile. | `build: .`                   |
-| `image:`                 | Tells Compose to pull a pre-made image from Docker Hub.          | `image: mongo:7.0`           |
-| `depends_on:`            | Sets the startup order (e.g., DB starts before API).             | `depends_on: ["db_service"]` |
-| `volumes:`               | Defines persistent storage or local directory syncing.           | `- db_data:/data/db`         |
-| `environment:`           | Injects configuration variables (often via `.env`).              | `- PORT=${PORT}`             |
-| `docker compose up -d`   | Launches the entire stack in the background.                     | `docker compose up -d`       |
-| `docker compose down`    | Stops and removes containers and networks.                       | `docker compose down`        |
-| `docker compose build`   | Forces a reconstruction of custom images.                        | `docker compose build`       |
-| `docker compose logs -f` | Tails the unified log stream from all services.                  | `docker compose logs -f`     |
+| Command / Key               | Purpose                                                          | Example                                             |
+| :-------------------------- | :--------------------------------------------------------------- | :-------------------------------------------------- |
+| `services:`                 | The root YAML key defining the services in the stack.            | `services:`                                         |
+| `build: .`                  | Tells Compose to build a custom image from the local Dockerfile. | `build: .`                                          |
+| `image:`                    | Tells Compose to use a pre-built image.                          | `image: mongo:8.0`                                  |
+| `ports:`                    | Publishes a container port to the host machine.                  | `- "3000:3000"`                                     |
+| `environment:`              | Passes environment variables into a container.                   | `- MONGO_URI=${MONGO_URI}`                          |
+| `volumes:`                  | Defines persistent storage or file mounts.                       | `- mongo_data:/data/db`                             |
+| `docker exec -it`           | Runs an interactive command inside a running container.          | `docker exec -it db_service mongosh`                |
+| `docker cp`                 | Copies files between our machine and a container.               | `docker cp projects.json db_service:/projects.json` |
+| `docker compose exec`       | Runs a command inside a running Compose-managed service.         | `docker compose exec db_service mongosh`            |
+| `docker compose up`         | Starts the stack and attaches the logs to our terminal.         | `docker compose up`                                 |
+| `docker compose up -d`      | Starts the stack in the background.                              | `docker compose up -d`                              |
+| `docker compose up --build` | Rebuilds images as needed before starting the stack.             | `docker compose up --build`                         |
+| `docker compose down`       | Stops and removes containers and the project network.            | `docker compose down`                               |
+| `docker compose ps`         | Shows the status of the services in the stack.                   | `docker compose ps`                                 |
+| `docker compose logs -f`    | Tails the live log output from the stack.                        | `docker compose logs -f`                            |
+| `docker compose exec`       | Runs a command inside a running service container.               | `docker compose exec db_service mongosh`            |
 
 ---
 
 ## The Master Blueprint Setup
 
-- **The compose.yaml File:** The single source of truth for your infrastructure. It should live in your project root alongside your `Dockerfile`.
-- **Service Discovery:** Within the Compose network, containers talk to each other using the service names defined in the YAML as hostnames (e.g., `mongodb://db_service`).
-- **The .env Layer:** Keep secrets out of your manifest. Use a `.env` file for sensitive data and ensure it is listed in your `.gitignore`.
-- **Persistent Anchors:** Use Named Volumes for databases to ensure your data survives a `docker compose down`.
+- **The `compose.yaml` File:** This is the single source of truth for the local stack. It lives in the project root and describes the services, ports, volumes, and config.
+- **Service Discovery:** Inside the Compose network, services can usually reach each other by service name. That is why `db_service` works as the MongoDB hostname.
+- **The `.env` Layer:** Compose automatically looks for a `.env` file beside `compose.yaml` and can use it for variable interpolation like `${MONGO_URI}`.
+- **Persistent Storage:** A named volume such as `mongo_data` lets MongoDB keep its data even if the container is removed and recreated.
 
 ---
 
-## Dockyard Hazard Map (Troubleshooting)
+## Dockyard Hazard Map
 
-| Problem                             | Likely Cause                                               | Quick Fix                                           |
-| :---------------------------------- | :--------------------------------------------------------- | :-------------------------------------------------- |
-| `ECONNREFUSED` on `localhost`.      | The API is looking for a DB inside its own container.      | Change hostname to the service name (`db_service`). |
-| Code changes aren't showing up.     | Compose is using a cached, outdated image.                 | Run `docker compose up --build -d`.                 |
-| "Port is already allocated."        | A native app or orphan container is squatting on the port. | Run `docker ps` and stop the conflicting process.   |
-| Database data is gone after `down`. | No persistent volume was defined or mounted.               | Add a `volumes:` entry mapping to `/data/db`.       |
+| Problem                             | Likely Cause                                              | Quick Fix                                                     |
+| :---------------------------------- | :-------------------------------------------------------- | :------------------------------------------------------------ |
+| `ECONNREFUSED` using `localhost`    | The API is looking for MongoDB inside its own container.  | Change the hostname to `db_service`.                          |
+| Code changes are not showing up     | The running container is still based on an older image.   | Run `docker compose up --build`.                              |
+| "Port is already allocated"         | Something else on the host is already using that port.    | Check `docker ps` or stop the conflicting local process.      |
+| Data disappears after teardown      | No named volume was attached, or it was removed.          | Add `mongo_data:/data/db` and avoid `docker compose down -v`. |
+| Container is running but app is sad | The service started, but config or connectivity is wrong. | Check `docker compose logs -f` and verify environment values. |
 
 ---
 
-## Solo's Pro-Notes
+## Solo’s Pro-Notes
 
-- **Internal vs. External:** Don't expose your database port to the host machine (`27017:27017`) unless you absolutely need to query it from a local GUI. Keep it private within the Compose network.
-- **The Readiness Myth:** `depends_on` only means the container has _started_, not that the software inside is ready. Always include reconnection logic in your Node.js code.
-- **Declarative Power:** Treat your `compose.yaml` as code. If you need a change, change the file, don't run a manual command.
+- **Internal vs External:** The API needs port publishing so our browser can reach it. MongoDB does not need a published host port just for the API to connect internally.
+- **`localhost` Means Self:** Inside a container, `localhost` points back to that same container, not to the host machine and not to another service.
+- **Volumes Are About State:** Containers are disposable. Database data is not. That is why stateful services usually need a named volume.
+- **Compose Is Declarative:** Change the `compose.yaml` file when the setup needs to change. Do not rely on a growing pile of one-off manual commands.
+
+<NoteBox title="Nice Mental Model">
+  Our browser reaches the API through `localhost:3000`.
+
+The API reaches MongoDB through `db_service:27017`.
+
+Same stack. Different paths.
+
+</NoteBox>
+
+<CautionBox title="Careful with `down -v`">
+  A plain `docker compose down` removes containers and the project network.
+
+A `docker compose down -v` also removes named volumes, which means database
+data can be deleted too.
+
+</CautionBox>
 
 ---
 
@@ -70,4 +95,4 @@ import CautionBox from "../../../components/CautionBox.astro";
 
 ### ⏭ Beyond the Harbor
 
-We have mastered local orchestration. But the world doesn't live on our laptops. In the next module, we’ll explore how to take these coordinated fleets and prepare them for the vast, unpredictable waters of production deployment.
+We’ve got local orchestration under control. Next, we’ll start looking at what it takes to move from a clean local stack toward an actual deployment workflow.

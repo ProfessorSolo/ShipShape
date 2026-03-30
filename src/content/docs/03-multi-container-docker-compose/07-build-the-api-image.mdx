@@ -1,0 +1,149 @@
+---
+title: "Building the API Image"
+description: "Using docker build to turn our API files and Dockerfile into a runnable image."
+sidebar:
+  order: 7
+  label: "Building the API Image"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We now have the ingredients for our API service:
+
+- the application files
+- the Dockerfile
+- a folder that acts as the build context
+
+Now it is time to turn that into an image.
+
+## The Build Command
+
+From inside our API project folder, run:
+
+```bash
+docker build -t portfolio-api .
+```
+
+If all goes well, Docker will work through the Dockerfile step by step and build an image named `portfolio-api`.
+
+## Breaking Down the Command
+
+- **`docker build`** tells Docker to build an image
+- **`-t portfolio-api`** tags the image with a human-friendly name
+- **`.`** sets the build context to the current folder
+
+That last bit matters more than it looks.
+
+## The Build Context
+
+The final `.` means:
+
+> “Use the current directory as the build context.”
+
+That tells Docker which files it is allowed to see during the build.
+
+So if our Dockerfile says:
+
+```dockerfile
+COPY . .
+```
+
+Docker is copying from the **build context**, not from your entire computer.
+
+<NoteBox title="Build Context = What Docker Can See">
+  Docker does not magically have access to all your files.
+
+  It only sees the files inside the build context that we pass to
+  `docker build`.
+</NoteBox>
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/07-docker-build-flow.png"
+  alt="Process flow diagram: The Project Folder (Context) containing our source files is fed into the Docker Engine via the '.' portal, resulting in the creation of the portfolio-api Image."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Docker build flow. The '.' in our command is a critical portal that tells Docker exactly which local files are included in the 'Context' to be used during the image creation process._
+
+## What Happens During the Build
+
+When Docker builds the image, it processes the Dockerfile instructions in order:
+
+1. start from the Node base image
+2. set the working directory
+3. copy the package files
+4. install dependencies
+5. copy the rest of the app
+6. record the exposed port
+7. set the startup command
+
+The result is a reusable image that contains everything needed to run the API.
+
+## Checking That the Image Exists
+
+Once the build completes, we can list our local images:
+
+```bash
+docker images
+```
+
+We should see an image named `portfolio-api`.
+
+Depending on our machine, we may also see:
+
+- the image tag
+- the image ID
+- when it was created
+- its size
+
+That confirms the build worked.
+
+## If We Change the App Later
+
+If we update our app files, Docker does **not** magically update the image.
+
+We need to build again.
+
+That is an important distinction:
+
+- the **source files** live in our project folder
+- the **image** is a built snapshot based on those files at build time
+
+<CautionBox title="Changing Files Does Not Rebuild the Image">
+  If we edit `server.js` after building the image, the existing image does not
+  update itself.
+
+  We need to run `docker build` again to create a new image with those changes.
+</CautionBox>
+
+## Why This Step Matters
+
+Building is the moment where our app stops being “just some files in a folder” and becomes something Docker can run consistently.
+
+That is the whole point of the image:
+
+- portable
+- repeatable
+- runnable
+
+Very neat. Very shipshape.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/image/build/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Build Reference
+</LinkButton>
+
+### ⏭ Running the API Container
+
+Now that we have an image, let’s launch it as a container and see what happens when our API tries to come to life beside the database.

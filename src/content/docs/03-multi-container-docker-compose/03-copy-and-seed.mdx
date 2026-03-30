@@ -1,0 +1,184 @@
+---
+title: "Copy and Seed"
+description: "Copying a seed file into the MongoDB container and importing it with mongoimport."
+sidebar:
+  order: 3
+  label: "Copy and Seed"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Our database service is running, and we already proved that we can connect to it with `mongosh`.
+
+Now we want to load it with a small starter dataset.
+
+Not because we need a seeding lesson — we already know that idea — but because our database now lives **inside a container**, so we need a way to get the seed file in and import it.
+
+## Our Goal
+
+We want to take a local file such as `projects.json`, copy it into the container, and then import it into MongoDB.
+
+That gives us a seeded `projects` collection inside our `portfolio` database.
+
+## The Seed File
+
+Here is a small example of what `projects.json` might look like:
+
+```json
+[
+  {
+    "title": "Professor Solo Portfolio",
+    "slug": "professor-solo-portfolio",
+    "category": "web-development",
+    "featured": true
+  },
+  {
+    "title": "Node Expense Tracker",
+    "slug": "node-expense-tracker",
+    "category": "backend",
+    "featured": false
+  },
+  {
+    "title": "DevOps Course Site",
+    "slug": "devops-course-site",
+    "category": "teaching",
+    "featured": true
+  }
+]
+```
+
+For this lesson, the content of the file is not the interesting part.
+
+The interesting part is getting that file **into the container** and loading it into the database.
+
+## Copying the File into the Container
+
+We will use `docker cp` to copy the seed file from our machine into the running container:
+
+```bash
+docker cp projects.json db_service:/projects.json
+```
+
+## Breaking Down `docker cp`
+
+- **`docker cp`** copies files between your machine and a container
+- **`projects.json`** is the local file on our machine
+- **`db_service:/projects.json`** means “copy this file into the `db_service` container at the root level”
+
+After this command runs, the container will have a file at `/projects.json`.
+
+<NoteBox title="Why Use docker cp Here?">
+  At this stage, `docker cp` is a nice simple option because it lets us move one
+  file into the container without needing bind mounts or Compose volumes yet.
+
+It is not the most automated workflow in the world, but it is great for
+understanding what is happening.
+
+</NoteBox>
+
+## Importing the Seed Data
+
+Now that the file exists inside the container, we can run `mongoimport` against it:
+
+```bash
+docker exec -it db_service mongoimport \
+  --db portfolio \
+  --collection projects \
+  --file /projects.json \
+  --jsonArray
+```
+
+## Breaking Down the Import Command
+
+- **`docker exec -it`** runs a command inside the running container
+- **`db_service`** is the MongoDB container
+- **`mongoimport`** is the MongoDB import tool
+- **`--db portfolio`** targets the `portfolio` database
+- **`--collection projects`** targets the `projects` collection
+- **`--file /projects.json`** tells MongoDB where the file is inside the container
+- **`--jsonArray`** tells MongoDB that the file contains a JSON array of documents
+
+That imports all of the documents from the seed file into the `projects` collection.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/03-copy-and-seed-flow.png"
+  alt="Data flow diagram: Step 1 shows the projects.json file being copied from the Host Laptop to the Container via 'docker cp'. Step 2 shows 'mongoimport' consuming the containerized file to populate the MongoDB database."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The two-stage seeding process: first crossing the container boundary with 'docker cp', then loading the file into MongoDB with 'mongoimport'._
+
+## Verifying the Import
+
+Now let’s confirm that the data is really there.
+
+Open `mongosh` again:
+
+```bash
+docker exec -it db_service mongosh
+```
+
+Switch to the database:
+
+```javascript
+use portfolio
+```
+
+Then query the collection:
+
+```javascript
+db.projects.find();
+```
+
+We can also count the documents:
+
+```javascript
+db.projects.countDocuments();
+```
+
+That gives us a quick sanity check that the import worked.
+
+## Why This Is Useful
+
+Once a database runs in a container, even familiar tasks like seeding start to look a little different.
+
+The database is no longer just “on our machine” in the vague general sense.
+
+It is running in an isolated environment, so we need container-aware commands to work with it:
+
+- `docker cp` to move files in
+- `docker exec` to run commands inside
+- `mongoimport` to load data into MongoDB
+
+<CautionBox title="Still Not Persistent">
+  We can seed the container, but the data is still living inside the container’s
+  writable layer.
+
+If the container is removed, the imported data disappears too.
+
+Seeding gives us content. A volume gives us persistence.
+
+</CautionBox>
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/container/cp/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker CP Reference
+</LinkButton>
+---
+<LinkButton
+  href="https://www.mongodb.com/docs/database-tools/mongoimport/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Mongoimport Documentation
+</LinkButton>

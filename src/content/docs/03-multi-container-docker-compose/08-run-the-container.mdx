@@ -1,0 +1,157 @@
+---
+title: "Running the API Container"
+description: "Launching the API service as a container and seeing what breaks when it tries to find the database."
+sidebar:
+  order: 8
+  label: "Running the API Container"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We now have an API image.
+
+Nice.
+
+Now let’s turn that image into a running container and see how well our two services get along without any orchestration help.
+
+## Starting the API Container
+
+Run this command:
+
+```bash
+docker run -d -p 3000:3000 --name api_service portfolio-api
+```
+
+If all goes well, Docker will create and start a new container named `api_service`.
+
+## Breaking Down the Command
+
+- **`docker run`** creates and starts a container from an image
+- **`-d`** runs it in detached mode
+- **`-p 3000:3000`** maps port 3000 on our machine to port 3000 in the container
+- **`--name api_service`** gives the container a predictable name
+- **`portfolio-api`** is the image we built earlier
+
+## Checking That the Container Is Running
+
+We can confirm that the container started with:
+
+```bash
+docker ps
+```
+
+We should see both of these containers running:
+
+- `db_service`
+- `api_service`
+
+At least, that is the dream.
+
+## Testing the API
+
+Our app exposes a route at:
+
+```text
+http://localhost:3000/api/projects
+```
+
+So at this point, it is tempting to open that in a browser and expect victory.
+
+We may get a response.
+
+We may get an error.
+
+Either way, before we celebrate, we should inspect the logs.
+
+## Looking at the Logs
+
+Run:
+
+```bash
+docker logs api_service
+```
+
+This is where the interesting part shows up.
+
+Instead of happily connecting to MongoDB, the API will likely report a connection failure.
+
+Depending on timing and environment, the message may look a little different, but the core issue is the same: the API cannot find the database at the address we gave it.
+
+<CautionBox title="The Localhost Trap">
+  Inside the `api_service` container, `localhost` means **that container
+  itself**.
+
+  It does **not** mean our laptop.
+
+  It does **not** mean Docker in general.
+
+  And it definitely does **not** mean the separate MongoDB container sitting
+  beside it.
+
+  So when the app tries to connect to `mongodb://localhost:27017/portfolio`, it
+  is looking for MongoDB inside its own container and finding absolutely
+  nothing.
+</CautionBox>
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/08-localhost-trap-diagram.png"
+  alt="Conceptual diagram of the Localhost Trap. The api_service container attempts to connect to 'localhost:27017' but the connection line loops back and hits its own internal wall, triggering a failure while the db_service container sits unreachable nearby."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Localhost Trap. Inside a container, 'localhost' is a self-referential loop. The API is looking for a database inside its own walls instead of reaching out to the service sitting right next to it._
+
+## Why This Failure Is Useful
+
+This is not a random bug.
+
+This is the lesson.
+
+We now have two separate containers:
+
+- one running MongoDB
+- one running our Node API
+
+But simply having both containers running does **not** mean they automatically know how to talk to each other.
+
+That wiring still has to happen.
+
+<NoteBox title="A Good Failure">
+  This is exactly the kind of failure we want right now.
+
+  The API container starts.
+  The database container starts.
+  But the connection between them is missing.
+
+  That makes the real problem much easier to see.
+</NoteBox>
+
+## Where We Are Now
+
+At this point, we have proven that:
+
+- the database can run in one container
+- the API can run in another container
+- the API cannot reach MongoDB just by using `localhost`
+
+And that sets us up perfectly for the next step.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Port Publishing
+</LinkButton>
+
+### ⏭ Manual Orchestration
+
+Our two services are alive, but they are not cooperating yet. Next, we’ll wire them together the hard way so we can feel exactly what Docker Compose is going to save us from.

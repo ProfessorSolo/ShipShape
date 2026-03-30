@@ -1,0 +1,133 @@
+---
+title: "Scaffolding"
+description: "Creating the minimal Node.js application files for our API container."
+sidebar:
+  order: 5
+  label: "Scaffolding"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Now that we know we need an API service, let’s create the smallest possible Node app that can play that role.
+
+This is not meant to be a full project.
+
+It is just enough application code to give our container something useful to run.
+
+## The Files We Need
+
+Create a new folder for the API service and add these files:
+
+- `package.json`
+- `server.js`
+
+That is enough for this step.
+
+## The `package.json` File
+
+This file defines the app and its dependencies.
+
+We need:
+
+- **`express`** for the web server
+- **`mongoose`** so the app can eventually talk to MongoDB
+
+```json
+{
+  "name": "shipshape-03-01-docker-compose",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Joshua Solomon (Professor Solo)",
+  "license": "ShipShape Learner License 1.0 (ShipShape-LEARN-1.0)",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.3.3"
+  }
+}
+```
+
+## The `server.js` File
+
+Now create `server.js`:
+
+```javascript
+const express = require("express");
+const mongoose = require("mongoose");
+
+const app = express();
+const PORT = 3000;
+const MONGO_URI = "mongodb://localhost:27017/portfolio";
+
+mongoose
+  .connect(MONGO_URI)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("Connection error:", err));
+
+const ProjectSchema = new mongoose.Schema({
+  title: String,
+  slug: String,
+  category: String,
+  featured: Boolean,
+});
+
+const Project = mongoose.model("Project", ProjectSchema, "projects");
+
+app.get("/api/projects", async (req, res) => {
+  try {
+    const projects = await Project.find();
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`API service listening on port ${PORT}`);
+});
+```
+
+## Why `localhost` Is Still There
+
+Right now, the app is trying to connect to:
+
+```text
+mongodb://localhost:27017/portfolio
+```
+
+That is intentional.
+
+It is not the final answer, but it sets us up for an important lesson in the next few steps.
+
+For now, we are just getting the application code in place.
+
+<NoteBox title="Tiny App, Real Purpose">
+  This app is intentionally small.
+
+We are not trying to impress anyone with backend architecture here. We are
+just creating a realistic little Node service that we can package into a
+container.
+
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express Documentation
+</LinkButton>
+
+### ⏭ Writing the Dockerfile
+
+We have the app files. Next, we’ll write the Dockerfile that turns this little Node service into a runnable image.

@@ -1,0 +1,120 @@
+---
+title: "The Control Surface"
+description: "Mastering the Docker Compose lifecycle including detached mode, logs, and process management."
+sidebar:
+  order: 14
+  label: "The Control Surface"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Now that we have fixed our configuration using `.env` files, we need to move beyond the simple "run it and watch" workflow. 
+
+As developers, we rarely want to keep our terminal locked to one process forever. We need a way to manage the stack's lifecycle efficiently.
+
+## Detached Mode: Reclaiming Our Terminal
+
+For normal development, we usually want the stack running quietly in the background.
+
+```bash
+docker compose up -d
+```
+
+The `-d` flag stands for **detached mode**. It starts everything, tells us what it did, and immediately hands back control of the shell.
+
+<NoteBox title="A Dockworker's Habit">
+  In the real world, `-d` is the default way most developers use Compose.
+  
+  We start the stack, then go back to coding, rather than staring at logs.
+</NoteBox>
+
+## Inspecting the Fleet
+
+Once we are running in detached mode, we lose that immediate visual feedback. We need tools to check the status of our "fleet."
+
+### Checking Status
+
+```bash
+docker compose ps
+```
+
+This command shows every container managed by the current Compose project, its status (Running, Exited, etc.), and which ports are mapped.
+
+### Tapping into the Logs
+
+If something goes wrong (like a database connection failure), we need to see the output:
+
+```bash
+docker compose logs -f
+```
+
+The `-f` flag will **follow** the logs, effectively giving us back the foreground view without having to restart the stack.
+
+## `stop` vs `down`: Choosing Your Reset Level
+
+There are two primary ways to halt the stack, and the distinction matters.
+
+### 1. Stopping (Pause)
+
+```bash
+docker compose stop
+```
+
+This halts the processes inside the containers but **leaves the containers and the network in place**. It is like parking the ship but kept it at the dock with the engine off.
+
+### 2. Down (Tear Down)
+
+```bash
+docker compose down
+```
+
+This is the definitive reset. It:
+1. Stops the containers.
+2. Removes the containers entirely.
+3. Removes the project network.
+
+For this course, `down` is our best friend. It ensures that every time we run `up`, we are starting with a clean slate.
+
+<CautionBox title="Which One to Use?">
+  If we are just stepping away for a coffee, `stop` is fine.
+  
+  If we have changed our `compose.yaml` or `.env` file, use `down` to ensure the old environment is wiped before the new one is built.
+</CautionBox>
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/14-compose-lifecycle-states.png"
+  alt="State diagram showing the transition from 'Running' to 'Stopped' (container still exists) versus 'Down' (container is removed from the grid)."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: Choosing your reset level. 'stop' merely pauses the processes inside the containers, while 'down' completely deconstructs the environment, removing the containers and the project network entirely for a true clean slate._
+
+## Restarting and Rebuilding
+
+If we change our app code, remember that the **image** needs to be rebuilt. You can force this during the startup command:
+
+```bash
+docker compose up -d --build
+```
+
+This command acts as the ultimate "make it happen" button—it rebuilds anything that's changed and brings the stack back up in the background.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/compose/up/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  CLI Reference: Compose Up
+</LinkButton>
+
+### ⏭ Internal Networking
+
+Our services are up and we know how to control them, but we haven't actually looked at the "magic" that allowed them to find each other in Lesson 13. Next, we'll dive into the internal wires.

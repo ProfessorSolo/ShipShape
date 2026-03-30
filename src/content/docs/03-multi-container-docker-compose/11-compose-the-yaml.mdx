@@ -1,0 +1,158 @@
+---
+title: "Compose the YAML"
+description: "Creating a minimal compose.yaml that defines both services in one place."
+sidebar:
+  order: 11
+  label: "Compose the YAML"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Now that we know what Docker Compose is for, let’s put it to work.
+
+In this step, we are going to create a minimal `compose.yaml` file that describes both of our services in one place:
+
+- the API service
+- the database service
+
+## The Compose File
+
+In the root of our project, create a file named `compose.yaml`.
+
+For this first version, add:
+
+```yaml
+services:
+  api_service:
+    build: .
+    ports:
+      - "3000:3000"
+
+  db_service:
+    image: mongo:8.0
+```
+
+That little file replaces quite a lot of manual setup.
+
+## Breaking It Down
+
+At the top level, we have a `services:` block.
+
+This is where we list the containers that make up our application.
+
+In this example, we have two services:
+
+- **`api_service`** — built from the current project folder
+- **`db_service`** — created from the official MongoDB image
+
+Each service gets its own configuration block underneath.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/11-compose-anatomy.png"
+  alt="Anatomy of a compose.yaml file. Glowing callouts map the 'build' block to the API service, the 'image' block to the MongoDB service, and the 'ports' block to a network gate between the host and the container."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Blueprint into Reality. Each section of our 'compose.yaml' file translates directly into a Docker object: 'build' instructions create images from source code, 'image' tags pull pre-made tools, and 'ports' open specific gates into our private network._
+
+## The API Service
+
+Our API service uses:
+
+```yaml
+build: .
+```
+
+That tells Compose to build the image from the current directory.
+
+In other words, Compose will look for the `Dockerfile` in this folder and use it to build the API image for us.
+
+We also have:
+
+```yaml
+ports:
+  - "3000:3000"
+```
+
+That maps port `3000` on our machine to port `3000` inside the API container, so we can reach the service in a browser.
+
+## The Database Service
+
+Our database service uses:
+
+```yaml
+image: mongo:8.0
+```
+
+That tells Compose to create the container from the MongoDB image directly, without building anything locally.
+
+This is a nice example of how Compose can manage different kinds of services in the same file:
+
+- some services are **built**
+- some services are pulled from an **image**
+
+<NoteBox title="Built vs. Pulled">
+  Not every service needs a Dockerfile in our project.
+
+  Our own app is usually built from source, while supporting services like
+  MongoDB, Redis, or PostgreSQL are often started directly from official images.
+</NoteBox>
+
+## What About the Network?
+
+We may notice there is no `networks:` block here.
+
+That is one of the nicest Compose conveniences.
+
+By default, Docker Compose creates a private network for the project and connects all declared services to it automatically.
+
+That means the services can already reach each other by service name.
+
+So later, `api_service` can talk to MongoDB by using `db_service` as the hostname.
+
+Very civilized.
+
+<CautionBox title="This File Is Intentionally Minimal">
+  This first Compose file is not the finished setup.
+
+  It is just the starting point.
+
+  We still have more to do around configuration, environment variables, and
+  making the services cooperate properly.
+</CautionBox>
+
+## Why This Already Feels Better
+
+Even in this tiny version, Compose is already cleaning things up.
+
+Instead of manually remembering:
+
+- network creation
+- image builds
+- container names
+- port mappings
+- startup order
+
+we are starting to describe the system in one place.
+
+That is the real win.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/compose-file/services/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose File Services Reference
+</LinkButton>
+
+### ⏭ Running the Stack with Compose
+
+Now that the file exists, let’s use it to launch both services together and see how much manual work just disappeared.

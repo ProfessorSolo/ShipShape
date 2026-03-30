@@ -24,7 +24,7 @@ If we put our database inside the same container as our API, we run into several
 - **Updates:** We can't update our Node version without potentially taking our database offline.
 - **Isolation:** If our API crashes and corrupts the container's filesystem, our database data might vanish with it.
 
-[Image of Monolithic vs. Microservices Architecture]
+
 
 ## Shifting to a Distributed Fleet
 
@@ -37,7 +37,12 @@ In this lesson, we are going to build a classic two-tier architecture:
 
 This separation allows each service to do one thing perfectly. Our API focuses on code; our database focuses on data.
 
-{/* T.A. Watts Image Placeholder: A technical schematic showing the transition from a single, cluttered container 'skiff' to a coordinated 'fleet' of two distinct, specialized service nodes. */}
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/00-monolith-vs-distributed-fleet.png"
+  alt="Architecture comparison diagram: A single, cluttered monolithic container on the left versus a distributed fleet of specialized services (Node.js API and MongoDB) on the right, connected via a network layer."
+  width="1600"
+  loading="lazy"
+/>
 
 ## The Coordination Friction
 

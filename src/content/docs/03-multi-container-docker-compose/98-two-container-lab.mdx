@@ -10,97 +10,182 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-Welcome to the **Dry Dock**. We've discussed the theory of manifests, service networks, and harbor coordination. But a dockyard map is irrelevant unless you can actually bring the ships into the harbor.
+Welcome to the dry dock.
 
-It’s time to get your hands dirty with real configurations.
+We’ve now worked through the core ideas behind a two-container setup:
 
-{/* T.A. Watts Image Placeholder: A gritty, glowing terminal window hovering over an organized, neon-lit dockyard showing shipping containers snapping into place. */}
+- a Node/Express API service
+- a MongoDB database service
+- Docker Compose orchestration
+- internal service networking
+- environment-based configuration
+- persistent volumes
+
+Now it is our turn to put those ideas together.
+
+{/* T.A. Watts Image Placeholder: A glowing terminal scene above a neon-lit dockyard, with two service containers snapping neatly into place under Compose control. */}
 
 ## Maintenance Tier: The Basic Spin-Up
 
-**Objective:** Start a pre-configured Compose environment and verify its health.
+**Objective:** Start a simple two-service Compose setup and verify that both services are running.
 
-**Instructions:**
+### Instructions
 
-1. Create a `compose.yaml` file that defines an `api_service` and a `db_service`.
-2. Use the official `mongo:7.0` image for the database.
-3. Map port `3000:3000` for the Node application.
-4. Run `docker compose up -d` in your terminal to bring the fleet online in the background.
+1. Create a `compose.yaml` file that defines:
+   - an `api_service`
+   - a `db_service`
+2. Use the official `mongo:8.0` image for the database service.
+3. Build the API service from our project folder.
+4. Publish port `3000:3000` for the API service.
+5. Run the stack with:
 
-**Expected Outcome:**
-You should see Compose build a default network, pull the Mongo image, and launch the two services side-by-side. Running `docker compose ps` should list both containers as "Up."
+```bash
+docker compose up -d
+```
+
+### Expected Outcome
+
+Compose should:
+
+- build the API image
+- pull the MongoDB image if needed
+- create a project network
+- start both services
+
+Running this command should show both services up:
+
+```bash
+docker compose ps
+```
 
 <NoteBox title="Student-to-AI: Concept Check">
-  **Prompt:** "Explain how `docker compose up -d` differs from `docker run -d`
-  when it comes to the internal network it creates, using simple technical
-  language."
+  **Prompt:** "Explain how `docker compose up -d` differs from running two
+  separate `docker run -d` commands, especially in terms of networking and
+  project coordination."
 </NoteBox>
 
 ---
 
 ## Custom Job Tier: The Persisted Cargo
 
-**Objective:** Combine service networking with long-term Volume persistence and security.
+**Objective:** Add persistence to the database and move the MongoDB connection string into environment-based configuration.
 
-**Instructions:** 1. Modify your `compose.yaml` to include a named volume called `mission_data`. 2. Map that volume directly to MongoDB's internal directory: `/data/db`. 3. Create a `.env` file with a `MONGO_USER` and `MONGO_PASS`. 4. Map these into the database service configuration using the `${VAR}` syntax. 5. Execute a `docker compose down` followed by a `docker compose up -d` to reload the configuration.
+### Instructions
 
-**Expected Outcome:**
-When inspecting `docker compose logs db_service`, you should see MongoDB initializing with your injected credentials. Even if you destroy the containers with `down`, your `mission_data` volume should remain safely on your host.
+1. Update our `compose.yaml` file to add a named volume called `mongo_data`.
+2. Mount that volume to MongoDB’s internal data directory:
+
+```yaml
+volumes:
+  - mongo_data:/data/db
+```
+
+3. Create a `.env` file beside our `compose.yaml`.
+4. Add a `MONGO_URI` value that points to the database service:
+
+```env
+MONGO_URI=mongodb://db_service:27017/portfolio
+```
+
+5. Pass that value into the API service using Compose environment variable interpolation.
+6. Bring the stack down and back up:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+### Expected Outcome
+
+Our database should now store its data in a named volume rather than only inside the container.
+
+Our API should read its MongoDB connection string from `process.env.MONGO_URI` instead of a hardcoded value.
+
+We should also be able to confirm that the named volume exists:
+
+```bash
+docker volume ls
+```
 
 <NoteBox title="Student-to-AI: Verification Prompt">
-  **Prompt:** "What is the specific Docker CLI command to confirm whether my
-  named volume `mission_data` exists on my host machine independently of any
-  running containers?"
+  **Prompt:** "What is the Docker CLI command to verify that our named volume
+  `mongo_data` exists independently of any running container?"
 </NoteBox>
+
+<CautionBox title="Remember What `down -v` Does">
+  A normal `docker compose down` removes containers and the project network.
+
+A `docker compose down -v` also removes named volumes, which means our Mongo
+data will be deleted too.
+
+</CautionBox>
 
 ---
 
-## Solo's Special: The Sabotaged Connection
+## Solo’s Special: The Sabotaged Connection
 
-**Objective:** Diagnose and fix a broken connection caused by incorrect service discovery.
+**Objective:** Diagnose and fix a broken database connection caused by using the wrong hostname.
 
-**Instructions:**
+### Instructions
 
-1. Given that both `api_service` and `db_service` are on the same network, identify why `localhost` in your `server.js` is causing the connection to fail.
-2. Fix the connection string and rebuild your image using `docker compose up --build -d`.
-3. Prove your fix by executing a shell command inside the running container: `docker compose exec api_service sh`.
+1. Pretend our API is still trying to connect to MongoDB using:
 
-**Expected Outcome:**
-Your updated connection string should utilize the Compose service name (`mongodb://db_service:27017/shipshape`), successfully linking the backend app directly to the database.
+```javascript
+const MONGO_URI = "mongodb://localhost:27017/portfolio";
+```
+
+2. Identify why that fails inside a Compose setup.
+3. Fix the connection so the API uses the database service name instead.
+4. Rebuild and restart the stack with:
+
+```bash
+docker compose up --build -d
+```
+
+5. Check the logs to verify the API connects successfully.
+6. Step into the API container with:
+
+```bash
+docker compose exec api_service sh
+```
+
+### Expected Outcome
+
+Our fixed connection string should point to:
+
+```text
+mongodb://db_service:27017/portfolio
+```
+
+Once corrected, the API should be able to reach MongoDB across the internal Compose network.
 
 <NoteBox title="Student-to-AI: Debug Prompt">
-  **Prompt:** "If my application container crashes because the database takes 10
-  seconds to start, what are the best practices for handling this delay in
-  Node.js instead of relying solely on `depends_on`?"
+  **Prompt:** "Why does `localhost` fail inside a container when trying to reach
+  another service, and why does `db_service` work instead?"
 </NoteBox>
 
 ---
 
-## ⚡️ Bonus Tier: The Live-Sync Pipeline
+## ⚡ Bonus Tier: Faster Local Development
 
-**Objective:** Use **Bind Mounts** to enable "Hot Reloading" so you don't have to rebuild the image for every code change.
+**Objective:** Explore a more convenient local workflow that avoids rebuilding the image after every code change.
 
-**Instructions:**
+### Instructions
 
-1. Update your `api_service` in `compose.yaml` to include a volume that maps your current local directory to the container's `WORKDIR`:
-   ```yaml
-   volumes:
-     - .:/app
-   ```
-2. Modify your `Dockerfile` or `compose.yaml` to use a watcher like `nodemon` or Node 20's native `--watch` flag:
-   ```bash
-   # Example command change
-   node --watch server.js
-   ```
-3. Change a message in your `server.js` (like the "Connected" log) and save the file.
+1. Update `api_service` in `compose.yaml` to include a bind mount for our project files.
+2. Configure the API service to run with a file watcher such as `nodemon` or Node’s `--watch` flag.
+3. Start the stack and make a small change to `server.js`.
+4. Confirm that the API reloads without needing `docker compose up --build`.
 
-**Expected Outcome:**
-The API container should automatically restart and reflect your changes **instantly** without you ever typing `docker compose up --build`. This is the professional "Gold Standard" for local development.
+### Expected Outcome
 
-<NoteBox title="Student-to-AI: The Bind Mount Prompt">
-  **Prompt:** "Explain the technical difference between a **Named Volume** (like
-  `mission_data`) and a **Bind Mount** (like `./app`). When should I use one
-  over the other in a professional production environment?"
+Our API container should reflect code changes much more quickly during development.
+
+This is a common local-development pattern, even though it is a different idea from named volumes.
+
+<NoteBox title="Student-to-AI: Bind Mount Prompt">
+  **Prompt:** "Explain the difference between a named volume and a bind mount.
+  What problem does each one solve in a containerized development workflow?"
 </NoteBox>
 
 ---
@@ -118,4 +203,4 @@ The API container should automatically restart and reflect your changes **instan
 
 ### ⏭ Shipping Log
 
-You survived the shipyard. Let's record the final coordinates in our Codex to lock these concepts down securely.
+We’ve built the stack, wired the services, and kept the data alive. Next, we’ll lock the key ideas into the reference page for quick future lookup.

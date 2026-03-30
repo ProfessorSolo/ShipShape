@@ -1,0 +1,91 @@
+---
+title: "Internal Networking"
+description: "Understanding how services discover and reach each other inside a Docker Compose project."
+sidebar:
+  order: 15
+  label: "Internal Networking"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+In the manual days, we had to build the infrastructure (networks) before we could build the application. Docker Compose flips that: it builds the infrastructure *for* the application.
+
+Compose automatically creates a private project network and attaches every service to it.
+
+## Service Discovery: The Magic of Names
+
+The most critical feature of this network is **Service Discovery**. 
+
+Instead of tracking down IP addresses, services can reach each other using their **Service Name** as a hostname. This is why our `.env` file worked in Lesson 13:
+
+```env
+MONGO_URI=mongodb://db_service:27017/portfolio
+```
+
+The API doesn't know (or care) where the database is; it just asks the network for `db_service`.
+
+<NoteBox title="DNS at Work">
+  Docker Compose runs a tiny DNS server inside the project network. 
+  
+  When the API asks for `db_service`, this server gives it the internal IP of the database container.
+</NoteBox>
+
+## Port Exposure vs Port Publication
+
+There is a subtle but vital distinction between how the API talks to the database and how *we* talk to the API.
+
+### 1. Internal Communication (Exposure)
+The database container is listening on port `27017`. Because they share a network, the API can reach it directly at `db_service:27017`. 
+
+Notice that we **did not** map a port for the database in our YAML. We don't need to; the internal network is open to all services in the project.
+
+### 2. External Communication (Publication)
+For *us* to reach the API from our browser, we needed to map the port:
+
+```yaml
+ports:
+  - "3000:3000"
+```
+
+This acts as a bridge from our host machine into the private project network.
+
+<CautionBox title="Localhost vs Service Names">
+  Inside a container, `localhost` still means "this container." 
+  
+  If the API tries to connect to `localhost:27017`, it will fail because it's looking for MongoDB inside itself. Use service names for any container-to-container traffic.
+</CautionBox>
+
+## Summary of the Wires
+
+- **Browser to API:** `localhost:3000` (via published port)
+- **API to Database:** `db_service:27017` (via internal service name)
+
+This architecture keeps our database "hidden" from the outside world while keeping it perfectly accessible to our application.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/15-internal-external-networking.png"
+  alt="Networking diagram showing the 'Project Boundary'. Inside, the API and Database talk via port 27017. A single gate allows the Host Machine to reach the API via port 3000, while the database has no external path."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: Exposure vs. Publication. By default, services on the same Compose network can talk on any port (Exposure), but only ports explicitly mapped in the YAML (Publication) are reachable from your host machine browser._
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/how-tos/networking/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Compose Networking
+</LinkButton>
+
+### ⏭ Persistent Volumes
+
+Our services can talk, but our database is still "amnesiac"—if we tear down the stack, the data dies. Next, we’ll give our database some permanent memory.

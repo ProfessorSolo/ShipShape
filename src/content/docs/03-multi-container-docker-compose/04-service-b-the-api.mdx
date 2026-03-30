@@ -1,0 +1,101 @@
+---
+title: "Service B: The API"
+description: "Introducing the Node.js service that will become the second container in our stack."
+sidebar:
+  order: 4
+  label: "Service B: The API"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+So far, our MongoDB container is up and running.
+
+That is useful, but a database on its own is not much of an experience. We now need an **API service** — the application layer that will handle requests and talk to the database.
+
+In this lesson, that service will be a very small **Node.js + Express** app.
+
+## Why We Need a Second Service
+
+Up to this point, the database has been living on its own as a separate container.
+
+Now we are adding a second service with a different job:
+
+- **MongoDB** stores and retrieves data
+- **Node/Express** handles HTTP requests and responses
+
+That separation is the point.
+
+We are no longer building one all-in-one box. We are building a small system made of cooperating services.
+
+## Keeping the App Intentionally Small
+
+We have already built bigger Node and Express apps before.
+
+That means we do **not** need this lesson to become a detour into:
+
+- Express fundamentals
+- route design
+- Mongoose deep dives
+- full portfolio app architecture
+
+Instead, we are going to use a **tiny portfolio-flavoured API** so we can stay focused on containerization.
+
+The app only needs to be big enough to prove that:
+
+- we can containerize a Node app
+- we can run it as its own service
+- we can eventually connect it to MongoDB
+
+<NoteBox title="Focus Check">
+  The goal here is not to build a complete portfolio CMS.
+
+The goal is to take a familiar kind of Node app and package it into a
+container so it can become part of a multi-container setup.
+
+</NoteBox>
+
+## What’s Coming Next
+
+We’ll build this API service in a few small steps:
+
+- create the minimal application files
+- write the Dockerfile
+- build the image
+- run the container
+- discover why `localhost` becomes a problem
+
+That last one is where things start to get fun.
+
+## The Big Idea
+
+If we have already built a Node portfolio project, we can start to see the shape of where this is heading.
+
+A future version of that project could absolutely be split into services like:
+
+- a Node/Express API container
+- a MongoDB container
+
+That is the mental model we are building now.
+
+The app itself is familiar.
+
+The packaging is what is new.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://microservices.io/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Introduction to Microservices
+</LinkButton>
+
+### ⏭ Scaffolding the API
+
+Now that we know what this service is for, let’s create the minimal application files that our container will eventually run.

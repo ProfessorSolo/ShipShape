@@ -1,0 +1,118 @@
+---
+title: "Enter Docker Compose"
+description: "Moving from manual container commands to a single declarative configuration."
+sidebar:
+  order: 10
+  label: "Enter Docker Compose"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+If the manual orchestration step felt clunky, fragile, and just a little obnoxious, that is because it was.
+
+Creating networks by hand, remembering container names, rebuilding images, re-running long `docker run` commands, and keeping all the flags straight does not scale very gracefully.
+
+This is where **Docker Compose** enters the chat.
+
+## What Docker Compose Gives Us
+
+Docker Compose lets us define a multi-container application in a single file.
+
+Instead of typing a whole sequence of container commands ourselves, we describe the services we want, and Compose handles the setup.
+
+That means Compose can manage things like:
+
+- which services exist
+- which image or build instructions each service uses
+- which ports are exposed
+- which services should run together
+- the shared network they use to communicate
+
+That is a much nicer deal.
+
+## From Imperative to Declarative
+
+This is the real conceptual shift.
+
+When we were manually orchestrating containers, we were working **imperatively**.
+
+That means we were telling Docker exactly how to do each little step:
+
+- create this network
+- run this container
+- attach this name
+- map this port
+- rebuild this image
+- re-run this service
+
+With Compose, we move to a more **declarative** style.
+
+Instead of spelling out every step by hand, we describe the environment we want and let Docker Compose bring it into existence.
+
+<NoteBox title="Imperative vs. Declarative">
+  Manual Docker commands are very step-by-step.
+
+  Compose is more like saying, “Here is the setup I want. Please make reality
+  match this file.”
+</NoteBox>
+
+## Why This Matters
+
+Manual orchestration was useful because it showed us what was really happening under the hood.
+
+Now that we understand the moving parts, Compose can start feeling like a convenience instead of mysterious wizardry.
+
+That is the sweet spot:
+
+- we know what networks are doing
+- we know why service names matter
+- we know why rebuilding is sometimes necessary
+- and now we are ready to describe all of that in one place
+
+## One File, Shared Setup
+
+A Compose file is especially useful on a team.
+
+Instead of every developer maintaining their own mental checklist of commands, the project can keep its setup in version control right alongside the code.
+
+That makes the environment:
+
+- easier to share
+- easier to repeat
+- easier to understand
+
+<CautionBox title="Compose Is Not Magic">
+  Docker Compose does not replace Docker.
+
+  It sits on top of Docker and helps coordinate multiple containers more
+  cleanly. Under the hood, the same core ideas are still in play: images,
+  containers, ports, networks, and volumes.
+</CautionBox>
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/10-imperative-vs-declarative.png"
+  alt="Metaphorical diagram showing a long terminal history of messy individual commands on the left, being replaced on the right by a single, sharp compose.yaml file that projects the entire stack into a clean, networked reality."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The shift from Imperative to Declarative. Instead of executing a long string of manual 'how-to' commands, we simply provide a 'compose.yaml' blueprint that describes our desired end-state._
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Official Docker Compose Overview
+</LinkButton>
+
+### ⏭ Writing the First Compose File
+
+Now that we know what Compose is for, let’s create our first `compose.yaml` and describe both services in one place.

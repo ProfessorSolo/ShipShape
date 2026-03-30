@@ -1,0 +1,160 @@
+---
+title: "Step Inside"
+description: "Using docker exec to open mongosh inside the MongoDB container and create a first database, collection, and document."
+sidebar:
+  order: 2
+  label: "Step Inside"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Our MongoDB container is running, but we have not actually _used_ it yet.
+
+Before we move on to seeding, we want to step inside the container, connect with `mongosh`, and create a first real document.
+
+## Why This Matters
+
+A running container is nice, but we want proof that MongoDB is actually working.
+
+In this step, we will:
+
+- use `docker exec` to run a command inside the container
+- connect to MongoDB with `mongosh`
+- create a database named `portfolio`
+- create a `projects` collection by inserting a first document
+- confirm that the document exists
+
+That gives us a clean little win before we move into more automated setup.
+
+## A Quick Detour: `docker exec`
+
+The `docker exec` command lets us run a command **inside a container that is already running**.
+
+That makes it incredibly handy for things like:
+
+- opening a shell inside a container
+- running database tools
+- checking files and folders
+- debugging what is happening inside a service
+
+In our case, we are using it to launch the MongoDB shell from inside the MongoDB container.
+
+```bash
+docker exec -it db_service mongosh
+```
+
+## Breaking Down the Command
+
+- **`docker exec`** runs a command inside an already running container
+- **`-it`** keeps the session interactive so we can type commands
+- **`db_service`** is the name of the running MongoDB container
+- **`mongosh`** launches the MongoDB shell inside that container
+
+If all goes well, we should end up at a MongoDB prompt.
+
+<NoteBox title="Why Not Just Connect from the Host?">
+  We did not publish port `27017` to the host machine, so this database is not
+  meant to be accessed directly from our laptop tools yet.
+
+For now, stepping inside the container is the simplest and clearest approach.
+
+</NoteBox>
+
+## Creating the `portfolio` Database
+
+Inside `mongosh`, switch to a database named `portfolio`:
+
+```javascript
+use portfolio
+```
+
+MongoDB creates databases lazily, which means the database will not really exist until it contains data.
+
+So right now, we have selected the database name, but we have not actually stored anything yet.
+
+## Creating the First Collection and Document
+
+Now let’s insert one document into a `projects` collection:
+
+```javascript
+db.projects.insertOne({
+  title: "Professor Solo Portfolio",
+  slug: "professor-solo-portfolio",
+  category: "web-development",
+  featured: true,
+});
+```
+
+A few neat things happen here:
+
+- if the `projects` collection does not exist yet, MongoDB creates it
+- if the `portfolio` database does not exist yet, MongoDB creates it
+- the inserted object becomes the first document in that collection
+
+Very chill. Very MongoDB.
+
+## Confirming That It Worked
+
+Now let’s check whether the document is there:
+
+```javascript
+db.projects.find();
+```
+
+We should see the document we just inserted.
+
+We can also check which collections exist in the current database:
+
+```javascript
+show collections
+```
+
+And if we want to confirm our current database:
+
+```javascript
+db;
+```
+
+## What We Just Proved
+
+With only a few commands, we confirmed that:
+
+- the container is running
+- MongoDB accepts connections
+- the `portfolio` database can be used
+- the `projects` collection now exists
+- data can be written and queried successfully
+
+That is a proper first checkpoint.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/02-docker-exec-mongosh-session.png"
+  alt="Technical schematic showing a 'Laptop' terminal opening a secure 'docker exec' tunnel into the 'db_service' container to run the 'mongosh' process internally."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: A technical schematic showing a 'Laptop' terminal opening a secure 'docker exec' tunnel into the 'db_service' container to run the 'mongosh' process internally._
+
+<CautionBox title="Still Ephemeral">
+  We have not attached a named volume yet.
+
+That means this document currently lives only inside the container’s writable
+layer. If the container is removed, the data goes with it.
+
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/container/exec/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Exec Reference
+</LinkButton>

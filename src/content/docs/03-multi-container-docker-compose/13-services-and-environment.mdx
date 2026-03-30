@@ -1,0 +1,160 @@
+---
+title: "Services & Environment"
+description: "Using Docker Compose to pull values from .env into our compose.yaml file."
+sidebar:
+  order: 13
+  label: "Services & Environment"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We already know what a `.env` file is.
+
+The new twist here is that **Docker Compose automatically looks for one**.
+
+If a `.env` file sits beside our `compose.yaml`, Compose can load its values and substitute them directly into the YAML.
+
+That means this:
+
+```yaml
+environment:
+  - MONGO_URI=${MONGO_URI}
+```
+
+can pull from this:
+
+```env
+MONGO_URI=mongodb://db_service:27017/portfolio
+```
+
+Very handy.
+
+## The Real Upgrade
+
+So far, our API has been depending on a MongoDB connection string.
+
+We do **not** want to hardcode that into `server.js`.
+
+Instead, we want the app to read from:
+
+```javascript
+const MONGO_URI = process.env.MONGO_URI;
+```
+
+That part should already feel familiar.
+
+What is new here is that Compose can automatically substitute `${MONGO_URI}` from a project-level `.env` file into the service definition. Docker documents both the interpolation syntax and the default `.env` loading behavior. [oai_citation:1‡Docker Documentation](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/)
+
+## The `.env` File
+
+Create a `.env` file beside our `compose.yaml` file:
+
+```env
+MONGO_URI=mongodb://db_service:27017/portfolio
+```
+
+That gives Compose a value it can use while reading the YAML.
+
+## Updating `compose.yaml`
+
+Now update the API service:
+
+```yaml
+services:
+  api_service:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+
+  db_service:
+    image: mongo:8.0
+```
+
+Compose supports the `environment` attribute for setting container environment variables, and Docker’s docs show `${VAR}` interpolation working with values from `.env`.
+
+## What Is Actually Happening Here?
+
+There are really two steps:
+
+1. Compose reads `.env`
+2. Compose substitutes `${MONGO_URI}` into the `environment` block
+
+Then the container starts, and Node sees that value as `process.env.MONGO_URI`.
+
+That is the bridge.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/13-env-var-injection.png"
+  alt="Environment variable flow diagram: Step 1 shows a .env file providing a value. Step 2 shows Compose interpolating that value into the YAML manifest. Step 3 shows the final value being injected into the container's runtime process."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Triple-Leap. Environment variables travel from your local .env file, through the Compose interpolation engine, and finally land inside the containerized process as accessible runtime variables._
+
+<NoteBox title="The Surprise Bit">
+  The neat part is not the `.env` file itself.
+
+  The neat part is that Compose automatically reads it for YAML interpolation, so
+  we do not have to manually feed those values into the file every time.
+
+</NoteBox>
+
+## A Useful Distinction
+
+There are two similar-looking ideas here:
+
+- the project-level `.env` file used by Compose for interpolation
+- `env_file`, which is another Compose feature for loading environment files into containers
+
+For this lesson, we are using the first one because it is the cleanest way to show `${MONGO_URI}` appearing in `compose.yaml`. Docker documents `env_file` separately from interpolation.
+
+<CautionBox title="Automatic Does Not Mean Magical">
+  Compose auto-loads `.env`, but only if it can find it in the expected place or
+  if we explicitly provide one with `--env-file`.
+
+If the file is missing or we are in the wrong working directory, the values
+will not appear the way we expect. Docker documents both the default loading
+behavior and the `--env-file` override.
+
+</CautionBox>
+
+## Rebuild and Run
+
+Since the app now reads from `process.env.MONGO_URI`, rebuild and start the stack:
+
+```bash
+docker compose up --build
+```
+
+That rebuilds the API image and starts the services with the new config path in place.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Variable Interpolation
+</LinkButton>
+
+<LinkButton
+  href="https://docs.docker.com/compose/how-tos/environment-variables/set-environment-variables/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Compose Set Environment Variables
+</LinkButton>
+
+### ⏭ The Control Surface
+
+Now that the config is flowing through Compose properly, let’s look at the everyday workflow for managing the stack's lifecycle.

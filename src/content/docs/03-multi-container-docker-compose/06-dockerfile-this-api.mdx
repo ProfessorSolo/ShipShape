@@ -1,0 +1,115 @@
+---
+title: "Dockerfile it"
+description: "Refreshing the Dockerfile pattern and using it to package our API service into an image."
+sidebar:
+  order: 6
+  label: "Dockerfile it"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We already met the Dockerfile in the previous lesson, so this page is more of a refresher than a grand reveal.
+
+Now we are applying that same pattern to a small Node/Express API.
+
+## The Dockerfile
+
+Create a file named `Dockerfile` in our API folder:
+
+```dockerfile
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+## A Quick Refresher
+
+This should look familiar.
+
+Each instruction plays a specific role:
+
+- **`FROM node:20-slim`** starts from a Node.js base image
+- **`WORKDIR /app`** sets the working directory inside the container
+- **`COPY package*.json ./`** copies the package files first
+- **`RUN npm install`** installs the app dependencies
+- **`COPY . .`** copies the rest of the application files
+- **`EXPOSE 3000`** documents the port the app listens on
+- **`CMD ["node", "server.js"]`** tells the container what to run when it starts
+
+<NoteBox title="Familiar Recipe, New Context">
+  The Dockerfile itself is not doing anything wildly new here.
+
+What changes is the context: instead of containerizing a tiny one-off demo, we
+are now packaging a service that will become part of a multi-container setup.
+
+</NoteBox>
+
+## Why Copy `package.json` First?
+
+We may remember this little optimization from last class.
+
+We copy the package files before the rest of the app so Docker can cache the dependency installation layer more effectively.
+
+That means if we change `server.js` but do **not** change our dependencies, Docker may be able to reuse the existing `npm install` layer instead of reinstalling everything.
+
+Small move. Nice payoff.
+
+<img
+  src="/assets/lessons/03-multi-container-docker-compose/06-docker-layer-stack.png"
+  alt="Diagram showing the Docker layer stack. Lower blocks like 'FROM' and 'RUN npm install' are cached and locked, while the 'COPY . .' block is highlighted as the active change zone where rebuilding happens."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Docker layer stack. By placing dependency installation before application code, we allow Docker to reuse the 'Cached' layers, drastically speeding up subsequent builds._
+
+## Why `node:20-slim`?
+
+For this lesson, `node:20-slim` is a solid choice because it gives us:
+
+- a current Node runtime
+- a smaller image than the full Node base image
+- enough simplicity for classroom use
+
+We are not trying to optimize every byte right now. We just want a clean, sensible base image for our API service.
+
+<CautionBox title="Do Not Overcomplicate the Base Image">
+  This is not the moment to go spelunking through twenty different Node image
+  variants trying to shave off every possible megabyte.
+
+For class, clarity and reliability win.
+
+</CautionBox>
+
+## The Main Idea
+
+The Dockerfile is the blueprint that turns our API folder into something Docker can build into an image.
+
+Without it, Docker has no recipe.
+
+With it, we can package our Node app into a portable, repeatable unit that can run the same way on different machines.
+
+That is the part that matters.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/build/concepts/dockerfile/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Dockerfile Overview
+</LinkButton>
+
+### ⏭ Building the API Image
+
+Now that the blueprint is in place, let’s build the image and turn these files into something Docker can actually run.

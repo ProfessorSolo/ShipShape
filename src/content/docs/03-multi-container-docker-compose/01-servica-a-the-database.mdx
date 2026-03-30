@@ -1,6 +1,6 @@
 ---
 title: "Service A: The Database"
-description: "Launching and seeding our first specialized service: MongoDB."
+description: "Launching MongoDB as its own service and preparing for persistent local development."
 sidebar:
   order: 1
   label: "Service A: The Database"
@@ -10,97 +10,112 @@ import { LinkButton } from "@astrojs/starlight/components";
 import NoteBox from "../../../components/NoteBox.astro";
 import CautionBox from "../../../components/CautionBox.astro";
 
-Before we can build our API, we need a place to store our data. We’re moving away from the "all-in-one" mindset and launching our database as a standalone, specialized service.
+Before we can build a multi-container app, we need a data layer that runs as its **own service**.
 
-For this project, we are using **MongoDB 7.0**. It is a NoSQL database that stores data in flexible, JSON-like documents—perfect for our Node.js environment.
+In earlier work, we mostly interacted with MongoDB through **Atlas**. That was convenient, fast, and absolutely the right choice for many app projects. But in this lesson, we’re staying **local** on purpose so we can see how Docker Compose handles service coordination and, soon, **persistent volumes**.
 
-## Launching the Foundation
+We are not here to become MongoDB power users today. We are here to understand what it means for a database to live in its **own container**.
 
-To get started, we need to pull the official image from Docker Hub and run it. We want this service to run in the background and have a recognizable name so we can find it later.
+## Why the Database Gets Its Own Container
 
-Run the following command in your terminal:
+Once we move beyond a single-container app, we stop treating everything as one giant bundled machine.
 
-```bash
-docker run -d --name db_service mongo:7.0
-```
+Our database has a different job than our Node app:
 
-### Breaking Down the Command:
+- the **API service** runs our application logic
+- the **database service** stores and retrieves data
+- each service can be started, stopped, replaced, and debugged independently
 
-- **`-d`**: Runs the container in "detached" mode (the background).
-- **`--name db_service`**: Assigns a human-readable name to the container. Without this, Docker would assign a random name like `vibrant_einstein`.
-- **`mongo:7.0`**: Specifies the exact version of the image we want to pull.
+That separation is the whole game.
 
-<NoteBox title="The Automatic Pull">
-  If we see a series of "Pulling from library/mongo" progress bars, don't
-  worry—our terminal hasn't frozen. If docker run doesn't find the requested
-  image in our local cache, it automatically reaches out to Docker Hub to fetch
-  it for us. This "lazy loading" ensures we have the correct blueprint before
-  the container engine attempts to ignite.
+A local MongoDB container also gives us a nice bridge. We already have a Node portfolio project backed by MongoDB, so we're not far away from containerizing it.
+
+<NoteBox title="Not a MongoDB Lesson">
+  We already know what MongoDB is and what collections/documents look like.
+  Here, MongoDB is mainly our **stateful service**—the part of the stack that
+  gives us something meaningful to connect to and, later, something meaningful
+  to persist.
 </NoteBox>
 
-## Seeding the Cargo
+## Launching MongoDB, in a Container, Manually
 
-A database without data is just an empty warehouse. To make our upcoming API useful, we need to "seed" the database with some initial records.
+To start, we’ll launch MongoDB the manual way so we can feel the setup friction before Compose comes in to save the day.
 
-First, create a file on your local machine named `shipments.json` and paste the following "seed data" inside:
-
-```json
-[
-  { "item": "Navigational Computer", "status": "In Transit", "quantity": 5 },
-  { "item": "Fusion Core", "status": "Docked", "quantity": 2 },
-  { "item": "Plasma Shield", "status": "Processing", "quantity": 10 }
-]
-```
-
-Now, we need to get this file **into** the container and import it into a collection called `inventory`.
+Run this in a terminal:
 
 ```bash
-# 1. Copy the file into the running container
-docker cp shipments.json db_service:/tmp/shipments.json
-
-# 2. Run the import tool inside the container
-docker exec db_service mongoimport --db shipshape --collection inventory --file /tmp/shipments.json --jsonArray
+docker run -d --name db_service mongo:8.0
 ```
 
-{/* T.A. Watts Image Placeholder: A technical terminal view showing the 'docker cp' command successfully moving a data payload from the host machine into the isolated database container. */}
+## Breaking Down the Command
 
-## Verification
+- **`docker run`** creates and starts a container from an image
+- **`-d`** runs it in detached mode so it stays in the background
+- **`--name db_service`** gives the container a predictable name
+- **`mongo:8.0`** pulls and runs the MongoDB 8.0 image
 
-We need to be certain our data is actually there before we try to connect an API to it. We can "remote into" the database service and query the collection directly.
+<NoteBox title="Where did that image come from">
 
-```bash
-docker exec -it db_service mongosh shipshape --eval "db.inventory.find()"
-```
+If an image is not already on our machine, Docker will automatically search for and fetch it from Docker Hub!
 
-If you see your three JSON objects printed in the terminal, your foundation is secure.
-
-<NoteBox title="Why 27017?">
-  By default, MongoDB listens on port `27017`. Since we didn't use the `-p` flag
-  in our `docker run` command, this port is currently **only accessible** from
-  inside the Docker environment. Our laptop's OS cannot see it yet. This is
-  intentional—we want our data "moored" securely.
 </NoteBox>
 
-<CautionBox title="Ephemeral Warning">
-  Because we launched this container without a volume, any data we just imported
-  is **temporary**. If we stop and remove this container (`docker rm -f
-  db_service`), our seed data will vanish. We'll solve this "Persistence
-  Problem" later in the lesson.
-</CautionBox>
+## How to Choose an Image Tag
+
+When we look up an image on Docker Hub, we’ll usually see many, many tags.
+
+To select the right image for our purposes, a few simple rules go a long way:
+
+- avoid **`latest`** unless we truly want whatever changed most recently. The bleeding edge is not always our friend.
+- pin a **major version** for reasonable stability without over-controlling every patch - in this case `mongo:8.0`
+- **ALWAYS** prefer official or clearly maintained images, unless we have a very good reason not to.
+
+For this lesson, `mongo:8.0` is a good fit because it is modern and stable and official.
+
+<NoteBox title="More Image Selection Info">
+  When comparing images on Docker Hub, look for a few things:{" "}
+  <ul>
+    <li> who maintains the image </li>
+    <li> whether the tags are current and clearly versioned </li>
+    <li> whether the image has good documentation </li>
+    <li>
+      {" "}
+      whether the priority is simplicity, small size, or maximum control{" "}
+    </li>
+  </ul>
+</NoteBox>
+
+## Verifying That Our MongoDB Service Is Running
+
+Now let’s confirm that the container actually exists and is alive:
+
+```bash
+docker ps
+```
+
+We should see a running container named `db_service`.
+
+We can also inspect its logs:
+
+```bash
+docker logs db_service
+```
+
+At this stage, we are not trying to do anything fancy. We just want proof that our database service is up and waiting.
 
 ---
 
 ## Extra Bits & Bytes
 
 <LinkButton
-  href="https://www.mongodb.com/docs/manual/tutorial/getting-started/"
+  href="https://hub.docker.com/_/mongo"
   icon="external"
   variant="secondary"
   target="_blank"
 >
-  MongoDB: The Basics
+  Official MongoDB Image on Docker Hub
 </LinkButton>
 
-### ⏭ Service B: The API
+### ⏭ Step into the Database
 
-The data is waiting. Now we need to build the "Service B" vessel: a Node.js API designed to reach out and fetch these records.
+The service is alive. Let's step into it and see what we can do.

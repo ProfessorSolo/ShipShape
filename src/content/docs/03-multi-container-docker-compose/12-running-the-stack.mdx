@@ -1,0 +1,97 @@
+---
+title: "Running the Stack"
+description: "Using docker compose to launch both services together from a single manifest."
+sidebar:
+  order: 12
+  label: "Running the Stack"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We now have a `compose.yaml` file that describes both services. 
+
+Time to cash in. 
+
+Instead of launching containers one at a time with a pile of manual commands, we can now ask Docker Compose to bring the whole stack up for us.
+
+## Starting the Stack
+
+From the folder containing `compose.yaml`, run:
+
+```bash
+docker compose up
+```
+
+Compose will read the file, build what needs to be built, pull what needs to be pulled, create the network, and start the services. 
+
+That is already a lot less nonsense than the manual approach.
+
+## Foreground Is for Learning
+
+By default, `docker compose up` keeps the logs attached to our terminal. This is exactly what we want right now. 
+
+We can watch both services start in real time and, more importantly, spot connection issues immediately as they scroll past.
+
+<NoteBox title="Watch the Output">
+  When we are still figuring out what is happening, attached logs are our
+  friend. 
+  
+  They make the system feel much less mysterious.
+</NoteBox>
+
+## What We Should Expect
+
+If this is our first run, Compose may need a moment to:
+
+- build the API image
+- download the MongoDB image
+- create the containers
+- create the network
+
+Once the logs settle and we see the API is listening, we can test it at:
+
+```text
+http://localhost:3000/api/projects
+```
+
+## It Works, But It Is Brittle
+
+At this point, Compose has made startup much easier. 
+
+But we still have one important issue floating around in the background:
+
+- Our app code is still hardcoded to connect to MongoDB in a way that belongs in configuration, not in source code.
+
+So yes, Compose improves orchestration immediately. 
+
+But no, we are not fully cleaned up yet.
+
+<CautionBox title="Easy Startup Does Not Automatically Mean Good Configuration">
+  Compose can start the stack beautifully, but it does not magically fix bad
+  configuration choices inside our app.
+
+  If important values are still hardcoded, we still have work to do.
+</CautionBox>
+
+## Next Steps
+
+Now that we have seen the power of "one command to rule them all," we need to make that command smarter by stripping out the hardcoded secrets and connection strings.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/cli/docker/compose/up/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Compose Up Reference
+</LinkButton>
+
+### ⏭ Services & Environment
+
+Compose now manages the stack, but our configuration still needs work. Next, we’ll clean up service settings and move important values into environment-based config.
