@@ -1,14 +1,14 @@
 ---
-title: "The Shipping Manifest Log: Docker Compose"
-description: "Key takeaways and tactical command recap for multi-container orchestration."
+title: 'The Shipping Manifest Log: Docker Compose'
+description: 'Key takeaways and tactical command recap for multi-container orchestration.'
 sidebar:
   order: 99
-  label: "The Shipping Manifest"
+  label: 'The Shipping Manifest'
 ---
 
-import { LinkButton } from "@astrojs/starlight/components";
-import NoteBox from "../../../components/NoteBox.astro";
-import CautionBox from "../../../components/CautionBox.astro";
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
 
 {/* T.A. Watts Image Placeholder: A sleek, glowing datapad titled "The Orchestration Manifest," displaying a summarized view of a multi-container stack architecture. */}
 
@@ -23,9 +23,9 @@ import CautionBox from "../../../components/CautionBox.astro";
 | `environment:`              | Passes environment variables into a container.                   | `- MONGO_URI=${MONGO_URI}`                          |
 | `volumes:`                  | Defines persistent storage or file mounts.                       | `- mongo_data:/data/db`                             |
 | `docker exec -it`           | Runs an interactive command inside a running container.          | `docker exec -it db_service mongosh`                |
-| `docker cp`                 | Copies files between our machine and a container.               | `docker cp projects.json db_service:/projects.json` |
+| `docker cp`                 | Copies files between our machine and a container.                | `docker cp projects.json db_service:/projects.json` |
 | `docker compose exec`       | Runs a command inside a running Compose-managed service.         | `docker compose exec db_service mongosh`            |
-| `docker compose up`         | Starts the stack and attaches the logs to our terminal.         | `docker compose up`                                 |
+| `docker compose up`         | Starts the stack and attaches the logs to our terminal.          | `docker compose up`                                 |
 | `docker compose up -d`      | Starts the stack in the background.                              | `docker compose up -d`                              |
 | `docker compose up --build` | Rebuilds images as needed before starting the stack.             | `docker compose up --build`                         |
 | `docker compose down`       | Stops and removes containers and the project network.            | `docker compose down`                               |
@@ -91,6 +91,24 @@ data can be deleted too.
   target="_blank"
 >
   Official Compose Documentation
+</LinkButton>
+
+<LinkButton
+  href="/assets/resources/slide-decks/03-multi-container-docker-compose/Orchestrating_the_Fleet.pdf"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Multi-Container Docker Compose Study Guide
+</LinkButton>
+
+<LinkButton
+  href="https://github.com/ProfessorSolo/ShipShape-03-01-Docker-Compose.git"
+  icon="external"
+  variant="primary"
+  target="_blank"
+>
+  Complete Docker Compose Demo GitHub Repo
 </LinkButton>
 
 ### ⏭ Beyond the Harbor

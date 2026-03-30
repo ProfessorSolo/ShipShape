@@ -54,8 +54,9 @@ Instead of spelling out every step by hand, we describe the environment we want 
 <NoteBox title="Imperative vs. Declarative">
   Manual Docker commands are very step-by-step.
 
-  Compose is more like saying, “Here is the setup I want. Please make reality
-  match this file.”
+Compose is more like saying, “Here is the setup I want. Please make reality
+match this file.”
+
 </NoteBox>
 
 ## Why This Matters
@@ -86,14 +87,15 @@ That makes the environment:
 <CautionBox title="Compose Is Not Magic">
   Docker Compose does not replace Docker.
 
-  It sits on top of Docker and helps coordinate multiple containers more
-  cleanly. Under the hood, the same core ideas are still in play: images,
-  containers, ports, networks, and volumes.
+It sits on top of Docker and helps coordinate multiple containers more
+cleanly. Under the hood, the same core ideas are still in play: images,
+containers, ports, networks, and volumes.
+
 </CautionBox>
 
 <img
-  src="/assets/lessons/03-multi-container-docker-compose/10-imperative-vs-declarative.png"
-  alt="Metaphorical diagram showing a long terminal history of messy individual commands on the left, being replaced on the right by a single, sharp compose.yaml file that projects the entire stack into a clean, networked reality."
+  src="/assets/resources/infographics/03-multi-container-docker-compose/10-enter-docker-compose.png"
+  alt="The Shift from Imperative to Declarative. Instead of executing a long string of manual 'how-to' commands, we simply provide a 'compose.yaml' blueprint that describes our desired end-state."
   width="1600"
   loading="lazy"
 />

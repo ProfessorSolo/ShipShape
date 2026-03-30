@@ -23,7 +23,7 @@ const COURSE_MODULES = [
   {
     label: 'Multi-Container Docker',
     directory: '03-multi-container-docker-compose',
-    released: false,
+    released: true,
   },
   //   {
   //     label: 'Sleek Templating with Pug',

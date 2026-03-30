@@ -42,8 +42,9 @@ If something is missing, exited, or restarting over and over, this is a good fir
 <NoteBox title="Start with Visibility">
   Before we try random fixes, make sure we know what is actually running.
 
-  A surprising amount of debugging starts with realizing a container is not up
-  at all.
+A surprising amount of debugging starts with realizing a container is not up
+at all.
+
 </NoteBox>
 
 ## Read the Logs
@@ -120,8 +121,9 @@ That tells Compose to rebuild images as needed before starting the services.
   If our code changes are not showing up, there is a good chance we are still
   running an older image.
 
-  Containers do not magically absorb source code changes unless our setup is
-  explicitly designed for that.
+Containers do not magically absorb source code changes unless our setup is
+explicitly designed for that.
+
 </CautionBox>
 
 ## Common Trouble Spots
@@ -173,8 +175,8 @@ A better sequence is:
 5. rebuild only when the issue actually points there
 
 <img
-  src="/assets/lessons/03-multi-container-docker-compose/17-debugging-workflow-loop.png"
-  alt="Workflow diagram showing a circular loop of debugging steps: Status (ps), Logs (logs), Config (env/yaml), Exec (sh/mongosh), and Reset (up --build). A container with a warning icon is in the center."
+  src="/assets/resources/infographics/03-multi-container-docker-compose/17-workflow-and-debugging.png"
+  alt="The Dev Workflow Loop. When the stack isn't behaving, follow this logical cycle to reveal the underlying issue. Most 'mysteries' are solved between steps 1 and 3."
   width="1600"
   loading="lazy"
 />
@@ -186,7 +188,8 @@ That is calmer, faster, and usually much less cursed.
 <NoteBox title="Debug the System You Actually Have">
   Do not debug the version of the stack you *think* is running.
 
-  Debug the one that is actually running right now.
+Debug the one that is actually running right now.
+
 </NoteBox>
 
 ## The Real Lesson Here

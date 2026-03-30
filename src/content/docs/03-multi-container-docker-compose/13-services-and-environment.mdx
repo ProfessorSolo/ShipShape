@@ -31,6 +31,15 @@ MONGO_URI=mongodb://db_service:27017/portfolio
 
 Very handy.
 
+<img
+  src="/assets/resources/infographics/03-multi-container-docker-compose/13-services-and-environment.png"
+  alt="Environment Variable Pipeline in Docker Compose"
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1: The Environment Variable Pipeline in Docker Compose_
+
 ## The Real Upgrade
 
 So far, our API has been depending on a MongoDB connection string.
@@ -99,8 +108,8 @@ _Figure 1: The Triple-Leap. Environment variables travel from your local .env fi
 <NoteBox title="The Surprise Bit">
   The neat part is not the `.env` file itself.
 
-  The neat part is that Compose automatically reads it for YAML interpolation, so
-  we do not have to manually feed those values into the file every time.
+The neat part is that Compose automatically reads it for YAML interpolation, so
+we do not have to manually feed those values into the file every time.
 
 </NoteBox>
 
