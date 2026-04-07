@@ -1,0 +1,60 @@
+---
+title: "The Render Runtime"
+description: "Introducing Render as the managed host for our application."
+sidebar:
+  order: 4
+  label: "The Render Runtime"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+To get Voyagers Log online, we need a platform capable of securely hosting Node applications. We need a system that can pull our code, build it, run the startup script, and publicly route traffic to it.
+
+For this deployment sequence, we are using **Render**.
+
+## What Render Actually Is
+
+It is easy to get swamped by cloud buzzwords, so let's keep it grounded. Render is not a mystical cloud intelligence. It is a highly opinionated Platform-as-a-Service (PaaS). 
+
+Its entire job is to be the host engine for our application. 
+
+We provide it with our application source code, and Render handles the dull, complicated mechanics:
+- Provisioning the server space
+- Executing the container builds
+- Routing the public web traffic to the correct internal port
+- Managing the SSL certificates
+
+<NoteBox title="Platform Focus">
+  Render handles application hosting, not the entire universe of enterprise orchestration. It lets us drop in the code without having to play systems administrator to the underlying Linux servers. It is delightfully practical.
+</NoteBox>
+
+## Leaving Orchestration Behind
+
+In our local setup, we used Docker Compose to orchestrate both our application and our database. 
+
+On Render, we are only defining the application service. Render essentially says, "I see we have an application. Tell me how to build it and how to run it, and I will keep it alive." 
+
+<CautionBox title="Render Does Not Read Minds">
+  Render will run our application, but it will not magically know what our application relies on. If our application expects certain environment variables, or expects to connect to a specific database hostname, we are entirely responsible for providing that information to Render during configuration.
+</CautionBox>
+
+Render is taking on the role of the engine room. It will keep the propellers turning. But a functioning web application requires persistent memory. So if Render is running the logic, where is the data living?
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/web-services"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Render Web Services Documentation
+</LinkButton>
+
+### ⏭ The Atlas Return
+
+An application without state is prone to amnesia. Next, we hook up an old, reliable friend to manage the data.

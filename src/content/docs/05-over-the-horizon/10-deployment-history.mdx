@@ -1,0 +1,263 @@
+---
+title: "Deployment History"
+description: "Using deployment timelines to connect production behavior to recent changes instead of guessing blindly."
+sidebar:
+  order: 10
+  label: "Deployment History"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Once an application is live, one of the most useful debugging questions is also one of the simplest:
+
+**what changed?**
+
+When something starts behaving strangely in production, it is tempting to dive straight into code, logs, or theories.
+
+Sometimes that is appropriate.
+
+But often the first thing we should check is much more basic:
+
+> Did we just deploy something?
+
+## Why Time Matters So Much
+
+Production issues rarely happen in a vacuum.
+
+If an application was healthy all morning and then suddenly starts failing in the afternoon, the timing matters.
+
+That is especially true when the failure appears sharp rather than gradual.
+
+For example:
+
+- requests were fine
+- then they weren’t
+- nothing obvious changed from the user’s perspective
+- the shift happened at a very specific time
+
+That kind of pattern should immediately make us think about deployment history.
+
+Because software often breaks right after humans change it.
+
+Not always.
+But often enough that it should be one of our first instincts.
+
+<CautionBox title="Do Not Treat Time as Background Noise">
+  In operations, timestamps are not decoration. If something broke at a specific
+  moment, that moment may line up with a deploy, a restart, a config change, or
+  another action that explains the behavior much faster than guessing from
+  scratch.
+</CautionBox>
+
+---
+
+## Version Tells Us _What_. History Tells Us _When_.
+
+On the previous page, we added a version endpoint so the app could identify the release currently running.
+
+That helps answer:
+
+- what version is live?
+
+Deployment history adds another crucial piece:
+
+- when did that version become live?
+- what was running immediately before it?
+- what change triggered the shift?
+
+That combination is powerful.
+
+### `/version`
+
+Tells us the app’s current identity
+
+### Deployment history
+
+Tells us the timeline of how the app got there
+
+That is how ambiguity starts to disappear.
+
+---
+
+## Why Platforms Help Here
+
+A managed platform like Render usually keeps a record of deployments.
+
+That record often includes things like:
+
+- deploy time
+- deploy status
+- source commit
+- branch
+- build or release events
+
+That gives us a timeline we can compare against observed behavior.
+
+For example, if users start reporting failures around **2:15 PM**, and the deployment history shows a new release went live at **2:14 PM**, then we have not solved the problem yet, but we definitely have a strong lead.
+
+That is already much better than shrugging at the sky and muttering about “cloud weirdness.”
+
+<NoteBox title="The Deployment Record Gives You a Suspect">
+  A deploy that happened immediately before a production issue does not
+  automatically prove the deploy caused it. But it absolutely earns a place at
+  the top of the suspect list.
+</NoteBox>
+
+---
+
+## A Very Practical Operator Habit
+
+When something breaks in production, a healthy habit is to ask these questions in order:
+
+1. **What is happening?**
+2. **When did it start?**
+3. **What changed right before that?**
+4. **Did a deployment happen?**
+
+That habit keeps you from wasting energy on random speculation.
+
+Instead of treating the incident like an unsolved cosmic riddle, you start by checking the system’s recent timeline.
+
+That is much more grounded.
+
+---
+
+## Rollback Is Not Failure
+
+Once students start thinking in deployment timelines, another very important idea becomes much easier to introduce:
+
+**rollback is normal.**
+
+If a new release goes live and clearly correlates with widespread problems, the first priority is not heroic live surgery.
+
+The first priority is to reduce harm.
+
+That often means reverting to the previous known-good version.
+
+<CautionBox title="Do Not Romanticize Fixing Production Live">
+  If a fresh deploy clearly introduced a serious problem, the professional move
+  is often to restore service first and diagnose second. Rollback is not
+  weakness. It is risk control.
+</CautionBox>
+
+That is an important mindset shift.
+
+A rollback is not an admission that you are bad at software.
+It is a sign that you understand software is a live system with users attached to it.
+
+That is maturity.
+
+---
+
+## Why Rollback Works Best with Good History
+
+Rollback only feels easy and obvious when the deployment trail is clear.
+
+If you know:
+
+- what version is live now
+- what version was live before
+- when the deploy happened
+- what commit or release introduced the change
+
+then recovery becomes much calmer.
+
+Without that history, you end up asking miserable questions like:
+
+- wait, what was the last good version?
+- which commit did that come from?
+- was this the hotfix or the later cleanup push?
+- are we sure we are reverting to the right thing?
+
+Deployment history reduces that confusion.
+
+That is why it matters so much.
+
+---
+
+## How This Fits with the Version Endpoint
+
+The `/version` route and deployment history work really well together.
+
+Imagine this sequence:
+
+- users report that a new bug just appeared
+- you check `/version` and see `v1.2.1`
+- you check the deployment record and confirm `v1.2.1` went live five minutes before the reports started
+- you now know both:
+  - what version is running
+  - when it was introduced
+
+That is a much stronger operational footing than “I think the latest deploy maybe finished?”
+
+This is exactly why small operational signals matter.
+They reduce uncertainty at the moments when uncertainty is most annoying.
+
+---
+
+## What This Page Is Really Teaching
+
+This page is not just about clicking around in a platform dashboard.
+
+It is about teaching students to connect behavior to change over time.
+
+That is one of the most important habits in production support.
+
+Instead of asking:
+
+- what random thing could be wrong?
+
+we start asking:
+
+- what changed?
+- when did it change?
+- how closely does that line up with the failure?
+
+That shift turns debugging into investigation instead of superstition.
+
+<NoteBox title="Operations Is Often Timeline Work">
+  A surprising amount of production debugging comes down to reconstructing a
+  timeline: what was healthy, what changed, when it changed, and what happened
+  immediately after. Deployment history is one of the clearest timeline tools we
+  have.
+</NoteBox>
+
+---
+
+## What We Have Accomplished
+
+At this point, our production-awareness toolkit now includes:
+
+- startup logs
+- request logs
+- error logs
+- a heartbeat endpoint
+- a version endpoint
+- a deployment timeline
+
+That is a very solid first set of operational signals for a small deployed app.
+
+And importantly, they all help answer different questions.
+
+This page gave us the time dimension.
+
+That is huge.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://martinfowler.com/bliki/BlueGreenDeployment.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Martin Fowler: Blue-Green Deployment
+</LinkButton>
+
+### ⏭ The DevOps Ecosystem
+
+We have focused on a few very practical operational habits, but Docker, Render, logs, and endpoints are only part of a larger ecosystem. Next, we zoom out and look at how these pieces fit into the broader DevOps picture.

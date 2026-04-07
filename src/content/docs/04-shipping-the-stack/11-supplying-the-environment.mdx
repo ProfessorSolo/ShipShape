@@ -1,0 +1,165 @@
+---
+title: 'Supplying the Environment'
+description: 'Adding the runtime values Render needs before Voyager’s Log can start successfully.'
+sidebar:
+  order: 11
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Giving the Hosted App What It Needs
+
+The Render service exists now, but it still does not know how to run this application correctly.
+
+Our server expects a few runtime values that should **not** live in source code and should **not** be committed in a `.env` file for deployment.
+
+In Render, these values belong in the **Environment** section of the Web Service.
+
+That is where the platform stores configuration and injects it into the running application process.
+
+## Open the Environment Section
+
+In the Render dashboard:
+
+1. Open your Voyager’s Log Web Service
+2. Go to **Environment**
+3. Add the variables the app expects at runtime
+
+That is the whole job of this page.
+
+## The Three Variables We Need
+
+For this deployment, we need three key values:
+
+- `MONGO_URI`
+- `SESSION_SECRET`
+- `NODE_ENV`
+
+### 1) Add `MONGO_URI`
+
+This is the Atlas connection string your server uses to connect to MongoDB.
+
+Use the **same Atlas connection string you already tested locally**.
+
+```env
+MONGO_URI=mongodb+srv://username:password@cluster-name.mongodb.net/voyagers_log?retryWrites=true&w=majority
+```
+
+Paste the raw connection string value.
+
+Do not:
+
+- add extra quotes
+- wrap it in JavaScript syntax
+- invent a new database name unless that is the one you actually created in Atlas
+
+<NoteBox title="Known-good beats creative guessing">
+  We moved the database to Atlas before deployment on purpose. At this point,
+  `MONGO_URI` should already be a verified value, not a mystery.
+</NoteBox>
+
+### 2) Add `SESSION_SECRET`
+
+This is the secret used by `express-session` to sign session data.
+
+Use a long, random value.
+
+```env
+SESSION_SECRET=a-long-random-secret-value-that-is-not-guessable
+```
+
+A good session secret should be:
+
+- hard to guess
+- unique to this app
+- not copied from lesson notes
+- not committed anywhere in the repo
+
+<CautionBox title="This one is real">
+  `SESSION_SECRET` is not filler text. A weak or recycled value weakens the
+  authentication layer immediately.
+</CautionBox>
+
+### 3) Add `NODE_ENV`
+
+Set this exactly to:
+
+```env
+NODE_ENV=production
+```
+
+This matters because our Express server only serves the built frontend when it is running in production mode.
+
+In our app, that logic looks like this:
+
+```js
+if (process.env.NODE_ENV === 'production') {
+  // serve client/dist
+}
+```
+
+If `NODE_ENV` is missing, the container may still start, but the frontend will not be served the way we expect.
+
+That is how you end up with a deployed app that looks alive in Render but gives you `Cannot GET /` in the browser.
+
+## Do Not Add `PORT`
+
+Do **not** create a `PORT` variable manually in Render.
+
+Render provides that value automatically, and our server already knows how to use it:
+
+```js
+const PORT = process.env.PORT || 3000;
+```
+
+That fallback is for local use. In hosted runtime, Render supplies the real port.
+
+## Why We Are Not Uploading a `.env` File
+
+For local development, a `.env` file is fine.
+
+For hosted deployment, it is the wrong tool.
+
+We are not:
+
+- committing secrets to GitHub
+- uploading secret files into the container
+- hardcoding connection strings into source files
+
+Instead, Render stores those values as environment variables and injects them at runtime.
+
+That is the cleaner deployment model:
+
+**Local development**
+
+- optional `.env`
+- `dotenv`
+- machine-specific setup
+
+**Hosted deployment**
+
+- Render environment settings
+- injected runtime variables
+- no committed secret file
+
+## Save Changes and Let Render React
+
+Once you save these values, Render will usually trigger a new deploy or restart automatically.
+
+That is expected.
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/environment-variables"
+  variant="secondary"
+  size="small"
+>
+  Render Docs: Environment Variables
+</LinkButton>
+
+⏭ **Launching the Build**
+
+The service now has the runtime values it was missing. Next, we watch Render build the image and begin startup.

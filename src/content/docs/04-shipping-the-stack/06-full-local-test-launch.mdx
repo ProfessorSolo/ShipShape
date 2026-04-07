@@ -1,0 +1,572 @@
+---
+title: 'Local Test Launch'
+description: "Bringing the full Voyager's Log application together locally and verifying that every part of the stack is doing its job."
+sidebar:
+  order: 6
+---
+
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Bringing the Convoy Together
+
+At this point, Voyagers Log is no longer just a collection of isolated parts.
+
+We now have:
+
+- a MongoDB database running in Docker
+- an Express API running in Docker
+- Passport-based admin authentication
+- a Vite + Tailwind frontend running locally
+- a moderation workflow from public submission to admin approval
+
+Now we need to verify that it works as one coordinated system.
+
+This page is the local operations check.
+
+Before we start stripping away local assumptions for deployment, we want to confirm that the application behaves properly in the environment it was built for.
+
+---
+
+## What Runs Where
+
+At this stage, the local stack is deliberately split across two environments.
+
+### In Docker Compose
+
+These services run as containers:
+
+- **MongoDB**
+- **Express API**
+
+These are the backend services that represent the real application infrastructure.
+
+### On the Host Machine
+
+This process runs directly on your machine:
+
+- **Vite development server**
+
+We do that because Vite is a development-time tool, and running it natively gives:
+
+- faster startup
+- faster hot reload
+- simpler frontend development
+- less Docker noise while building the app
+
+<NoteBox title="Not Everything Has to Be Containerized During Development">
+  MongoDB and Express model the deployable backend system, so they benefit from
+  containerization right away. Vite is primarily a development tool at this
+  stage, so running it locally keeps the feedback loop faster and cleaner.
+</NoteBox>
+
+---
+
+## Current Project Shape
+
+By now, our project should look roughly like this:
+
+```text
+voyagers-log/
+├── compose.yaml
+├── .env
+├── server/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── package.json
+│   ├── index.js
+│   ├── config/
+│   │   └── passport.js
+│   ├── middleware/
+│   │   └── requireAuth.js
+│   └── models/
+│       ├── Log.js
+│       └── User.js
+└── client/
+    ├── package.json
+    ├── vite.config.js
+    ├── index.html
+    └── src/
+        ├── main.js
+        └── style.css
+```
+
+That is our local working convoy.
+
+---
+
+## Step 1: Start the Backend Stack
+
+From the project root, start the Docker services:
+
+```bash
+docker compose up --build -d
+```
+
+This should:
+
+- build the API image if needed
+- start the MongoDB container
+- start the Express API container
+
+If everything goes well, Docker Compose will bring the backend stack online in detached mode.
+
+---
+
+## Step 2: Confirm the Containers Are Running
+
+Run:
+
+```bash
+docker compose ps
+```
+
+You should see both services running:
+
+- `db`
+- `api`
+
+If either service is not healthy or has exited, do not just stare at the terminal and hope for growth. Check the logs.
+
+---
+
+## Step 3: Inspect the API Logs
+
+To inspect the API container:
+
+```bash
+docker compose logs api
+```
+
+You are looking for output along these lines:
+
+```text
+Connected to MongoDB
+Seeded default admin user
+Voyager's Log API listening on port 3000
+```
+
+If you want to watch logs live:
+
+```bash
+docker compose logs -f api
+```
+
+That is especially handy while testing routes or login behavior.
+
+---
+
+## Step 4: Inspect the Database Logs
+
+To inspect MongoDB:
+
+```bash
+docker compose logs db
+```
+
+Or follow them live:
+
+```bash
+docker compose logs -f db
+```
+
+At this point, you mostly want confirmation that MongoDB started cleanly and has not crashed or failed initialization.
+
+---
+
+## Step 5: Test the API Health Route
+
+Before even touching the frontend, verify that the API is reachable.
+
+Open a browser or use `curl`:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+You should get back something like:
+
+```json
+{ "ok": true, "service": "voyagers-log-api" }
+```
+
+That tells you:
+
+- the API container is reachable from the host
+- Express is running
+- port mapping is working
+
+If this route fails, the frontend is not your first problem.
+
+<CautionBox title="Do Not Debug the Frontend Before Verifying the Backend">
+  If the API is not reachable on `localhost:3000`, the frontend will fail in
+  ways that look mysterious but are actually just downstream fallout. Check
+  backend health first.
+</CautionBox>
+
+---
+
+## Step 6: Start the Frontend Dev Server
+
+In a second terminal, move into the `client` folder:
+
+```bash
+cd client
+npm run dev
+```
+
+Vite should start on:
+
+```text
+http://localhost:5173
+```
+
+Now the frontend development server is alive.
+
+At this point, your local environment is split like this:
+
+- **Docker Compose** → database + API
+- **Vite dev server** → frontend UI
+
+That is our intended setup for local development.
+
+---
+
+## Step 7: Open the Application in the Browser
+
+Visit:
+
+```text
+http://localhost:5173
+```
+
+You should see the Voyager’s Log interface with:
+
+- the public submission form
+- the admin login form
+- the approved voyage feed
+- the pending review panel
+
+If the page loads but the data panels fail, that usually means the frontend is up but cannot communicate properly with the backend.
+
+That leads us to the next important concept.
+
+---
+
+## How the Browser Talks to the Backend
+
+The browser is connected to the Vite dev server, not directly to Express.
+
+So when your frontend code does this:
+
+```javascript
+fetch('/api/voyages');
+```
+
+it is making a request to the Vite server first.
+
+Then `vite.config.js` steps in and proxies that request to the API.
+
+Your config should include this:
+
+```javascript
+server: {
+  host: '0.0.0.0',
+  port: 5173,
+  proxy: {
+    '/api': {
+      target: 'http://localhost:3000',
+      changeOrigin: true
+    }
+  }
+}
+```
+
+That means:
+
+- browser hits `http://localhost:5173/api/...`
+- Vite forwards the request to `http://localhost:3000/api/...`
+- Express handles the route
+- the response comes back through Vite to the browser
+
+This keeps the frontend code clean and avoids local cross-origin issues.
+
+<NoteBox title="The Proxy Is the Bridge">
+  During local development, the browser only knows it is talking to Vite. The
+  proxy quietly forwards API traffic to Express so the frontend can keep using
+  clean relative paths like `/api/voyages`.
+</NoteBox>
+
+---
+
+## Step 8: Submit a Public Voyage Entry
+
+Now test the public workflow.
+
+In the browser:
+
+1. enter a voyager name
+2. enter a message
+3. submit the form
+
+You should see a confirmation message indicating that the entry was submitted for review.
+
+That means the frontend successfully:
+
+- captured form input
+- sent a request to `/api/voyages`
+- passed through the Vite proxy
+- hit the Express API
+- saved the entry to MongoDB as `pending`
+
+Very respectable chain of custody.
+
+---
+
+## Step 9: Verify That the Entry Is Not Public Yet
+
+After submitting a new entry, check the approved feed.
+
+The new entry should **not** appear there yet.
+
+That is correct behavior.
+
+The public feed only displays entries whose status is:
+
+```text
+approved
+```
+
+New public submissions are created as:
+
+```text
+pending
+```
+
+That means the moderation layer is doing its job.
+
+---
+
+## Step 10: Log In as Admin
+
+Now test the auth flow using the seeded development account:
+
+```text
+username: admin
+password: changeme123
+```
+
+After login succeeds:
+
+- the admin feedback area should confirm the login
+- the pending review queue should load
+- you should see any pending entries available for moderation
+
+This verifies that:
+
+- Passport authentication is working
+- the session is being created
+- the browser is sending the session cookie on later requests
+
+---
+
+## Why the Session Cookie Matters
+
+The login request is not enough on its own.
+
+Once login succeeds, the browser must send the session cookie back on future admin requests so the server can recognize the authenticated user.
+
+That is why the frontend uses:
+
+```javascript
+credentials: 'include';
+```
+
+on authenticated fetch calls.
+
+For example:
+
+```javascript
+fetch('/api/admin/pending', {
+  credentials: 'include',
+});
+```
+
+Without that, the API would treat the request like it came from a random unauthenticated stranger.
+
+Which, to be fair, it effectively did.
+
+---
+
+## Step 11: Approve an Entry
+
+In the pending review panel, click **Approve** on one of the pending voyage entries.
+
+This should:
+
+- send a protected `PATCH` request to the API
+- update the entry’s `status` to `approved`
+- refresh the pending queue
+- refresh the approved public feed
+
+If the approved feed updates correctly, that means the end-to-end moderation flow is working.
+
+That is the full app loop:
+
+1. public user submits entry
+2. API stores it as `pending`
+3. admin logs in
+4. admin approves entry
+5. public feed displays it
+
+Now we are cooking with actual stack behavior.
+
+---
+
+## Step 12: Try Hiding an Entry
+
+If you want to test the alternate moderation action, submit another entry and then click **Hide** instead of **Approve**.
+
+That entry should:
+
+- disappear from the pending queue
+- remain absent from the public feed
+
+That confirms the `hidden` state is also working correctly.
+
+---
+
+## Quick Local Verification Checklist
+
+Before moving on, make sure all of the following are true:
+
+- `docker compose ps` shows both `db` and `api` running
+- `http://localhost:3000/api/health` responds successfully
+- `http://localhost:5173` loads the frontend
+- public submission works
+- new entries are created as pending
+- admin login works
+- pending entries can be approved
+- approved entries appear in the public feed
+- hidden entries do not appear publicly
+
+If those boxes are checked, the local system is doing exactly what it should.
+
+---
+
+## Useful Local Debugging Commands
+
+### Check running services
+
+```bash
+docker compose ps
+```
+
+### View API logs
+
+```bash
+docker compose logs api
+```
+
+### Follow API logs live
+
+```bash
+docker compose logs -f api
+```
+
+### View database logs
+
+```bash
+docker compose logs db
+```
+
+### Follow database logs live
+
+```bash
+docker compose logs -f db
+```
+
+### Check the API health route
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+### Stop the backend stack
+
+```bash
+docker compose down
+```
+
+### Stop the backend stack and remove the named volume
+
+```bash
+docker compose down -v
+```
+
+That last command will wipe the database data too, so use it when you mean it.
+
+---
+
+## What Is Still Intentionally Local
+
+Even though the app works beautifully now, it still has several local-development assumptions that are completely intentional at this stage.
+
+### Local Database Hostname
+
+The API still assumes MongoDB lives at:
+
+```text
+mongodb://db:27017/voyagers_log
+```
+
+That only works inside Docker Compose.
+
+### Separate Frontend Dev Server
+
+The frontend still runs through Vite on port `5173`.
+
+Express is not yet serving compiled frontend assets.
+
+### Local Proxy Setup
+
+Vite is still acting as the bridge for `/api` requests during development.
+
+### Development Credentials and Secrets
+
+The seeded admin account and session secret are still development-friendly shortcuts, not production-grade configuration.
+
+That is fine.
+
+This page is about verifying the local stack, not pretending it is already deployment-ready.
+
+<CautionBox title="Working Locally Does Not Mean Ready for Production">
+  A healthy local stack proves the application is assembled correctly. It does
+  not mean the app is ready to leave Docker Compose, accept hosted
+  configuration, or serve production frontend assets yet.
+</CautionBox>
+
+<NoteBox title="Confidence Before Refactor">
+  This local verification pass matters because once we begin refactoring for
+  deployment, we want to know that any new breakage comes from deployment
+  changes, not from unfinished local plumbing.
+</NoteBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://github.com/ProfessorSolo/ShipShape-04-01-VoyagersLog-Local.git"
+  icon="external"
+  variant="primary"
+  target="_blank"
+>
+  Completed Locally Running Voyagers Log Demo Repo
+</LinkButton>
+
+---
+
+### ⏭ Prepare for Deployment
+
+Now that the local stack is stable, our next job is to start removing the local assumptions that would break the moment we deploy.

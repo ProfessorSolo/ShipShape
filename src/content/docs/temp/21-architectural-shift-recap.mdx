@@ -1,0 +1,66 @@
+---
+title: "Architectural Shift Recap"
+description: "A side-by-side comparison of local orchestration and hosted delivery."
+sidebar:
+  order: 22
+  label: "Architectural Shift Recap"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We started this lesson with an application that relied entirely on our laptop. We ended the lesson with a fully decoupled application hosted cleanly across two independent, managed services on the internet.
+
+To truly understand the value of this deployment, we need to compare the two architectures side-by-side.
+
+## The Local Compose Way (Lesson 03)
+
+In our previous lesson, our architecture was dense and localized:
+
+- **Orchestration:** `docker-compose.yml` ran the show.
+- **Application Environment:** A local Docker container using our local hardware.
+- **Database Environment:** Another local Docker container, running a Mongo image.
+- **Networking:** Local Docker bridge network.
+- **Connection Logic:** App connected directly to the database using the magic hostname `mongodb://db:27017`.
+- **Configuration:** Handled locally via `.env` files.
+
+<CautionBox title="The Local Ceiling">
+  That setup is brilliant for development, but it hits a hard ceiling. It requires a developer's machine to always be turned on, and it assumes all services will always live happily together on the exact same internal network.
+</CautionBox>
+
+## The Hosted Deployment Way (Lesson 04)
+
+Now, look at the architecture we just finished deploying:
+
+- **Orchestration:** Replaced by Git-driven deployment pipelines and managed platform automation.
+- **Application Environment:** Hosted and routed on a managed PaaS (Render).
+- **Database Environment:** Hosted remotely on a managed DBaaS (MongoDB Atlas).
+- **Networking:** Over the public internet or peering clouds.
+- **Connection Logic:** Requires a fully authenticated coordinate `mongodb+srv://...`.
+- **Configuration:** Managed entirely through host-injected Environment Variables.
+
+<NoteBox title="The Decoupled Advantage">
+  We can wipe our laptop, reinstall our OS, and go on a six-month vacation. The Voyagers Log will continue to serve traffic, and Atlas will continue to safely hold the data. We have achieved true deployment maturity.
+</NoteBox>
+
+{/* T.A. Watts Image Placeholder: A high-fidelity diagram explicitly showing the "Local Compose" stack on the left crossed out, and the "Hosted Deployment" stack on the right connected successfully via the internet. */}
+
+We did not just move files. We restructured the operational reality of the application. The shift from local to live requires respecting the environment boundary, externalizing secrets, and verifying physical persistence. We have met all those requirements.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/azure/architecture/guide/technology-choices/compute-decision-tree"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Architecture Decision Strategies (PaaS vs IaaS)
+</LinkButton>
+
+### ⏭ Shipping Log
+
+The cargo is delivered. Next, we wrap the deployment sequence and look ahead at what it takes to support a live application.

@@ -1,0 +1,59 @@
+---
+title: "Architecture in Transit"
+description: "Understanding the operational shift from local orchestration to hosted delivery."
+sidebar:
+  order: 3
+  label: "Architecture in Transit"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It is crucial to understand that an application doesn't just "move" when it gets deployed. Its entire surrounding context changes.
+
+In Lesson 03, we solved the local development problem. We used Docker Compose to create a nice, tidy local network. We defined an app container and a database container. They sat side-by-side, entirely under our control.
+
+Deployment tears that arrangement apart.
+
+## The Architectural Shift
+
+When we transition to hosted delivery, the monolithic local setup gets unbundled into independent, specialized services. 
+
+Here is exactly what changes:
+
+- **The App is Hosted Elsewhere:** The application no longer runs on our laptop's hardware. It runs on a managed platform provider.
+- **The Database Leaves the Sibling Network:** We do not host the database next to the app in the same container cluster. The application data will live in a specialized, highly available database engine far away from the application code.
+- **Configuration Migrates:** We can no longer rely on a local `.env` file sitting comfortably on our hard drive. Variables and secrets must be injected dynamically by the host environment.
+- **The Workflow Matures:** We stop using `docker-compose up` to run the latest code. Deployment is now a workflow step—triggered directly from a version-controlled repository (Git).
+
+{/* T.A. Watts Image Placeholder: A side-by-side architecture diagram showing the tightly packed local Compose setup on the left, and the decoupled hosted architecture (Git -> App Host -> Remote DB) on the right. */}
+
+<CautionBox title="Broken Assumptions">
+  Every shortcut we took during local development is violently exposed during deployment. Hardcoded ports fail. Localhost URLs break. Hardcoded database connections shatter. We cannot hide infrastructure assumptions in a public deployment.
+</CautionBox>
+
+<NoteBox title="Think Like a Operator">
+  Moving from local to live means treating the application as a stateless delivery mechanism. It should expect to be started, stopped, configured, and routed entirely by external forces.
+</NoteBox>
+
+This modular approach is what allows modern applications to scale and survive crashes without taking their databases down with them. 
+
+The first piece of this new decoupled architecture is finding a proper harbor for the application code to actually run. Let's head over to the host.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  N-tier Architectural Concepts 
+</LinkButton>
+
+### ⏭ The Render Runtime
+
+We need a place where our Express app can live 24/7. Next, we meet our execution engine: Render.

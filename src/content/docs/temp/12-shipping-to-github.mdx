@@ -1,0 +1,64 @@
+---
+title: "Shipping to GitHub"
+description: "Establishing a Git repository as the single source of truth for deployment."
+sidebar:
+  order: 13
+  label: "Shipping to GitHub"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+If we want a modern hosting platform to deploy our code securely, we cannot simply drag and drop folders into a web interface. That is not how professional engineering operates. 
+
+Instead, we use a version control system as an intermediary. We push our code to a Git repository, and we tell our host environment to pull directly from there.
+
+GitHub acts as our central cargo manifest. By making the repository the single source of truth, we ensure that the exact version of the code we have verified locally is what ultimately gets built and executed on Render.
+
+## Preparing the Cargo
+
+Before we make our final commit, we need to guarantee that no local debris accidentally hitches a ride into our repository.
+
+The most critical shield we have is the `.gitignore` file. We must ensure that it currently ignores two distinct categories of files:
+
+1. **Dependency Folders:** We never commit `node_modules/`. Render will use our `package.json` to install the correct dependencies automatically during its build phase.
+2. **Local Secrets:** We aggressively ignore `.env` files. If we commit a `.env` file containing local development keys or our new Atlas connection string, we have compromised our own security posture.
+
+<CautionBox title="Scrubbing the Manifest">
+  Always double-check our `git status` before committing. If we see `.env` sitting in the untracked files list waiting to be staged, stop immediately and add it to our `.gitignore`. Do not let secrets slip into the public record.
+</CautionBox>
+
+## Completing the Handoff
+
+Once we are confident the repository is clean, we wrap everything up:
+
+- We initialize Git if we haven't already.
+- We stage the clean application files.
+- We commit the changes with a clear historical message.
+- We push the final branch up to our GitHub repository.
+
+<NoteBox title="The Pipeline Trigger">
+  Once the code is resting in GitHub, our local machine's deployment responsibilities are effectively over. We have handed the cargo off. From this point forward, Render will read directly from the repository.
+</NoteBox>
+
+With our manifest securely logged on GitHub and our database coordinates in hand, we are officially ready to requisition a web service on Render.
+
+{/* T.A. Watts Image Placeholder: A sequence diagram showing local git commit -> push to GitHub -> Webhook triggering Render. */}
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.github.com/en/get-started/using-git/ignoring-files"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  GitHub .gitignore Strategies
+</LinkButton>
+
+### ⏭ Creating the Render Service
+
+Our code is staged on GitHub. Next, we log into our host platform and instruct it to spin up a new runtime engine.

@@ -1,0 +1,251 @@
+---
+title: "Request Logs"
+description: "Making inbound traffic visible by logging the requests that reach the application."
+sidebar:
+  order: 4
+  label: "Request Logs"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Startup logs tell us the application woke up.
+
+Good.
+
+But once the app is running, we also need to know whether anything is actually reaching it.
+
+Without request logs, the app can feel strangely silent.
+
+Maybe users are successfully submitting entries all day.
+Maybe every request is failing instantly.
+Maybe the frontend is making calls you forgot about.
+Maybe a bot is hammering a route you did not expect.
+
+If we do not log inbound traffic at all, those situations can look exactly the same from the platform logs:
+
+almost nothing.
+
+That is why request logging is the next useful layer of visibility.
+
+## What Request Logs Give Us
+
+Request logs answer a very simple but very important question:
+
+**what is actually hitting this application?**
+
+That includes signals like:
+
+- when a request arrived
+- which HTTP method it used
+- which path it targeted
+
+Those details alone can already tell us a lot.
+
+For example:
+
+- if a user says “the form is broken” and we see a `POST` request hitting the right route, then the request made it into our app
+- if we see no request at all, then the problem may be earlier in the chain
+- if we see a route being hit repeatedly, we know the app is not sitting idle
+
+That is operationally useful information.
+
+---
+
+## A Simple Global Middleware Logger
+
+In Express, the cleanest way to log incoming traffic is with middleware.
+
+A small middleware function can intercept every request, log a few structural details, and then pass control onward.
+
+Here is a simple example:
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+
+  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
+
+  next();
+});
+
+// routes go below...
+app.post("/api/log", (req, res) => {
+  res.send("Log accepted.");
+});
+```
+
+This middleware runs for every request that reaches the app.
+
+That means each request leaves behind a tiny breadcrumb in the logs.
+
+Simple. Cheap. Very useful.
+
+<NoteBox title="Why Middleware Is a Good Fit">
+  Middleware sits near the front of the request pipeline, which makes it a great
+  place to capture broad request activity before the request reaches the route
+  handler logic deeper in the app.
+</NoteBox>
+
+---
+
+## What This Log Tells Us
+
+A line like this:
+
+```text
+[2026-04-01T18:12:34.000Z] POST /api/voyages
+```
+
+tells us at least three important things:
+
+- the request reached the application
+- it used the `POST` method
+- it targeted `/api/voyages`
+
+That already narrows the problem space.
+
+If a user says “submitting a log entry fails,” and we can see the request reaching the app, then networking and basic routing are probably not the first suspects anymore.
+
+The request is here.
+Now we can start asking what happened **after** it arrived.
+
+That is a much stronger debugging position.
+
+---
+
+## Why This Matters in a Hosted App
+
+Locally, you can often see requests happen just by watching your dev environment closely.
+
+In a hosted app, that direct intimacy is gone.
+
+You are not sitting beside the running process anymore.
+
+So request logs become one of the easiest ways to answer questions like:
+
+- is anyone hitting this route?
+- did the request actually reach the server?
+- is the frontend talking to the API the way we think it is?
+- is the live app receiving the kind of traffic we expect?
+
+That is a major visibility upgrade for very little code.
+
+---
+
+## Keep the Logs Structural
+
+It is tempting to get greedy and log everything.
+
+Do not.
+
+A request logger should usually stay focused on structural details like:
+
+- timestamp
+- method
+- path
+
+Those are high-value and low-risk.
+
+What we generally do **not** want to dump casually into production logs:
+
+- full request bodies
+- passwords
+- tokens
+- session data
+- personally sensitive user input
+
+That kind of logging creates noise fast, and in the worst case it turns your logs into a security problem.
+
+<CautionBox title="Do Not Turn Logs into a Data Leak">
+  Logging an entire `req.body` might feel helpful in the moment, but in a real
+  application it can expose passwords, private user data, or other sensitive
+  information. Keep request logs concise and structural unless you have a very
+  specific, safe reason to go deeper.
+</CautionBox>
+
+---
+
+## Structural Logs vs Behavioral Logs
+
+A useful way to think about request logs is this:
+
+### Structural Logging
+
+- method
+- route
+- timestamp
+- maybe status code later
+
+### Behavioral Logging
+
+- entire payloads
+- raw user input
+- secrets
+- tokens
+- session contents
+
+For this lesson, we want structural logging.
+
+It gives us operational signal without making the logs unreadable or irresponsible.
+
+That balance matters.
+
+---
+
+## A Small Improvement That Changes the Story
+
+Without request logging, the app can feel like a black box that only occasionally shouts when something catches fire.
+
+With request logging, it starts to feel alive.
+
+You can tell:
+
+- whether it is receiving traffic
+- what routes are being exercised
+- roughly when activity happened
+- whether a user complaint lines up with a real request pattern
+
+That is a huge step toward understanding the app as a living deployed system instead of just a blob of code on a platform.
+
+---
+
+## What This Still Does Not Tell Us
+
+Request logs are helpful, but they do not answer everything.
+
+They tell us that traffic arrived.
+
+They do **not** automatically tell us:
+
+- whether the route handler succeeded
+- whether Atlas responded properly
+- whether the request resulted in a `500`
+- whether downstream logic failed after the request entered the system
+
+So request logging gives us a stronger first clue.
+
+But if something breaks deeper in the app, we also need the application to log failures clearly.
+
+That is where error logging enters the picture.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/en/guide/writing-middleware.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express: Writing Middleware
+</LinkButton>
+
+### ⏭ Error Logs
+
+Requests reaching the app is only part of the story. Next, we look at what happens when something goes wrong and how to fail loudly enough to be useful.

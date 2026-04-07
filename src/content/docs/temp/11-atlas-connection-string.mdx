@@ -1,0 +1,66 @@
+---
+title: "The Atlas Connection String"
+description: "Retrieving and formatting the exact coordinates for our hosted database."
+sidebar:
+  order: 12
+  label: "The Atlas Connection String"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+With our Atlas infrastructure primed, our final task in the MongoDB dashboard is to secure the exact routing coordinates. We need the connection string that will chart the path over the internet from our application to the database cluster.
+
+In the Atlas interface, selecting "Connect" and choosing the driver-based connection method will reveal the standard `mongodb+srv://` URI string.
+
+## Decoding the Target String
+
+The string Atlas hands us is a template. It looks something like this:
+
+```text
+mongodb+srv://adminuser:<password>@cluster0.abcde.mongodb.net/?retryWrites=true&w=majority
+```
+
+Before we can use this in our deployment environment, we have to finalize the template. 
+
+The two pieces we must manually replace in order to make it functional are the `<password>` placeholder and, optionally, the specific database name. 
+
+<CautionBox title="The Angled Brackets Rule">
+  When we replace the `<password>` placeholder, we must remove the angled brackets `<` and `>` themselves. If our password is `supersecret123`, the string should be `:supersecret123@`, not `:<supersecret123>@`. This is consistently the number one cause of failed database connections on deployment.
+</CautionBox>
+
+## Defining the Database Destination
+
+Notice that the default string ends gracefully with a slash before the query parameters: `mongodb.net/?retryWrites...`. 
+
+If we connect using this exact string, MongoDB will connect to the default `test` database on the cluster. Since we are deploying Voyagers Log, we want to place our data into a specifically named database. 
+
+We append the name of our target database immediately after that final slash:
+
+```text
+mongodb+srv://adminuser:supersecret123@cluster0.abcde.mongodb.net/voyagers-log?retryWrites=true&w=majority
+```
+
+<NoteBox title="Keep it Secure">
+  Store this completed string in a temporary secure file on our local machine, or simply keep it on our clipboard. Our next objective is to push our code to GitHub, and we absolutely do not want this connection string accidentally committed into our repository.
+</NoteBox>
+
+Now that we have our finished map coordinate, we can step away from Atlas. Our destination is waiting. All we need now is a reliable way to get our code shipped from our local harbor into the hosting pipeline.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/manual/reference/connection-string/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Detailed Connection String Format
+</LinkButton>
+
+### ⏭ Shipping to GitHub
+
+We cannot hand Render raw folders from our laptop. Next, we establish a version-controlled repository to act as our official cargo manifest.

@@ -1,0 +1,252 @@
+---
+title: "Logs vs Monitoring"
+description: "Understanding the difference between event-level evidence and broader service health signals."
+sidebar:
+  order: 7
+  label: "Logs vs Monitoring"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Once an application is live, there are at least two very different ways to “look at” it.
+
+One is through logs.
+
+The other is through monitoring-style signals.
+
+Both matter.
+They are not the same thing.
+And mixing them up leads to a lot of confused debugging.
+
+## Two Different Questions
+
+A useful way to separate them is this:
+
+### Logs ask:
+
+**What happened?**
+
+### Monitoring asks:
+
+**How is the system doing right now?**
+
+That distinction is the heart of the page.
+
+Logs give us event-level evidence.
+Monitoring gives us higher-level health awareness.
+
+Both are forms of visibility.
+They just operate at different altitudes.
+
+---
+
+## Logs: The Story of Specific Events
+
+Logs are records of discrete things that happened.
+
+Examples:
+
+- the app started
+- a request hit `/api/voyages`
+- a database write failed
+- an authentication check threw an error
+
+Logs are great for answering questions like:
+
+- what route was hit?
+- when did the failure happen?
+- what was the error message?
+- what was the app trying to do at the time?
+
+That makes logs especially good for **debugging specific problems**.
+
+They are detailed.
+They are textual.
+They are often messy in a very informative way.
+
+<NoteBox title="Logs Are Evidence">
+  Logs are the closest thing we get to a written trail of the application's
+  behavior. They help us reconstruct what happened after the fact, especially
+  when something fails in a way the user cannot explain clearly.
+</NoteBox>
+
+---
+
+## Why Logs Alone Are Not Enough
+
+Logs are useful, but they are not always the fastest way to understand the overall state of a live system.
+
+If you stare at a busy stream of text, you might be able to answer:
+
+- “what just happened on this route?”
+- “what error occurred here?”
+
+But it is much harder to answer:
+
+- “is the system healthy overall?”
+- “is error volume rising?”
+- “is memory usage climbing over time?”
+- “did something suddenly get slower?”
+
+That is not really what logs are built for.
+
+<CautionBox title="A Log Stream Is Not a Health Dashboard">
+  Logs are excellent for detail, but terrible at summarizing the big picture
+  quickly. Reading a stream of text to understand overall system health is like
+  trying to judge traffic conditions by reading individual license plates.
+</CautionBox>
+
+---
+
+## Monitoring: The Shape of System Health
+
+Monitoring is a broader lens.
+
+Instead of preserving every event as text, monitoring systems tend to aggregate signals into a more readable form.
+
+Examples include:
+
+- CPU usage
+- memory consumption
+- request volume
+- error rate
+- response time
+- uptime checks
+
+These are not trying to tell the full story of every request.
+
+They are trying to answer questions like:
+
+- is the system under strain?
+- is it behaving normally?
+- is something drifting in a bad direction?
+- did a major change just make things worse?
+
+That makes monitoring especially useful for **situational awareness**.
+
+---
+
+## What Monitoring Is Good At
+
+Monitoring shines when you need to quickly answer:
+
+- is the service up?
+- is performance degrading?
+- are errors spiking?
+- is memory usage climbing in a suspicious way?
+- did the system change behavior after a deploy?
+
+Those are not log-style questions.
+They are health-style questions.
+
+And that difference matters.
+
+A graph showing memory steadily rising over time is often far more useful in that moment than 10,000 lines of request output.
+
+---
+
+## The Relationship Between Them
+
+The healthiest way to think about this is:
+
+### Monitoring tells us **that** something is wrong.
+
+### Logs help us figure out **why** it is wrong.
+
+That pairing is incredibly important.
+
+For example:
+
+- monitoring says error rate spiked in the last 10 minutes
+- logs show repeated database timeouts on a specific route
+
+Or:
+
+- monitoring shows memory usage climbing steadily
+- logs reveal a pattern of a specific request path or repeated failure behavior
+
+That is the handshake.
+
+<NoteBox title="They Work Best Together">
+  Monitoring gives us the wide-angle view. Logs give us the close-up evidence.
+  One tells us where to look. The other helps explain what we find.
+</NoteBox>
+
+---
+
+## Where Voyagers Log Fits Right Now
+
+In this lesson, we are still working at the early stages of production awareness.
+
+That means we are not building a full monitoring stack with dashboards, alerting rules, percentile charts, and incident escalation flows.
+
+What we **are** doing is building the first operational habits that lead in that direction.
+
+So for Voyagers Log, our visibility stack at this stage looks more like:
+
+- startup logs
+- request logs
+- error logs
+- a few tiny health-style signals
+
+That is intentionally small.
+
+We are learning the distinction before we go trying to build the whole observability universe.
+
+---
+
+## Why This Distinction Matters
+
+If students do not separate logs from monitoring, a few bad habits show up fast.
+
+They start expecting logs to do everything.
+They start treating random platform graphs like detailed diagnostics.
+They do not know whether they need:
+
+- a specific event trail
+  or
+- a broad health signal
+
+That confusion slows everything down.
+
+This page exists to make the split explicit:
+
+- logs are event evidence
+- monitoring is health awareness
+
+Once that clicks, later operational tools make much more sense.
+
+---
+
+## The Bridge to the Next Step
+
+Now that we understand this distinction, we can add more intentional operational signals to the app.
+
+Not giant enterprise monitoring.
+Just small, focused signals that help answer quick health-style questions.
+
+That is where endpoints like a heartbeat route start becoming useful.
+
+They are not full monitoring systems.
+But they are a very practical first monitoring-style signal.
+
+And that is exactly the kind of next step we want.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://sre.google/sre-book/monitoring-distributed-systems/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Google SRE Book: Monitoring Distributed Systems
+</LinkButton>
+
+### ⏭ The Heartbeat Endpoint
+
+Logs help us understand what happened. Next, we add a tiny operational endpoint whose job is simpler: answer whether the app is alive right now.

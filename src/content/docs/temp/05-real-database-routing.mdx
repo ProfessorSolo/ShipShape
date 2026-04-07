@@ -1,0 +1,74 @@
+---
+title: "Real Database Routing"
+description: "Transitioning from local service-name networking to remote connection strings."
+sidebar:
+  order: 6
+  label: "Real Database Routing"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Here is the primary trap of local container orchestration: it spoils us securely.
+
+When we used Docker Compose, all the containers in our local stack communicated over a private Docker bridge network. That network provided an internal DNS service. If the Express app wanted to talk to the Mongo container, the connection string simply looked like this:
+
+```text
+mongodb://db:27017/voyagers-log
+```
+
+Docker magically resolved `db` to the correct internal container IP. It was brilliantly simple.
+
+It is also completely useless in the deployed world.
+
+## The Magic Name Breaks
+
+There is no local Compose network on Render. 
+
+Render does not magically know about the existence of MongoDB Atlas. There is no sibling container running under the polite alias `db`. If we push an application to Render that still relies on `mongodb://db`, the application will violently crash on startup.
+
+<CautionBox title="Service Names Do Not Travel">
+  Compose service names (`db`, `redis`, `api`) do not carry over into hosted deployment. We must strip all local DNS assumptions out of our application configuration before launching.
+</CautionBox>
+
+## Re-aiming with Connection Strings
+
+To connect our Render-hosted application to our Atlas-hosted database, we have to route the traffic over the public internet (or secure VPC peering) using a fully qualified, authenticated connection string.
+
+It will look like this:
+
+```text
+mongodb+srv://adminuser:supersecretpassword@cluster0.abcde.mongodb.net/voyagers-log
+```
+
+{/* T.A. Watts Image Placeholder: A diagram contrasting a request resolving locally to `db` via Docker, versus a request routing outwardly from Render, over the internet, to an Atlas `mongodb+srv://` address. */}
+
+This string contains everything the application needs to establish contact:
+1. **The Protocol** (`mongodb+srv://`)
+2. **The Credentials** (`adminuser:supersecretpassword`) 
+3. **The Destination Coordinate** (`cluster0.abcde.mongodb.net`)
+4. **The Target Database Name** (`/voyagers-log`)
+
+<NoteBox title="The Connection Paradigm">
+  In Compose, services talk by name. In deployment, services talk by precise address. The deployed app must act like a ship crossing the ocean—it needs the exact coordinates, not just the name of a local port.
+</NoteBox>
+
+We know what string we need to supply. The question is: how do we inject a highly sensitive string, packed with production passwords, safely into the application code without exposing it to the world? 
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/manual/reference/connection-string/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  MongoDB Connection String Format
+</LinkButton>
+
+### ⏭ Deployment Readiness
+
+Before we get the Atlas cluster spooled up, we need to make sure the application code itself isn’t carrying any fatal local baggage. Next, we hit the deployment checklist.

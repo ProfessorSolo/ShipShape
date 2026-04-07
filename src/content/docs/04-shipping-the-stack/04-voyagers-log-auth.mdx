@@ -1,0 +1,622 @@
+---
+title: 'Security: Auth'
+description: "Adding Passport.js authentication and admin moderation to Voyager's Log."
+sidebar:
+  order: 4
+---
+
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Lock Down the Bridge
+
+Right now, Voyagers Log can accept submissions, but it has no command structure.
+
+Anyone can submit a new entry, which is fine. That part is public by design.
+
+But nobody can:
+
+- log in as an admin
+- review pending entries
+- approve entries for publication
+- hide entries from the public feed
+
+That means the app has intake, but no governance.
+
+We'll fix that by adding:
+
+- an admin user model
+- Passport.js authentication
+- session management
+- protected moderation routes
+
+---
+
+## The Goal of the Auth Layer
+
+We are keeping the rules intentionally simple.
+
+### Public Users
+
+Public users can:
+
+- submit a voyage entry
+- view approved entries
+
+Public users cannot:
+
+- log in
+- approve entries
+- access moderation routes
+
+### Admin Users
+
+Admin users can:
+
+- log in
+- stay authenticated with a session
+- view pending entries
+- approve entries
+- hide entries
+
+That is all we need.
+
+We are not building sign-up flows, password resets, email verification, two-factor auth, or a sprawling role hierarchy.
+
+This is lesson-focused authentication, not auth fan fiction.
+
+---
+
+## New Dependencies
+
+Inside the `server` folder, install the required packages:
+
+```bash
+npm install passport passport-local express-session connect-mongo bcrypt
+```
+
+These each have a job:
+
+- `passport` handles authentication flow
+- `passport-local` provides username/password login
+- `express-session` manages sessions
+- `connect-mongo` stores session data in MongoDB
+- `bcrypt` hashes passwords securely
+
+---
+
+## Define our User Model
+
+Create `server/models/User.js`.
+
+```javascript
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  passwordHash: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: String,
+    enum: ['admin'],
+    default: 'admin',
+  },
+});
+
+module.exports = mongoose.model('User', userSchema);
+```
+
+This model is intentionally tiny.
+
+We only need:
+
+- a username
+- a hashed password
+- a role field
+
+The role field may feel a bit dramatic with only one allowed value, but it gives us a clean place to grow later if needed.
+
+---
+
+## Passport Configuration
+
+Create `server/config/passport.js`.
+
+```javascript
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const bcrypt = require('bcrypt');
+const User = require('../models/User');
+
+passport.use(
+  new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await User.findOne({ username });
+
+      if (!user) {
+        return done(null, false, { message: 'Invalid credentials' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+      if (!isMatch) {
+        return done(null, false, { message: 'Invalid credentials' });
+      }
+
+      return done(null, user);
+    } catch (error) {
+      return done(error);
+    }
+  })
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
+});
+
+module.exports = passport;
+```
+
+This does three key things:
+
+1. defines how username/password login is checked
+2. defines what gets stored in the session
+3. defines how the logged-in user is restored from that session later
+
+<NoteBox title="Why We Store User ID in the Session">
+  Passport does not store the whole user object in the session. It stores a
+  small identifier and then reloads the user on later requests. That keeps the
+  session lighter and avoids stuffing unnecessary data into it.
+</NoteBox>
+
+---
+
+## Auth Middleware
+
+Create `server/middleware/requireAuth.js`.
+
+```javascript
+function requireAuth(req, res, next) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+
+  return res.status(401).json({ error: 'Authentication required' });
+}
+
+module.exports = requireAuth;
+```
+
+This middleware protects routes that should only be accessible to authenticated admins.
+
+Simple. Sharp. No negotiations.
+
+---
+
+## Updating the Main Server File
+
+Now replace `server/index.js` with this version:
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+const session = require('express-session');
+const { MongoStore } = require('connect-mongo');
+const passport = require('./config/passport');
+
+const Log = require('./models/Log');
+const User = require('./models/User');
+const requireAuth = require('./middleware/requireAuth');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    seedAdminUser();
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
+
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: MONGO_URI,
+    }),
+    cookie: {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'voyagers-log-api' });
+});
+
+app.get('/api/voyages', async (req, res) => {
+  try {
+    const logs = await Log.find({ status: 'approved' }).sort({ createdAt: -1 });
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching voyages:', error);
+    res.status(500).json({ error: 'Failed to fetch voyage entries' });
+  }
+});
+
+app.post('/api/voyages', async (req, res) => {
+  try {
+    const { voyagerName, message } = req.body;
+
+    if (!voyagerName || !message) {
+      return res.status(400).json({
+        error: 'voyagerName and message are required',
+      });
+    }
+
+    const newLog = await Log.create({
+      voyagerName,
+      message,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Voyage entry submitted for review',
+      log: newLog,
+    });
+  } catch (error) {
+    console.error('Error creating voyage entry:', error);
+    res.status(500).json({ error: 'Failed to create voyage entry' });
+  }
+});
+
+app.post('/api/login', passport.authenticate('local'), (req, res) => {
+  res.json({
+    success: true,
+    message: 'Login successful',
+    user: {
+      username: req.user.username,
+      role: req.user.role,
+    },
+  });
+});
+
+app.post('/api/logout', (req, res, next) => {
+  req.logout((error) => {
+    if (error) {
+      return next(error);
+    }
+
+    req.session.destroy((sessionError) => {
+      if (sessionError) {
+        return next(sessionError);
+      }
+
+      res.clearCookie('connect.sid');
+      res.json({ success: true, message: 'Logout successful' });
+    });
+  });
+});
+
+app.get('/api/admin/pending', requireAuth, async (req, res) => {
+  try {
+    const pendingLogs = await Log.find({ status: 'pending' }).sort({
+      createdAt: -1,
+    });
+    res.json(pendingLogs);
+  } catch (error) {
+    console.error('Error fetching pending voyages:', error);
+    res.status(500).json({ error: 'Failed to fetch pending entries' });
+  }
+});
+
+app.patch('/api/admin/voyages/:id/approve', requireAuth, async (req, res) => {
+  try {
+    const updatedLog = await Log.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (!updatedLog) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Entry approved',
+      log: updatedLog,
+    });
+  } catch (error) {
+    console.error('Error approving voyage entry:', error);
+    res.status(500).json({ error: 'Failed to approve entry' });
+  }
+});
+
+app.patch('/api/admin/voyages/:id/hide', requireAuth, async (req, res) => {
+  try {
+    const updatedLog = await Log.findByIdAndUpdate(
+      req.params.id,
+      { status: 'hidden' },
+      { new: true }
+    );
+
+    if (!updatedLog) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Entry hidden',
+      log: updatedLog,
+    });
+  } catch (error) {
+    console.error('Error hiding voyage entry:', error);
+    res.status(500).json({ error: 'Failed to hide entry' });
+  }
+});
+
+async function seedAdminUser() {
+  const bcrypt = require('bcrypt');
+
+  try {
+    const existingAdmin = await User.findOne({
+      username: process.env.ADMIN_USERNAME,
+    });
+
+    if (existingAdmin) {
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+
+    await User.create({
+      username: process.env.ADMIN_USERNAME,
+      passwordHash,
+      role: 'admin',
+    });
+
+    console.log('Seeded default admin user');
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
+  }
+}
+
+app.listen(PORT, () => {
+  console.log(`Voyager's Log API listening on port ${PORT}`);
+});
+```
+
+---
+
+## What This Server Now Does
+
+Compared to the previous page, the API now supports:
+
+- public submission of new entries
+- public viewing of approved entries
+- admin login
+- admin logout
+- protected access to pending entries
+- protected moderation actions
+
+That is the core moderation loop.
+
+---
+
+## The Default Admin Account
+
+For local development, the server now seeds a default admin account if one does not already exist.
+
+This is marginally acceptable for local lesson setup.
+
+It is absolutely NOT acceptable for any serious environment unless your strategy is “invite chaos personally.”
+
+<CautionBox title="Development Convenience Is Not Production Security">
+  Seeded default credentials are dangerous even in a highly controlled learning
+  environment. They are not remotely acceptable in real development and run the
+  unacceptable risk of accidental deployment.
+</CautionBox>
+
+---
+
+## Session Storage in MongoDB
+
+This part of the session configuration matters:
+
+```javascript
+store: MongoStore.create({
+  mongoUrl: MONGO_URI
+}),
+```
+
+That means that our session data is stored in MongoDB (which is persisted in a volume) instead of only in server memory.
+
+Why that matters:
+
+- sessions survive server restarts better
+- auth state is managed more realistically
+- the setup is closer to how deployed apps behave
+
+This is a better pattern than using the default in-memory session storage once the app starts becoming an actual system.
+
+---
+
+## About Cookies and API Testing
+
+Because login uses sessions, authentication depends on a cookie.
+
+That means if we test login with `curl`, we need to preserve cookies between requests.
+
+Here is a login example that stores the session cookie in a file:
+
+```bash
+curl -c cookies.txt -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d "username=admin&password=changeme123"
+```
+
+That is almost right in spirit, but Passport’s default local strategy expects form-style field parsing unless we wire it differently.
+
+Since this app is already using JSON parsing, let’s make the login request through a normal form post body by adding one more middleware line.
+
+Update the top of `server/index.js` so it includes:
+
+```javascript
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+```
+
+Now a login request like this works cleanly:
+
+```bash
+curl -c cookies.txt -X POST http://localhost:3000/api/login -H "Content-Type: application/x-www-form-urlencoded" -d "username=professorsolo&password=P4ssw0rdIsNotAValidPassword"
+```
+
+And we can use the cookie file when accessing protected routes:
+
+```bash
+curl -b cookies.txt http://localhost:3000/api/admin/pending
+```
+
+<NoteBox title="Sessions Mean State">
+  This is no longer a stateless API flow. Once login succeeds, the browser or
+  client must send the session cookie back on later requests so the server can
+  recognize the authenticated user.
+</NoteBox>
+
+---
+
+## Testing the Full Moderation Flow
+
+Once the updated API is running, we can test the full sequence.
+
+### 1. Submit a Public Entry
+
+```bash
+curl -X POST http://localhost:3000/api/voyages \
+  -H "Content-Type: application/json" \
+  -d '{"voyagerName":"Captain Solo","message":"Docked safely at station zero."}'
+```
+
+This creates a new `pending` entry.
+
+### 2. Confirm the Public Feed Still Hides It
+
+```bash
+curl http://localhost:3000/api/voyages
+```
+
+We should still get only approved entries.
+
+### 3. Log In as Admin
+
+```bash
+curl -c cookies.txt -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=changeme123"
+```
+
+### 4. View Pending Entries
+
+```bash
+curl -b cookies.txt http://localhost:3000/api/admin/pending
+```
+
+### 5. Approve One Entry
+
+Use the `_id` from the pending entry list:
+
+```bash
+curl -b cookies.txt -X PATCH http://localhost:3000/api/admin/voyages/ENTRY_ID/approve
+```
+
+### 6. Check the Public Feed Again
+
+```bash
+curl http://localhost:3000/api/voyages
+```
+
+Now the approved entry should appear.
+
+That is the complete moderation loop working locally inside the containerized stack.
+
+---
+
+## No Updates to `compose.yaml`
+
+The nice part here is that the Compose file does **not** need surgery for auth.
+
+Authentication lives in the API layer, not as a separate service.
+
+That is convenient. For once.
+
+---
+
+## What We Have Accomplished
+
+Voyager’s Log now has:
+
+- an admin user model
+- Passport.js local authentication
+- session-based login
+- MongoDB-backed session storage
+- protected moderation routes
+- public submission with private approval workflow
+
+## Useful Routes Recap
+
+### Public Routes
+
+- `GET /api/health`
+- `GET /api/voyages`
+- `POST /api/voyages`
+
+### Auth Routes
+
+- `POST /api/login`
+- `POST /api/logout`
+
+### Protected Admin Routes
+
+- `GET /api/admin/pending`
+- `PATCH /api/admin/voyages/:id/approve`
+- `PATCH /api/admin/voyages/:id/hide`
+
+That is a very respectable little command deck.
+
+---
+
+### ⏭ Let's catch this tailwind and launch our client, tout suite.
+
+Now that we have backend with database persistence, auth, and moderation, the final piece is our client application.

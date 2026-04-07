@@ -1,0 +1,323 @@
+---
+title: 'Deploy Readiness Audit'
+description: "Stripping away local training wheels. Preparing Voyager's Log to use environment variables and serve compiled Vite assets."
+sidebar:
+  order: 8
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## The Pre-Flight Checklist
+
+At this point, we have verified:
+
+- MongoDB running in Docker
+- the Express API talking to MongoDB
+- Passport-based admin authentication
+- Vite serving the frontend locally
+- public submission and admin moderation working together end to end
+
+**it works locally as a complete system.**
+
+Good. That confidence matters.
+
+Now we can safely do the next job: remove the local assumptions that would break the moment this app leaves Docker Compose and lands on a hosted platform.
+
+This is the refactor that makes deployment possible.
+
+Our readiness audit has five checkpoints:
+
+1. **Dynamic Port Binding** — let the host choose the port
+2. **Dynamic Database Routing** — move the Mongo connection string into an environment variable
+3. **Dynamic Session Secret** — stop treating auth secrets like classroom decorations
+4. **Production Static File Serving** — teach Express to serve the compiled Vite app
+5. **Preserve the Local Bridge** — keep Vite proxying in development where it belongs
+
+---
+
+## 1. Relinquishing the Port
+
+A hosted platform does not care that we enjoy port `3000`.
+
+It provides a port dynamically, usually through `process.env.PORT`.
+
+```javascript
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
+```
+
+Now our server will behave correctly in both environments:
+
+- **locally** it falls back to `3000`
+- **in production** it accepts the host-provided port
+
+<NoteBox title="The Server is Listening">
+A hosted environment also expects the server to listen on the container’s network interface, not just on localhost.
+
+Binding to 0.0.0.0 tells Express to listen on on all available network interfaces, which allows traffic coming into the container to reach the app.
+
+This works perfectly well in our locally running Docker containers and becomes essential later in our hosted deployment.
+
+</NoteBox>
+
+Let's make our Express app listen on all network interfaces, not just localhost:
+
+```javascript
+app.listen(PORT, HOST, () => {
+  console.log(`Voyager's Log API listening on ${HOST}:${PORT}`);
+});
+```
+
+---
+
+## 2. Dynamic Database Routing
+
+When testing we may want to continue using our local MongoDB, but for production we're going to point to Atlas.
+
+We'll need our DB connection string to be environment specific for that:
+
+```javascript
+const MONGO_URI = process.env.MONGO_URI;
+```
+
+Then continue using it in the Mongoose connection:
+
+```javascript
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    seedAdminUser();
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
+```
+
+Now the code no longer cares where MongoDB lives.
+
+It only cares that a valid connection string is provided at runtime.
+
+That is exactly the kind of indifference we want.
+
+<CautionBox title="Do Not Hardcode Hosted Credentials">
+  When we move to MongoDB Atlas, the connection string will include real
+  credentials. That value must come from the environment, not from source
+  control and definitely not from a committed JavaScript string.
+</CautionBox>
+
+---
+
+## 3. Dynamic Session Secret
+
+Our auth layer also needs to stop assuming a classroom-only secret.
+
+replace it with:
+
+```javascript
+const SESSION_SECRET =
+  process.env.SESSION_SECRET || 'dev-only-secret-change-me';
+```
+
+That gives us a reasonable local fallback while preparing the app for a real production secret later.
+
+Use that variable in your session setup:
+
+```javascript
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: MONGO_URI,
+    }),
+    cookie: {
+      httpOnly: true,
+      maxAge: 1000 * 60 * 60 * 24,
+    },
+  })
+);
+```
+
+This is a nice example of environment awareness reaching beyond just ports and databases.
+
+Secrets are configuration too.
+
+---
+
+## 4. Serving the Compiled Frontend
+
+Locally, Vite is a dev server.
+
+In production, Vite becomes a build tool.
+
+That means it generates static frontend assets into:
+
+```text
+client/dist
+```
+
+and then gets out of the way.
+
+If we want the app to run cleanly from one origin in production, Express needs to serve those built files directly.
+
+### Import `path`
+
+At the top of `server/index.js`, add:
+
+```javascript
+const path = require('path');
+```
+
+### Add a Production-Only Static Serving Block
+
+After your API routes, add:
+
+```javascript
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../client/dist');
+
+  app.use(express.static(distPath));
+
+  app.get('/{*splat}', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+```
+
+This does two jobs:
+
+### Static Assets
+
+```javascript
+app.use(express.static(distPath));
+```
+
+This serves the built CSS, JavaScript, and other static frontend assets.
+
+### Catch-All Frontend Delivery
+
+```javascript
+app.get('/{*splat}', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+```
+
+This ensures that browser requests for the frontend still load the app properly instead of returning 404 errors.
+
+So in production:
+
+- `/api/...` requests hit the Express API routes
+- frontend requests get the built `index.html` and its assets
+
+That gives us one app, one origin, and far less deployment drama.
+
+<NoteBox title="Production Only Means Production Only">
+  We wrap this block in `if (process.env.NODE_ENV === 'production')` because we
+  still want Vite to handle the frontend during local development. Fast dev
+  feedback locally, integrated static serving later. Everybody wins.
+</NoteBox>
+
+<CautionBox title="We Cannot Serve a Build That Has Not Happened Yet">
+  Once Express is responsible for serving the frontend in production, the Vite
+  build step becomes mandatory. This is why the next phase tightens the Docker
+  story around a build stage and a runtime stage.
+</CautionBox>
+
+The production static-serving block assumes that the built frontend actually exists.
+
+Specifically, it assumes this file is present:
+
+```text
+client/dist/index.html
+```
+
+If that file does not exist yet, Express has nothing useful to serve.
+
+That means our future deployment pipeline must eventually do the following in the correct order:
+
+1. install dependencies
+2. build the Vite frontend
+3. start the Express server
+
+We'll handle exactly this on the next page.
+
+---
+
+## 5. Preserving the Local Bridge
+
+None of this means local development stops using Vite.
+
+Quite the opposite.
+
+Locally, we still want:
+
+- Express on `3000`
+- Vite on `5173`
+
+and we still want Vite to proxy API requests to Express.
+
+### Setting the Base Path
+
+Add `base: '/'` to vite.config.js
+
+This helps Vite generate production asset paths correctly from the domain root.
+
+Our `client/vite.config.js` should now look like:
+
+```javascript
+import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  base: '/',
+  plugins: [tailwindcss()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+---
+
+## Hosted Deployment Later
+
+By the end of this lesson, the app is ready to consume values like these.
+
+```env
+PORT=<provided by platform>
+MONGO_URI=<Atlas connection string>
+SESSION_SECRET=<strong production secret>
+NODE_ENV=production
+```
+
+The beauty here is that the code no longer needs to change between environments.
+
+Only the values do.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://vite.dev/guide/static-deploy.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Vite Docs: Static Deployment
+</LinkButton>
+
+### ⏭ The Multi-Stage Dockerfile
+
+Our application is now runtime-aware, but our container story still needs tightening. Next, we package the build step and the runtime step into a single multi-stage Dockerfile so the compiled Vite frontend and the Express server can ship together cleanly.

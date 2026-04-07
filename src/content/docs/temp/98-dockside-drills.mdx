@@ -1,0 +1,107 @@
+---
+title: "Dockside Drills"
+description: "Reinforcement labs for pre-flight deployment configuration and routing checks."
+sidebar:
+  order: 24
+  label: "Dockside Drills"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It is one thing to read a checklist; it is another entirely to implement one under pressure. We have effectively completed the module, but before we fully sign off the cargo manifest, let's verify that the operational skills actually stuck.
+
+These three drills will test our ability to configure a Node application for hosted survival.
+
+---
+
+## Tier 1 — Maintenance: The Ignition Check
+
+**Objective:** Correctly format an application's startup command.
+
+**The Scenario:** A junior developer hands us a `package.json` file for an application that needs to be deployed to Render immediately.
+
+```json
+{
+  "name": "cargo-tracker",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
+```
+
+**What to do:**
+Identify what is critically missing for a hosted deployment, and write the exact line of code conceptually required to fix the `scripts` object so the host platform can start the application without relying on development tools.
+
+**Expected outcome:** We should understand why `nodemon` is a liability here and exactly what standard command must be added to trigger the raw Node process.
+
+**Student-to-AI prompt:**
+> "I have a `package.json` file that only has a `dev` script running `nodemon`. Can someone explain why a hosted platform like Render prefers a dedicated `start` script specifically using `node`?"
+
+---
+
+## Tier 2 — Custom Job: Surviving the Host Network
+
+**Objective:** Prevent a silent routing failure caused by hardcoded assumptions.
+
+**The Scenario:** We inherit a small Express microservice that runs beautifully on our local machine using `node server.js`. The codebase contains the following ignition sequence:
+
+```javascript
+const DB_HOST = 'mongodb://db:27017/app';
+const API_PORT = 4000;
+
+mongoose.connect(DB_HOST);
+
+app.listen(API_PORT, () => {
+    console.log(`Service locked and listening on port ${API_PORT}`);
+});
+```
+
+**What to do:**
+Rewrite both constant declarations (`DB_HOST` and `API_PORT`) so that the application safely receives its routing and port assignments from the host environment, while maintaining local fallbacks.
+
+**Expected outcome:** We should author two lines of JavaScript utilizing Node's `process.env` object and the fallback `||` operator.
+
+**Student-to-AI prompt:**
+> "I am deploying an Express app and I need to stop hardcoding my port to `4000`. Can someone show me how to use `process.env.PORT` with a fallback, and explain how the host platform interacts with it?"
+
+---
+
+## Tier 3 — Solo Special: The Broken Compass
+
+**Objective:** Diagnose and correct a malformed database integration.
+
+**The Scenario:** We deploy an application to Render. The dashboard says "Live," and the homepage loads perfectly. However, the moment we attempt to submit a form, the application spins and throws an HTTP 500 error.
+
+We check the Render environment variables dashboard and see the following entry:
+
+- **Key:** `mongo_uri`
+- **Value:** `mongodb+srv://adminuser:<cargosecret99>@cluster0.abcde.mongodb.net/tracker?retryWrites=true&w=majority`
+
+**What to do:**
+Identify the **two separate, fatal errors** in this configuration that are currently destroying the database connection.
+
+**Expected outcome:** We should spot one error related to how the code likely expects the environment variable to be referenced, and one structural error in how the developer pasted the connection string template.
+
+**Student-to-AI prompt:**
+> "My deployed Node app is crashing when it tries to connect to MongoDB Atlas. My connection string contains `<cargosecret99>`. Can someone help me debug if I formatted the password replacement correctly?"
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://nodejs.org/en/learn/command-line/how-to-read-environment-variables-from-nodejs"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Reading Environment Variables in Node
+</LinkButton>
+
+### ⏭ Shipping Manifest
+
+If we survived the drills, our deployment knowledge is structurally sound. Next, we wrap it all up into a dense pocket reference.

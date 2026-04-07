@@ -1,0 +1,238 @@
+---
+title: 'Precision Persistence: Atlas'
+description: "Switching Voyager's Log from a local MongoDB container to MongoDB Atlas before deployment to Render."
+sidebar:
+  order: 10
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Moving Voyager’s Log to Atlas
+
+Up to this point, Voyager’s Log has been using MongoDB in a local container.
+
+That worked well for local multi-container development, but now we are preparing for deployment.
+
+So we are changing one thing:
+
+- the database moves from local Docker to **MongoDB Atlas**
+
+Everything else stays the same:
+
+- same app
+- same production image
+- same local production-image test workflow
+- only `MONGO_URI` changes
+
+<NoteBox title="One Clean Swap">
+  We are not redesigning the app here.
+
+We are just replacing the database connection so the app talks to Atlas instead of a local MongoDB container.
+
+</NoteBox>
+
+---
+
+## What You Need to Do in Atlas
+
+This part should feel familiar from Node2Know.
+
+You only need to:
+
+1. use an existing free cluster or create one
+2. create the application database
+3. create a database user for this app
+4. allow access from your current machine
+5. copy the Atlas connection string
+6. update `.env.prod`
+
+That’s it.
+
+---
+
+## Atlas Setup
+
+### 1. Create or Reuse a Cluster
+
+Use a free Atlas cluster if you already have one.
+
+You do not need anything special here. You just need a running cluster that can host this application database.
+
+### 2. Create the Database
+
+Inside the cluster, create the application database.
+
+Use:
+
+```text
+voyagers_log
+```
+
+You can also create the first collection at the same time. Something simple like this is fine:
+
+```text
+logs
+```
+
+The exact collection names may grow as the app runs, but creating the database now makes the target explicit and keeps the setup clean.
+
+### 3. Create a Database User
+
+Create a database user for Voyager’s Log if you do not already have one for this project.
+
+That username and password will become part of the Atlas connection string.
+
+Give that user access appropriate for this application database.
+
+### 4. Allow Your Current IP Address
+
+Because you are still testing from your own machine, Atlas needs to allow connections from your current public IP.
+
+In **Network Access**, add your current IP address.
+
+For local testing, the **Add Current IP Address** shortcut is usually enough.
+
+### 5. Copy the Connection String
+
+Atlas will give you a connection string that looks something like this:
+
+```text
+mongodb+srv://USERNAME:PASSWORD@cluster-name.mongodb.net/voyagers_log?retryWrites=true&w=majority
+```
+
+Make sure the database name at the end is:
+
+```text
+voyagers_log
+```
+
+That is the database your app should use.
+
+---
+
+## Update `.env.prod`
+
+Your app should already be reading the database connection from environment variables:
+
+Replace the old local MongoDB URI with your Atlas URI.
+
+Example:
+
+```env
+MONGO_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@cluster-name.mongodb.net/voyagers_log?retryWrites=true&w=majority
+```
+
+---
+
+## Rebuild the Production Image
+
+Now rebuild the app image from the project root:
+
+```bash
+docker build -t voyagers-log-production .
+```
+
+This gives you a fresh production image with the current application code.
+
+---
+
+## Run the Production Container Locally
+
+Start the app with your updated `.env.prod` file:
+
+```bash
+docker run --rm --name voyagers-log-prod -p 3000:3000 --env-file .env.prod -e NODE_ENV=production voyagers-log-production
+```
+
+At this point, the app should connect directly to Atlas.
+
+You do not need to run the old MongoDB container anymore.
+
+<CautionBox title="No Local Database Container Required">
+  Once the app is pointing at Atlas, MongoDB is no longer part of your local runtime stack for this workflow.
+
+The production container runs locally, but the database lives in the cloud.
+
+</CautionBox>
+
+---
+
+## Verify the Connection
+
+Open the app and test the normal flows:
+
+- submit a voyage entry
+- log in as admin
+- review pending entries
+- approve an entry
+- confirm it appears in the public feed
+
+If that all works, your production image is now running locally against Atlas.
+
+That is the whole checkpoint.
+
+---
+
+## Common Problems
+
+### Atlas Network Access
+
+Your current IP may not be allowed yet.
+
+### Bad Connection String
+
+A typo in the username, password, cluster name, or database name will break the connection.
+
+### Missing Environment Variables
+
+If `MONGO_URI` is undefined, the app will not connect.
+
+### Old Local Mongo Assumptions
+
+Make sure you are no longer using an old local URI such as:
+
+```text
+mongodb://db:27017/voyagers_log
+```
+
+or:
+
+```text
+mongodb://host.docker.internal:27017/voyagers_log
+```
+
+Those belonged to the earlier local database setup.
+
+---
+
+## What Changed
+
+Voyager’s Log now uses:
+
+- a hosted MongoDB Atlas database
+- environment-based database configuration
+- the same production-image workflow as before
+- no local MongoDB container dependency
+
+That puts the data layer where it needs to be before deployment.
+
+Next stop: **Render**.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/atlas/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  MongoDB Atlas Documentation
+</LinkButton>
+
+### ⏭ Introducing Render (PaaS)
+
+We now have a deployable application image blueprint living in the repository itself. Next, we hand that blueprint to Render so it can build the container, assign the app a public web runtime, and prepare the hosted side of the launch sequence.

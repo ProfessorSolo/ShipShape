@@ -1,0 +1,181 @@
+---
+title: "Beyond the Horizon"
+description: "Why deployment is not the end of the journey, but the beginning of a new responsibility."
+sidebar:
+  order: 0
+  label: "Beyond the Horizon"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Take a second and look back at what we just pulled off.
+
+We built an application.
+We split responsibilities across the stack.
+We ran services locally.
+We moved sensitive configuration out of the code.
+We connected to a managed database.
+We deployed the app to a hosted platform and verified that it actually worked.
+
+That is not small.
+
+It is a real milestone, and it is worth pausing long enough to appreciate it.
+
+But it is also the moment where software development quietly changes shape.
+
+## The Deployment Illusion
+
+It is very easy to treat deployment like the grand finale.
+
+The public URL is live.
+The app loads.
+The database responds.
+The pipeline finally stops yelling.
+
+Cue the dramatic harbor music.
+
+That feeling is understandable. It is also misleading.
+
+<CautionBox title="The Finish Line Fallacy">
+  Deployment is not the end of the work. It is the point where a different kind
+  of work begins. Shipping software makes it reachable. Operating software makes
+  it survivable.
+</CautionBox>
+
+Before deployment, most of our questions sounded like this:
+
+- _How do we build it?_
+- _How do we connect the pieces?_
+- _How do we package it?_
+- _How do we get it online?_
+
+After deployment, the questions change:
+
+- _Is it healthy right now?_
+- _What is it doing?_
+- _What changed?_
+- _How would we know if it broke?_
+- _Where do we look first when something goes sideways?_
+
+That shift is the heart of this final lesson.
+
+---
+
+## The New Responsibility
+
+Once an application is live, it stops being just a coding project.
+
+It becomes something that needs to be:
+
+- observed
+- supported
+- understood
+- trusted
+
+That does **not** mean we are about to disappear into an enterprise swamp of dashboards, incident war rooms, and seventeen layers of platform theater.
+
+It means we are going to add a few simple, practical production-aware habits so the application can start communicating with the humans responsible for it.
+
+<NoteBox title="What We Are Really Adding">
+  We are not trying to turn Voyagers Log into some sprawling cloud monster. We
+  are adding the basic signals that help a live application explain itself.
+  Software should not just run. It should leave enough clues behind that we can
+  understand what it is doing.
+</NoteBox>
+
+---
+
+## From Building to Supporting
+
+For most of this program, our focus has been on making software work.
+
+That meant learning how to:
+
+- write code
+- connect systems
+- build interfaces
+- move data
+- deploy applications
+
+Now, for one final shift, we move from **building** into **supporting**.
+
+That means thinking a little more like this:
+
+- What would I want to know if this app failed remotely?
+- What signals should it emit when it starts?
+- How do I know whether traffic is reaching it?
+- How do I know whether it can still talk to its dependencies?
+- How do I avoid relying on pure guesswork once users are involved?
+
+Those are operational questions.
+
+And once software goes live, operational questions become software questions.
+
+---
+
+## Why This Matters Beyond the Course
+
+This lesson is the last one in this course.
+
+For many of you, it is also the last one in the SSD program.
+
+That makes this page a pretty fitting threshold.
+
+Because one of the biggest differences between building software for school and building software professionally is this:
+
+**professional software does not stop mattering after it deploys.**
+
+That is when it starts mattering in a different way.
+
+A deployed application has a life after launch.
+It has behavior.
+It has drift.
+It has failure modes.
+It has users who do not care how elegant your code was if the app is down.
+
+That is not meant to sound grim.
+It is meant to sound real.
+
+And honestly, this is where things get interesting.
+
+---
+
+## The Horizon Ahead
+
+In this final lesson, we are not going to build a giant new feature.
+
+We are going to revisit the application we already shipped and look at it through a more operational lens.
+
+We are going to focus on first-step production awareness:
+
+- startup signals
+- request visibility
+- health-style endpoints
+- logs as operational evidence
+- understanding what the app is doing after it leaves our machine
+
+That is the next step beyond deployment.
+
+Not infinite complexity.
+Just enough awareness to stop flying blind.
+
+{/* T.A. Watts Image Placeholder: A visual showing Deployment as a midpoint buoy rather than a finish-line flag, with open water still ahead. */}
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://sre.google/sre-book/introduction/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Google SRE Book: Introduction
+</LinkButton>
+
+### ⏭ Voyagers Log, Live
+
+We already shipped our application. Next, we return to it with a new question: not just “does it run?” but “how would we support it now that it’s live?”

@@ -1,0 +1,274 @@
+---
+title: "The Heartbeat Endpoint"
+description: "Adding a tiny operational route that answers the simplest production question: is the application alive right now?"
+sidebar:
+  order: 8
+  label: "The Heartbeat Endpoint"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Logs are great at telling us what happened.
+
+They help us answer questions like:
+
+- did the app start?
+- did a request arrive?
+- what failed?
+- when did it fail?
+
+That is useful.
+
+But sometimes we want to ask a much simpler question:
+
+**is the app alive right now?**
+
+We should not need to submit a real form, trigger a real route, or wait for a real error just to answer that.
+
+That is where a heartbeat endpoint comes in.
+
+## What a Heartbeat Endpoint Is
+
+A heartbeat endpoint is a small route whose only job is to say:
+
+> yes, the app is here and responding
+
+That is it.
+
+It is not a user-facing feature.
+It is not business logic.
+It is not meant to do anything interesting.
+
+It is an operational signal.
+
+A very tiny one.
+A very useful one.
+
+---
+
+## A Simple Example
+
+In Express, a basic heartbeat route can be as small as this:
+
+```javascript
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    uptime: process.uptime(),
+  });
+});
+```
+
+Now, if we visit:
+
+```text
+/health
+```
+
+or hit it from the terminal with `curl`, the app returns a small JSON response that confirms:
+
+- the Node process is alive
+- the Express router is responding
+- the app can accept and answer a request right now
+
+That is already a very useful signal.
+
+<NoteBox title="A Tiny Route with a Big Job">
+  A heartbeat endpoint is simple on purpose. Its job is not to explain
+  everything about the system. Its job is to answer one fast, important
+  question: is the app up and responding?
+</NoteBox>
+
+---
+
+## Why This Helps
+
+A heartbeat endpoint is useful because it removes ambiguity.
+
+Without it, if we want to check whether the app is still alive, we might end up asking awkward questions like:
+
+- should I hit the homepage?
+- should I try a real form submission?
+- should I test a database-backed route?
+- should I wait for a user to complain?
+
+That is clumsy.
+
+With a dedicated heartbeat endpoint, we get a much cleaner answer.
+
+It lets us quickly distinguish between:
+
+- **the app is dead**
+  and
+- **the app is alive, but some deeper feature may be broken**
+
+That distinction matters a lot.
+
+---
+
+## What the Heartbeat Does and Does Not Prove
+
+A heartbeat endpoint is intentionally narrow.
+
+If it returns a healthy response, that usually tells us:
+
+- the process is running
+- Express is responding
+- the route layer is alive
+
+That is helpful.
+
+But it does **not** automatically prove that:
+
+- the database is reachable
+- all routes are functioning
+- form submissions succeed
+- external dependencies are healthy
+- the app is behaving perfectly overall
+
+So the heartbeat is not “full health.”
+It is “basic life.”
+
+That is still worth having.
+
+<CautionBox title="Do Not Overclaim What It Means">
+  A `/health` response tells us the app is alive enough to answer that route. It
+  does not guarantee every feature is healthy. Think of it as a pulse check, not
+  a full medical exam.
+</CautionBox>
+
+---
+
+## Keep It Lightweight
+
+This route should be fast and boring.
+
+Very boring.
+
+That means:
+
+- no heavy computation
+- no long-running logic
+- no giant payload
+- no dependency on slow downstream services unless you are deliberately building a deeper readiness check
+
+For this lesson, the heartbeat endpoint should stay minimal.
+
+Its value comes from being:
+
+- quick
+- predictable
+- easy to query
+- easy to understand
+
+If a heartbeat route takes a long time to respond, that is usually a sign that someone made it do too much.
+
+---
+
+## Useful Output Without Overdoing It
+
+A small payload like this is fine:
+
+```javascript
+{
+  status: 'healthy',
+  uptime: process.uptime()
+}
+```
+
+That gives us a little context without turning the route into a diagnostics dump.
+
+You might also reasonably include small, safe fields like:
+
+- current environment
+- app name
+- timestamp
+
+But keep it restrained.
+
+A heartbeat endpoint is not the place to dump internal secrets, config values, or a thousand lines of runtime state.
+
+---
+
+## Why Platforms Care About This Too
+
+This route is not just useful for humans.
+
+Platforms and orchestration systems often care about health-style endpoints too.
+
+A host can periodically hit a route like `/health` to answer questions such as:
+
+- is the app responding?
+- should traffic still be sent here?
+- does this container need to be restarted?
+
+That means a small operational route like this can become part of a much bigger platform story.
+
+We do not need to go full Kubernetes opera here to appreciate the point.
+
+The point is simple:
+
+**small, predictable health signals are useful to both humans and infrastructure.**
+
+<NoteBox title="A First Step Toward Self-Healing Systems">
+  Once a platform can ask an app “are you alive?” on a regular basis, it becomes
+  much easier to detect dead processes and respond automatically. That is one of
+  the first small steps toward more resilient hosting.
+</NoteBox>
+
+---
+
+## How This Fits with the Earlier Pages
+
+So far, our visibility story has been building in layers:
+
+- startup logs tell us the app woke up
+- request logs tell us traffic is arriving
+- error logs tell us what failed
+- a heartbeat endpoint tells us whether the app is alive right now
+
+That is a really nice progression.
+
+Each signal answers a slightly different question.
+
+And that is exactly what we want:
+
+not one giant magical observability feature, but several small, useful signals working together.
+
+---
+
+## Where This Still Leaves a Gap
+
+Even with a heartbeat route, one operational question still remains awkward:
+
+**what version of the app are we actually looking at?**
+
+If we deploy twice in one day and someone says:
+
+- “I think the fix is live”
+- “No, I’m still seeing the old behavior”
+
+then “the app is healthy” is not enough.
+
+We also need the app to identify itself.
+
+That leads naturally to the next operational endpoint.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/azure/architecture/patterns/health-endpoint-monitoring"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Health Endpoint Monitoring Pattern
+</LinkButton>
+
+### ⏭ The Version Endpoint
+
+A heartbeat tells us the app is alive. Next, we add a tiny route that tells us exactly what build or version is currently running.

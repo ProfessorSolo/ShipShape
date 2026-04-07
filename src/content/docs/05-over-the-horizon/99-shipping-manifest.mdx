@@ -1,0 +1,134 @@
+---
+title: "Shipping Manifest"
+description: "A compact operational reference for making deployed applications more visible, understandable, and supportable."
+sidebar:
+  order: 99
+  label: "Shipping Manifest"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+
+This is the final quick-reference page for the lesson.
+
+It is not about how to build the app.
+It is about how to make a live app easier to understand once it is running somewhere real.
+
+Use it as a compact reminder of the small operational signals that make deployed software less mysterious.
+
+---
+
+## Syntax HUD
+
+| Syntax / Concept                    | Purpose                                                                                    | Example                                                  |
+| :---------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| **Startup log**                     | Confirms the app woke up, bound to a port, and reached a basic startup milestone.          | `console.log(\`[SYSTEM] Listening on port: \${PORT}\`);` |
+| **Request logging middleware**      | Records inbound traffic so we can see what routes are actually being hit.                  | `app.use((req, res, next) => { ... })`                   |
+| **`next()`**                        | Passes control from one middleware step to the next route or middleware.                   | `next();`                                                |
+| **Error logging in `catch` blocks** | Records useful failure context for operators without dumping it into the browser response. | `console.error(\`[ERROR] \${error.message}\`);`          |
+| **Heartbeat endpoint**              | Provides a fast route to confirm the service is alive and responding.                      | `app.get('/health', (req, res) => ...)`                  |
+| **Version endpoint**                | Identifies the currently running release or deployment version.                            | `res.json({ release: process.env.APP_VERSION })`         |
+
+---
+
+## The Visibility Blueprint
+
+A small application becomes much easier to support when it can help answer these questions quickly:
+
+1. **Did it start successfully?**  
+   Startup logs answer this.
+
+2. **Is it receiving traffic?**  
+   Request logs answer this.
+
+3. **If something fails, what failed?**  
+   Error logs around risky operations answer this.
+
+4. **Is it alive right now?**  
+   A heartbeat endpoint helps answer this.
+
+5. **What version is running?**  
+   A version endpoint helps answer this.
+
+That is a very respectable first layer of production awareness.
+
+---
+
+## The Hazard Map
+
+| Problem                                           | Likely Cause                                                                   | Quick Fix                                                                                              |
+| :------------------------------------------------ | :----------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| App hangs after adding request logging middleware | Middleware intercepted the request but never handed it forward                 | Add `next()` and include it in the middleware signature                                                |
+| Homepage loads but feature actions fail           | The request reaches the app, but deeper route logic or a dependency is failing | Check error logs and the code path after the request arrives                                           |
+| User sees a `500`, but logs are not useful        | Risky logic is not wrapped with intentional logging                            | Add `try/catch` and log clear failure context with `console.error()`                                   |
+| Sensitive data appears in logs                    | Too much request or error detail is being logged                               | Keep logs structural and avoid logging secrets, passwords, tokens, or raw request bodies in production |
+| Logs become noisy and hard to use                 | The app is logging too much without restraint                                  | Log intentionally, keep messages concise, and avoid unnecessary chatter                                |
+| Team is unsure what release is live               | No version signal exists in the deployed app                                   | Add a `/version` route backed by something like `APP_VERSION`                                          |
+
+---
+
+## Solo’s Pro-Notes
+
+- **Silence is not a strategy.**  
+  If a live application emits no useful signals, support becomes guesswork.
+
+- **Logs and monitoring are not the same thing.**  
+  Logs tell us what happened. Monitoring helps tell us how the system is doing overall.
+
+- **A working homepage is not full proof of health.**  
+  Static asset delivery, API behavior, and database behavior are different layers.
+
+- **Do not confuse local success with hosted truth.**  
+  Once the app is deployed, the platform logs and the live runtime become the real source of evidence.
+
+- **Rollback is a normal move.**  
+  If a fresh deploy clearly introduced a problem, restoring the last known-good version is often the sane response.
+
+- **Small signals matter.**  
+  Startup logs, request logs, error logs, `/health`, and `/version` are all tiny features, but together they make a live app far easier to support.
+
+---
+
+## Operational Checklist
+
+When looking at a deployed application, start with questions like these:
+
+- Did the app start?
+- Is traffic reaching it?
+- Are failures being logged clearly?
+- Can I check whether it is alive quickly?
+- Can I tell which version is running?
+- Do I have enough evidence to debug from facts instead of vibes?
+
+If the answer to most of those is “yes,” the app is already much more supportable than a silent black box.
+
+---
+
+## Final Thought
+
+The goal of this lesson was not to turn a small project into a giant observability empire.
+
+It was to teach one durable habit:
+
+**when software goes live, supportability matters.**
+
+A production-aware application does not just run.
+It leaves enough clues behind that humans can understand it, trust it, and recover when something goes wrong.
+
+That is a strong place to finish.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://sre.google/sre-book/table-of-contents/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Google SRE Book
+</LinkButton>
+
+### ⏭ Mission Complete
+
+ShipShape is complete.

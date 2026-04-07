@@ -1,0 +1,195 @@
+---
+title: 'The Deployment Handover'
+description: 'Following the shift from successful image build into application startup and healthy hosted runtime.'
+sidebar:
+  order: 13
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## From Built Image to Running App
+
+A completed Docker build is important.
+
+But it is still only a build.
+
+At the end of the previous step, Render had successfully packaged the application image.  
+Now the platform has to do something different:
+
+1. create a container from that image
+2. inject the environment variables
+3. run the application command
+4. wait to see whether the app becomes a healthy web service
+
+That is the deployment handover.
+
+This is the moment where the packaged image stops being a build artifact and starts trying to become a live application.
+
+## What Changes in the Logs
+
+During the build phase, the log output is mostly Docker talking:
+
+- `COPY`
+- `RUN npm install`
+- `RUN npm run build`
+- `COPY --from=builder`
+
+Once the build completes, the log stream should change.
+
+Now the app itself starts talking.
+
+That means the logs should begin telling you about things like:
+
+- application startup
+- MongoDB connection
+- server binding
+- runtime failures, if they exist
+
+<NoteBox title="The build is over. The app is talking now.">
+  Build logs tell you whether Render could assemble the image. Runtime logs tell
+  you whether the application can actually wake up and behave like a hosted web
+  service.
+</NoteBox>
+
+## What Render Is Doing Now
+
+Conceptually, the runtime sequence looks like this:
+
+1. the image build finishes
+2. Render starts a container from that image
+3. Render injects the configured environment variables
+4. the container runs the image command
+5. the Node process starts
+6. Express and Mongoose begin startup
+7. Render waits to see whether the service becomes healthy
+
+That is the runtime checkpoint.
+
+This is where the app proves whether it can actually live on the platform, not just compile nicely for it.
+
+## The Runtime Proofs of Life
+
+For Voyager’s Log to become a healthy live service, a few things need to happen in the right order.
+
+### 1) The App Starts
+
+The container must successfully run the command from the Dockerfile:
+
+```dockerfile
+CMD ["node", "server/index.js"]
+```
+
+If the process crashes immediately, the service will never become healthy.
+
+### 2) MongoDB Connection Succeeds
+
+The app must be able to use `MONGO_URI` to connect to Atlas.
+
+If that fails, the runtime logs will usually show connection errors, auth failures, or retry noise instead of a clean startup.
+
+### 3) The Server Binds to the Provided Port
+
+The Express server must successfully listen using the port Render provides through the environment.
+
+In code, that means something in this shape:
+
+```js
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Voyager's Log API listening on port ${PORT}`);
+});
+```
+
+### 4) Render Recognizes the Service as Healthy
+
+Once the process is still alive and listening properly, Render can treat the service as healthy and begin routing traffic to it.
+
+That is the real runtime milestone.
+
+## What Good Runtime Logs Tend to Look Like
+
+The exact output depends on your app logging, but healthy runtime logs often include signs like:
+
+- successful MongoDB connection
+- a message showing the server is listening on a port
+- no immediate crash loop or restart loop
+
+Typical healthy output might resemble:
+
+```text
+Connected to MongoDB
+Voyager's Log API listening on port 10000
+```
+
+The exact port value may not be `3000`, and that is normal. Render provides the runtime port dynamically, and the application is expected to accept it.
+
+<CautionBox title="Do not get attached to port 3000">
+  In hosted runtime, the important question is not whether the port looks
+  familiar. The real question is whether the app successfully bound to the port
+  Render gave it.
+</CautionBox>
+
+## Why the Port May Look Strange
+
+Students often see a runtime log showing a port like `10000` and immediately assume something is broken.
+
+Usually, it is not.
+
+The public URL does not require your Node process to bind directly to `80` or `443`. Render sits in front of the app and routes public HTTPS traffic to the internal port your container is listening on.
+
+So the real test is not:
+
+> Is this the port I expected locally?
+
+It is:
+
+> Did the process successfully bind to the port Render provided?
+
+That is the question that matters.
+
+## If Runtime Fails Here
+
+If the build succeeded but the service still fails during startup, the likely causes have shifted.
+
+At this point, the common suspects are things like:
+
+- incorrect `MONGO_URI`
+- incorrect `SESSION_SECRET`
+- missing `NODE_ENV`
+- startup errors in application code
+- inability to connect to Atlas
+- failure to bind correctly to the provided port
+
+That is why this page exists separately from the build page.
+
+The build phase and runtime phase fail for different reasons. We need to keep those layers separate when debugging.
+
+### Build Phase
+
+Can the platform package the app?
+
+### Runtime Phase
+
+Can the platform actually run the app successfully?
+
+These are not the same thing.
+
+An image can build perfectly and still fail at runtime. A container can start and still never become healthy. A process can run and still not serve the app properly.
+
+That distinction makes debugging much less chaotic.
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/health-checks"
+  variant="secondary"
+  size="small"
+>
+  Render Docs: Health Checks
+</LinkButton>
+
+⏭ **Verifying External Routing**
+
+A healthy runtime state is a strong signal, but it is not the final proof. Next, we verify the public URL directly and confirm that the hosted app is actually serving the compiled frontend correctly.

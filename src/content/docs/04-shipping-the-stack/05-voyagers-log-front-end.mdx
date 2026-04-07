@@ -1,0 +1,932 @@
+---
+title: 'Signal Deck: Front End'
+description: "Building the Vite + Tailwind front end for Voyager's Log and connecting it to the local API."
+sidebar:
+  order: 5
+---
+
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Quick and Easy Client Side
+
+At this point our Voyagers Log has a working backend stack:
+
+- MongoDB running in Docker
+- Express serving API routes
+- Passport handling admin authentication
+
+The only problem is that the UX currently amounts to operating a shipping yard with `curl` and determination.
+
+Time to:
+
+- create the Vite app
+- add Tailwind CSS
+- build a public-facing interface
+- connect the client to the API
+- add a lightweight admin review screen
+- prep the client to run locally
+
+---
+
+## What our Front End Needs to Do
+
+### Public Interface
+
+Public visitors should be able to:
+
+- see approved voyage entries
+- submit a new voyage entry
+
+### Admin Interface
+
+Admins should be able to:
+
+- log in
+- view pending entries
+- approve entries
+- hide entries
+
+We are not building a giant dashboard here.
+
+We are building a clean control surface for the exact backend features we already created.
+
+---
+
+## Creating the Vite App
+
+At the root of the project, create the frontend with Vite:
+
+```bash
+npm create vite@latest client
+```
+
+Choose:
+
+- **Framework:** Vanilla
+- **Variant:** JavaScript
+
+Then move into the `client` folder and install dependencies:
+
+```bash
+cd client
+npm install
+```
+
+That gives us a modern frontend build setup without adding framework drama we do not need.
+
+---
+
+## Adding Tailwind CSS
+
+Inside the `client` folder, install Tailwind and the Vite plugin:
+
+```bash
+npm install tailwindcss @tailwindcss/vite
+```
+
+Now replace `client/vite.config.js` with this:
+
+```javascript
+import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [tailwindcss()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+This configuration does three important things:
+
+- enables Tailwind
+- makes the Vite dev server available on port `5173`
+- proxies `/api` requests to our Express backend on port `3000`
+
+<NoteBox title="Why the Proxy Matters">
+  The browser loads the frontend from the Vite dev server, but the data comes
+  from Express. The proxy keeps frontend code simple by letting it call
+  `/api/...` instead of hardcoding full backend URLs everywhere.
+</NoteBox>
+
+---
+
+## Frontend File Structure
+
+We are going to simplify the default Vite starter and use this structure:
+
+```text
+client/
+├── public
+└── src/
+    ├── main.js
+    └── style.css
+├── .gitignore
+├── package.json
+├── vite.config.js
+├── index.html
+
+```
+
+---
+
+## Replacing `index.html`
+
+Replace the content of `client/index.html` with:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voyagers Log</title>
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+That gives us one root mount point for the whole interface.
+
+---
+
+## Replacing `style.css`
+
+Replace `client/src/style.css` with:
+
+```css
+@import 'tailwindcss';
+```
+
+That is all we need to activate Tailwind in this setup.
+
+Tiny file. Huge value. Mildly unfair.
+
+---
+
+## Building the UI in `main.js`
+
+Here's where all the magic (and heavy lifting) happens.
+
+Replace `client/src/main.js` with the following:
+
+```javascript
+import './style.css';
+
+const app = document.querySelector('#app');
+
+const state = {
+  isAuthed: false,
+};
+
+const refreshIcon = `
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <path d="M21 2v6h-6" />
+    <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8" />
+    <path d="M3 22v-6h6" />
+    <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16" />
+  </svg>
+`;
+
+app.innerHTML = `
+  <main class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <nav class="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <p class="text-cyan-400 uppercase tracking-[0.35em] text-xs">Deep Space Dispatch</p>
+          <h1 class="text-2xl font-bold">Voyager's Log</h1>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            id="open-entry-modal-btn"
+            type="button"
+            class="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400 hover:text-cyan-400 transition"
+          >
+            Create
+          </button>
+
+          <a
+            id="admin-link"
+            href="#pending-section"
+            class="hidden rounded-lg border border-fuchsia-700 px-4 py-2 text-sm hover:border-fuchsia-400 hover:text-fuchsia-300 transition"
+          >
+            Admin
+          </a>
+
+          <button
+            id="open-login-modal-btn"
+            type="button"
+            class="rounded-lg bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-white hover:scale-[1.01] transition"
+          >
+            Login
+          </button>
+
+          <button
+            id="logout-btn"
+            type="button"
+            class="hidden rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400 hover:text-cyan-400 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <section class="max-w-6xl mx-auto w-full px-4 py-8 flex-1">
+      <p id="auth-feedback" class="mb-6 text-sm text-slate-400"></p>
+
+      <section class="mb-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-2xl font-semibold">And then...</h2>
+          <button
+            id="refresh-approved-btn"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-700 p-2 hover:border-cyan-400 hover:text-cyan-400 transition"
+            aria-label="Refresh approved voyages"
+            title="Refresh approved voyages"
+          >
+            ${refreshIcon}
+          </button>
+        </div>
+
+        <p id="approved-feedback" class="text-sm text-slate-400 mb-4"></p>
+        <div id="approved-list" class="space-y-4"></div>
+      </section>
+
+      <section
+        id="pending-section"
+        class="hidden mb-8 scroll-mt-24 bg-slate-900 border border-fuchsia-700/40 rounded-2xl p-6 shadow-xl"
+      >
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="text-2xl font-semibold text-fuchsia-400">Pending Review Queue</h2>
+          <button
+            id="refresh-pending-btn"
+            class="inline-flex items-center justify-center rounded-lg border border-slate-700 p-2 hover:border-fuchsia-500 hover:text-fuchsia-400 transition"
+            aria-label="Refresh pending voyages"
+            title="Refresh pending voyages"
+          >
+            ${refreshIcon}
+          </button>
+        </div>
+
+        <p id="pending-feedback" class="text-sm text-slate-400 mb-4"></p>
+        <div id="pending-list" class="space-y-4"></div>
+      </section>
+    </section>
+
+    <footer class="border-t border-slate-800 bg-slate-950">
+      <div class="max-w-6xl mx-auto px-4 py-4 text-sm text-slate-500">
+        &copy; 2026 Professor Solo. All rights reserved.
+      </div>
+    </footer>
+
+    <div
+      id="entry-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm p-4"
+    >
+      <div class="min-h-full flex items-center justify-center">
+        <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-2xl font-semibold">Create Voyage Entry</h2>
+            <button
+              type="button"
+              data-close-modal="entry-modal"
+              class="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-cyan-400 hover:text-cyan-400 transition"
+            >
+              Close
+            </button>
+          </div>
+
+          <form id="entry-form" class="space-y-4">
+            <div>
+              <label for="voyagerName" class="block text-sm font-medium mb-2">Voyager Name</label>
+              <input
+                id="voyagerName"
+                name="voyagerName"
+                type="text"
+                required
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-4 py-3 outline-none focus:border-cyan-400"
+                placeholder="Captain Nova"
+              />
+            </div>
+
+            <div>
+              <label for="message" class="block text-sm font-medium mb-2">Message</label>
+              <textarea
+                id="message"
+                name="message"
+                rows="5"
+                required
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-4 py-3 outline-none focus:border-cyan-400"
+                placeholder="Docking complete. Supplies stable. Crew morale acceptable."
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              class="rounded-xl bg-cyan-400 text-slate-950 font-semibold px-5 py-3 hover:scale-[1.01] transition"
+            >
+              Submit for Review
+            </button>
+          </form>
+
+          <p id="entry-feedback" class="mt-4 text-sm text-slate-400"></p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="login-modal"
+      class="hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm p-4"
+    >
+      <div class="min-h-full flex items-center justify-center">
+        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-2xl font-semibold">Admin Login</h2>
+            <button
+              type="button"
+              data-close-modal="login-modal"
+              class="rounded-lg border border-slate-700 px-3 py-2 text-sm hover:border-cyan-400 hover:text-cyan-400 transition"
+            >
+              Close
+            </button>
+          </div>
+
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label for="username" class="block text-sm font-medium mb-2">Username</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-4 py-3 outline-none focus:border-cyan-400"
+                placeholder="admin"
+              />
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium mb-2">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="w-full rounded-xl bg-slate-950 border border-slate-700 px-4 py-3 outline-none focus:border-cyan-400"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="rounded-xl bg-fuchsia-500 text-white font-semibold px-5 py-3 hover:scale-[1.01] transition"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+`;
+
+const els = {
+  openEntryModalBtn: document.querySelector('#open-entry-modal-btn'),
+  openLoginModalBtn: document.querySelector('#open-login-modal-btn'),
+  adminLink: document.querySelector('#admin-link'),
+  entryModal: document.querySelector('#entry-modal'),
+  loginModal: document.querySelector('#login-modal'),
+  entryForm: document.querySelector('#entry-form'),
+  loginForm: document.querySelector('#login-form'),
+  logoutBtn: document.querySelector('#logout-btn'),
+  refreshApprovedBtn: document.querySelector('#refresh-approved-btn'),
+  refreshPendingBtn: document.querySelector('#refresh-pending-btn'),
+  pendingSection: document.querySelector('#pending-section'),
+  entryFeedback: document.querySelector('#entry-feedback'),
+  authFeedback: document.querySelector('#auth-feedback'),
+  approvedFeedback: document.querySelector('#approved-feedback'),
+  pendingFeedback: document.querySelector('#pending-feedback'),
+  approvedList: document.querySelector('#approved-list'),
+  pendingList: document.querySelector('#pending-list'),
+};
+
+els.openEntryModalBtn.addEventListener('click', () =>
+  openModal(els.entryModal)
+);
+els.openLoginModalBtn.addEventListener('click', () =>
+  openModal(els.loginModal)
+);
+els.entryForm.addEventListener('submit', submitEntry);
+els.loginForm.addEventListener('submit', loginAdmin);
+els.logoutBtn.addEventListener('click', logoutAdmin);
+els.refreshApprovedBtn.addEventListener('click', loadApprovedVoyages);
+els.refreshPendingBtn.addEventListener('click', loadPendingVoyages);
+
+document.addEventListener('click', (event) => {
+  const closeBtn = event.target.closest('[data-close-modal]');
+  if (closeBtn) {
+    closeModal(document.querySelector(`#${closeBtn.dataset.closeModal}`));
+    return;
+  }
+
+  const modalBackdrop = event.target.closest('.fixed.inset-0');
+  if (modalBackdrop && event.target === modalBackdrop) {
+    closeModal(modalBackdrop);
+    return;
+  }
+
+  const actionBtn = event.target.closest('button[data-action]');
+  if (actionBtn) {
+    moderateVoyage(actionBtn.dataset.id, actionBtn.dataset.action);
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeModal(els.entryModal);
+    closeModal(els.loginModal);
+  }
+});
+
+function openModal(modal) {
+  modal.classList.remove('hidden');
+}
+
+function closeModal(modal) {
+  modal.classList.add('hidden');
+}
+
+function setAuthUi(isAuthed) {
+  state.isAuthed = isAuthed;
+  els.pendingSection.classList.toggle('hidden', !isAuthed);
+  els.adminLink.classList.toggle('hidden', !isAuthed);
+  els.logoutBtn.classList.toggle('hidden', !isAuthed);
+  els.openLoginModalBtn.classList.toggle('hidden', isAuthed);
+
+  if (!isAuthed) {
+    els.pendingList.innerHTML = '';
+    els.pendingFeedback.textContent = '';
+  }
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    credentials: 'include',
+    ...options,
+  });
+
+  let data = null;
+  try {
+    data = await response.json();
+  } catch {}
+
+  return { response, data };
+}
+
+async function submitEntry(event) {
+  event.preventDefault();
+  els.entryFeedback.textContent = 'Submitting transmission...';
+
+  const formData = new FormData(els.entryForm);
+  const payload = {
+    voyagerName: formData.get('voyagerName')?.trim(),
+    message: formData.get('message')?.trim(),
+  };
+
+  if (!payload.voyagerName || !payload.message) {
+    els.entryFeedback.textContent = 'Voyager name and message are required.';
+    return;
+  }
+
+  try {
+    const { response, data } = await api('/api/voyages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(data?.error || 'Failed to submit entry.');
+    }
+
+    els.entryForm.reset();
+    els.entryFeedback.textContent = 'Transmission submitted for review.';
+
+    if (state.isAuthed) {
+      await loadPendingVoyages();
+    }
+
+    setTimeout(() => {
+      closeModal(els.entryModal);
+      els.entryFeedback.textContent = '';
+    }, 900);
+  } catch (error) {
+    console.error(error);
+    els.entryFeedback.textContent = error.message;
+  }
+}
+
+async function loginAdmin(event) {
+  event.preventDefault();
+  els.authFeedback.textContent = 'Attempting login...';
+
+  const formData = new FormData(els.loginForm);
+  const body = new URLSearchParams({
+    username: formData.get('username')?.trim() || '',
+    password: formData.get('password') || '',
+  });
+
+  try {
+    const { response, data } = await api('/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!response.ok) {
+      setAuthUi(false);
+      els.authFeedback.textContent = data?.error || 'Login failed.';
+      return;
+    }
+
+    setAuthUi(true);
+    els.authFeedback.textContent = `Logged in as ${data.user.username}.`;
+    els.loginForm.reset();
+    closeModal(els.loginModal);
+    await loadPendingVoyages();
+    await loadApprovedVoyages();
+  } catch (error) {
+    console.error(error);
+    setAuthUi(false);
+    els.authFeedback.textContent = 'Login failed.';
+  }
+}
+
+async function logoutAdmin() {
+  els.authFeedback.textContent = 'Logging out...';
+
+  try {
+    const { response } = await api('/api/logout', {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Logout failed.');
+    }
+
+    setAuthUi(false);
+    els.authFeedback.textContent = 'Logged out.';
+    await loadApprovedVoyages();
+  } catch (error) {
+    console.error(error);
+    els.authFeedback.textContent = error.message;
+  }
+}
+
+async function loadApprovedVoyages() {
+  els.approvedFeedback.textContent = 'Loading approved transmissions...';
+
+  try {
+    const { response, data } = await api('/api/voyages');
+
+    if (!response.ok) {
+      throw new Error('Failed to load approved entries.');
+    }
+
+    renderVoyageList(els.approvedList, data, {
+      emptyText: 'No approved transmissions have been published yet.',
+      statusLabel: 'APPROVED',
+      statusClass: 'text-emerald-400',
+      nameClass: 'text-cyan-400',
+      cardClass: 'bg-slate-950 border border-slate-800',
+      showStatus: state.isAuthed,
+    });
+
+    els.approvedFeedback.textContent = data.length
+      ? ''
+      : 'No approved entries yet.';
+  } catch (error) {
+    console.error(error);
+    els.approvedFeedback.textContent = error.message;
+  }
+}
+
+async function loadPendingVoyages() {
+  if (!state.isAuthed) return;
+
+  els.pendingFeedback.textContent = 'Loading pending queue...';
+
+  try {
+    const { response, data } = await api('/api/admin/pending');
+
+    if (response.status === 401) {
+      setAuthUi(false);
+      els.authFeedback.textContent = 'Session expired.';
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error('Failed to load pending entries.');
+    }
+
+    renderVoyageList(els.pendingList, data, {
+      emptyText: 'The pending queue is clear.',
+      statusLabel: 'PENDING',
+      statusClass: 'text-amber-300',
+      nameClass: 'text-fuchsia-300',
+      cardClass: 'bg-fuchsia-950/30 border border-fuchsia-800/50',
+      showStatus: true,
+      actions: true,
+    });
+
+    els.pendingFeedback.textContent = data.length
+      ? ''
+      : 'No pending entries right now.';
+  } catch (error) {
+    console.error(error);
+    els.pendingFeedback.textContent = 'Could not load pending entries.';
+  }
+}
+
+async function moderateVoyage(id, action) {
+  els.pendingFeedback.textContent = `Applying ${action} action...`;
+
+  try {
+    const { response, data } = await api(`/api/admin/voyages/${id}/${action}`, {
+      method: 'PATCH',
+    });
+
+    if (response.status === 401) {
+      setAuthUi(false);
+      els.authFeedback.textContent = 'Session expired.';
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.error || `Failed to ${action} entry.`);
+    }
+
+    await Promise.all([loadPendingVoyages(), loadApprovedVoyages()]);
+  } catch (error) {
+    console.error(error);
+    els.pendingFeedback.textContent = error.message;
+  }
+}
+
+function renderVoyageList(container, voyages, options) {
+  if (!voyages.length) {
+    container.innerHTML = emptyCard(options.emptyText, options.cardClass);
+    return;
+  }
+
+  container.innerHTML = voyages
+    .map((voyage) => renderVoyageCard(voyage, options))
+    .join('');
+}
+
+function renderVoyageCard(voyage, options) {
+  const statusHtml = options.showStatus
+    ? `
+      <span class="text-xs uppercase tracking-[0.2em] ${options.statusClass}">
+        ${options.statusLabel}
+      </span>
+    `
+    : '';
+
+  const actionsHtml = options.actions
+    ? `
+      <div class="flex flex-wrap gap-3">
+        <button
+          class="rounded-lg bg-cyan-400 text-slate-950 font-semibold px-4 py-2"
+          data-id="${voyage._id}"
+          data-action="approve"
+        >
+          Approve
+        </button>
+        <button
+          class="rounded-lg border border-fuchsia-700 px-4 py-2 hover:border-fuchsia-400 hover:text-fuchsia-300 transition"
+          data-id="${voyage._id}"
+          data-action="hide"
+        >
+          Hide
+        </button>
+      </div>
+    `
+    : '';
+
+  return `
+    <article class="${options.cardClass} rounded-2xl p-5">
+      <div class="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <h3 class="text-lg font-semibold ${options.nameClass}">
+            ${escapeHtml(voyage.voyagerName)}
+          </h3>
+          <p class="text-xs text-slate-400">${formatDate(voyage.createdAt)}</p>
+        </div>
+        ${statusHtml}
+      </div>
+
+      <p class="text-slate-200 whitespace-pre-wrap mb-4">
+        ${escapeHtml(voyage.message)}
+      </p>
+
+      ${actionsHtml}
+    </article>
+  `;
+}
+
+function emptyCard(
+  message,
+  cardClass = 'bg-slate-950 border border-slate-800'
+) {
+  return `
+    <div class="${cardClass} rounded-2xl p-5 text-slate-400">
+      ${escapeHtml(message)}
+    </div>
+  `;
+}
+
+function formatDate(value) {
+  return new Date(value).toLocaleString();
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+setAuthUi(false);
+loadApprovedVoyages();
+```
+
+---
+
+## What This Front End Does
+
+This single file interface now supports:
+
+- public submission of new voyage entries
+- loading approved entries from the API
+- admin login using session auth
+- loading the pending review queue
+- approving entries
+- hiding entries
+- refreshing both public and admin views
+
+---
+
+## Important Fetch Details
+
+Two patterns matter in this file.
+
+### Public API Requests
+
+For public data and public submission, a normal fetch is enough:
+
+```javascript
+fetch('/api/voyages');
+```
+
+or
+
+```javascript
+fetch('/api/voyages', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(payload),
+});
+```
+
+### Authenticated Requests
+
+For session-based admin routes, fetch must include credentials:
+
+```javascript
+fetch('/api/admin/pending', {
+  credentials: 'include',
+});
+```
+
+That tells the browser to send the session cookie along with the request.
+
+<NoteBox title="Sessions Only Work If the Cookie Travels">
+  The server can only recognize an authenticated admin if the browser includes
+  the session cookie on later requests. Without `credentials: 'include'`, your
+  login may succeed and your protected route requests will still behave like
+  strangers at the airlock.
+</NoteBox>
+
+---
+
+## Running the Front End Locally
+
+From the `client` folder, start the Vite dev server:
+
+```bash
+npm run dev
+```
+
+By default, this should bring the client up on:
+
+```text
+http://localhost:5173
+```
+
+Because of the proxy in `vite.config.js`, the frontend can call:
+
+```text
+/api/...
+```
+
+and Vite will forward those requests to:
+
+```text
+http://localhost:3000
+```
+
+where the Express API is running.
+
+---
+
+## Running the Full Local Stack
+
+At this stage, local development works like this:
+
+### Terminal 1 — Docker Compose Stack
+
+From the project root:
+
+```bash
+docker compose up --build -d
+```
+
+That starts:
+
+- MongoDB
+- the Express API
+
+### Terminal 2 — Vite Front End
+
+From the `client` folder:
+
+```bash
+npm run dev
+```
+
+That starts:
+
+- the frontend development server
+
+This means the full local environment is now split across:
+
+- Docker Compose for backend services
+- Vite for frontend development
+
+<CautionBox title="The Front End Is Not in Compose Yet">
+  For this lesson phase, the Vite dev server runs directly on the host machine,
+  not as a containerized service. That keeps frontend development simpler while
+  the backend remains containerized and networked through Compose.
+</CautionBox>
+
+## What We Have Accomplished
+
+Voyager’s Log now has:
+
+- a Vite frontend
+- Tailwind styling
+- a public submission form
+- a public feed of approved entries
+- an admin login flow
+- a moderation interface for pending entries
+- local frontend-to-backend communication
+
+The app is now fully usable in local development.
+
+Not just theoretically functional.  
+Actually operable.
+
+---
+
+### ⏭ Kick the Tires
+
+Before we deploy, we test.

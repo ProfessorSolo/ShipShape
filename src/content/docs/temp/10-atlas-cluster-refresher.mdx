@@ -1,0 +1,54 @@
+---
+title: "Atlas Cluster Refresher"
+description: "A quick review of the required MongoDB Atlas setup before establishing the connection."
+sidebar:
+  order: 11
+  label: "Atlas Cluster Refresher"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Voyagers Log is now perfectly configured to receive an external database connection string via `process.env.MONGO_URI`. 
+
+Now, we actually have to generate that string. 
+
+We are not going to conduct a massive tour of the entire MongoDB Atlas ecosystem here. We are treating Atlas strictly as a utility. We just need the remote port open and a secure key to the door.
+
+## The Bare Minimum Setup
+
+To ship this stack, our Atlas account needs exactly three things configured correctly:
+
+1. **An Active Cluster:** The actual servers running the database engine.
+2. **A Database User:** A designated credential set (username and password) explicitly authorized to read and write to the database.
+3. **Network Access (IP Whitelisting):** Security rules dictating *where* the connection is allowed to originate from.
+
+<NoteBox title="Role Isolation">
+  The Database User we create in Atlas is not meant to be a person. It is a "service account" specifically meant for the Voyagers Log application to use.
+</NoteBox>
+
+<CautionBox title="The 0.0.0.0/0 Compromise">
+  For this deployment sequence against a free-tier cluster, allowing network access from anywhere (`0.0.0.0/0`) is often the most practical way to ensure Render can reach the cluster, since Render uses dynamic IPs. In a strict enterprise environment, we would use VPC peering or dedicated static IPs to lock this down entirely.
+</CautionBox>
+
+If our cluster is already spinning, our database user is created, and our network access is open, the infrastructure is holding steady. 
+
+All that is left is to grab the exact string that will chart the course between our host and our data.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Deploying an Atlas Sandbox Cluster
+</LinkButton>
+
+### ⏭ The Connection String
+
+With the cluster active, we need the precise routing coordinates. Next, we retrieve the finalized connection string from Atlas.

@@ -1,0 +1,74 @@
+---
+title: "Shipping Manifest"
+description: "A high-density reference guide for application deployment and database routing."
+sidebar:
+  order: 25
+  label: "Shipping Manifest"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+This is our master checklist and syntax dictionary for first-stage application delivery. If our deployed application refuses to run, refuses to connect, or refuses to route traffic, our answer is almost certainly somewhere on this page.
+
+---
+
+## Syntax HUD
+
+| Syntax / Concept | Purpose | Example |
+| :--- | :--- | :--- |
+| `process.env.PORT` | Dynamically binds the application to the internal port assigned by the host environment. | `app.listen(process.env.PORT \|\| 3000);` |
+| `process.env.[VAR]` | Injects external secrets (like database strings) securely into the codebase at runtime. | `mongoose.connect(process.env.MONGO_URI);` |
+| `mongodb+srv://` | The standard connection protocol for linking to a managed remote MongoDB instance (like Atlas). | `mongodb+srv://user:pass@cluster.mongodb.net/` |
+| `npm install` | The mandatory **Build Command**. Tells the host platform to fetch necessary package dependencies. | `npm install` |
+| `npm start` | The mandatory **Start Command**. Tells the host to trigger our production `node` script. | `npm start` |
+
+---
+
+## The Deployment Blueprint
+
+An application must meet these four criteria before it is authorized to leave the local dock:
+
+- **Start Script verification:** `package.json` contains `"start": "node server.js"`.
+- **Dynamic Port mapping:** No hardcoded ports; `process.env.PORT` must be implemented.
+- **Externalized Database connections:** No hardcoded `mongodb://` strings; connections must pull from `process.env`.
+- **Clean Repository:** Absolutely no `.env` files or secret keys committed to GitHub.
+
+---
+
+## The Hazard Map
+
+| Problem | Likely Cause | Quick Fix |
+| :--- | :--- | :--- |
+| Render says "Live" but the browser times out. | The app is listening on a hardcoded port (e.g., `3000`) instead of the host's assigned port. | Update to `process.env.PORT \|\| 3000` and redeploy. |
+| Atlas connection fails immediately. | Angled brackets were left around the password, or the password was mistyped. | Ensure the string reads `:mypassword@`, not `:<mypassword>@`. |
+| "Mongo connection refused / ENOTFOUND db" | App still contains local Compose network assumptions (`mongodb://db`). | Update code to expect `process.env.MONGO_URI`. |
+| Render fails build with `Command not found`. | Missing or misconfigured `start` script in `package.json`. | Add `"start": "node server.js"` to `package.json`. |
+| `process.env.MONGO_URI` is undefined in production. | The environment variable was mistyped in the Render dashboard. | Verify the dashboard key matches the code's casing exactly (e.g., `MONGO_URI`, not `mongo_uri`). |
+
+---
+
+## Solo’s Pro-Notes
+
+- **The Database Is Not Sibling Data:** Do not host data inside the application container. The app logic (Render) must remain safely decoupled from the data persistence (Atlas).
+- **The Homepage Is A Liar:** A loading frontend does not mean a healthy deployment. Always force an integration check by writing a piece of data to the remote database using the live application interface.
+- **Secrets Do Not Travel Automatically:** The `.env` file from our laptop stays on our laptop. We are explicitly responsible for copying those values into the deployment environment dashboard.
+- **Embrace Stateless Execution:** Assume the host platform will randomly destroy and recreate our application container at any given moment. 
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/deploy-node-express-app"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Render: Deploying Node & Express
+</LinkButton>
+
+### ⏭ Module Complete
+
+We have successfully shipped the stack. The application is out of the harbor. Where do we go next?

@@ -1,0 +1,244 @@
+---
+title: 'When Deploys Fail'
+description: 'Learning how to classify deployment failures so you debug the right layer first.'
+sidebar:
+  order: 16
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Leaving the Happy Path
+
+So far, we have walked the successful deployment path:
+
+- the image built
+- the runtime started
+- the public URL loaded
+- the app talked to Atlas
+
+Win!!!
+
+Sadly, real deployment work is not just about successful launches.
+
+It is also about knowing how to respond when things fail.
+
+And it will fail sometimes.
+
+We will eventually:
+
+- mistype an environment variable
+- forget to commit a needed file
+- break the frontend build
+- push code that works locally but fails in hosted runtime
+
+That does **not** mean the platform is random, cursed, or personally offended.
+
+A failed deploy is not chaos.
+
+It is evidence.
+
+## The First Question to Ask
+
+When a deploy fails, do **not** start with:
+
+> “What is wrong with deployment?”
+
+Start with:
+
+> **Which phase failed?**
+
+At this point in the lesson, the most important diagnostic split is:
+
+1. **Build failure**
+2. **Runtime failure**
+
+That distinction is everything.
+
+Because once you identify the failure phase, your next debugging move becomes much clearer.
+
+<NoteBox title="The habit we want">
+Do not diagnose everything as “the deploy failed.”
+
+First identify the phase. Then debug that phase.
+
+</NoteBox>
+
+## Failure Type 1: Build Failure
+
+A **build failure** means the platform could not successfully create the deployable image.
+
+In other words:
+
+- Docker never finished packaging the app
+- the image was never completed
+- the application never even reached startup
+
+That means this is still a **build pipeline** problem, not yet a live-app problem.
+
+### Common build failure causes
+
+Typical examples include:
+
+- missing dependencies
+- bad `COPY` paths in the Dockerfile
+- frontend build errors
+- files referenced by the build that were never committed
+- project structure mismatches between the repo and the Dockerfile
+
+### What build failures usually look like
+
+You will usually see errors during steps such as:
+
+- `npm install`
+- `npm run build`
+- file copy steps
+- Docker instruction execution
+
+The important point is simple:
+
+**the app never reached runtime.**
+
+<CautionBox title="Do not debug the wrong layer">
+  If the image never built successfully, there is no point testing the public
+  URL, blaming Atlas, or guessing about frontend routing yet.
+</CautionBox>
+
+### Why build failures are often less scary
+
+A build failure usually blocks the **new** deploy.
+
+It often does **not** immediately destroy the last working version already running on the platform.
+
+So while build failures are annoying, they are often a **blocked release**, not an instantly broken live service.
+
+## Failure Type 2: Runtime Failure
+
+A **runtime failure** happens **after** the image built successfully.
+
+That means:
+
+- Docker packaging worked
+- the image exists
+- the container starts, or tries to start
+- the application fails during startup or cannot stay healthy
+
+This is a different class of problem entirely.
+
+### Common runtime failure causes
+
+Typical examples include:
+
+- missing or incorrect `MONGO_URI`
+- missing or incorrect `SESSION_SECRET`
+- missing or incorrect `NODE_ENV`
+- hardcoded local port assumptions
+- app crashes during startup
+- Atlas connection failures
+- production static-serving logic pointing at the wrong built asset path
+
+### What runtime failures usually look like
+
+Runtime failures often show up as:
+
+- a build that succeeds but never becomes healthy
+- a service that restarts repeatedly
+- a public URL returning platform or proxy errors
+- startup exceptions in the application logs
+
+The key idea here is:
+
+**the image exists, but the app cannot run correctly inside its hosted environment.**
+
+## The Clean Split
+
+Here is the useful mental model:
+
+### Build Failure
+
+- Docker build fails
+- image is never completed
+- startup never happens
+- likely causes: Dockerfile, file layout, dependencies, build tooling
+
+### Runtime Failure
+
+- Docker build succeeds
+- image is created
+- startup begins
+- app fails because of config, connectivity, port binding, or runtime code behavior
+
+That distinction should become automatic.
+
+Because once you know which side of the line you are on, the debugging path stops being blurry.
+
+## The Two-Question Triage Check
+
+When a deploy fails, ask these questions in order:
+
+### 1) Did the Docker build complete successfully?
+
+If no, you are in **build failure** territory.
+
+### 2) Did the built app start and stay healthy?
+
+If no, you are in **runtime failure** territory.
+
+That one-two check will save a shocking amount of wasted nonsense.
+
+## Our First Move for Each Failure Type
+
+### If it is a build failure, check:
+
+- the Dockerfile
+- project file paths
+- committed files
+- package metadata
+- frontend build output
+
+### If it is a runtime failure, check:
+
+- environment variables
+- Atlas connectivity
+- startup logs
+- port binding
+- application exceptions during boot
+
+Different failure class.
+
+Different first move.
+
+## Why This Distinction Matters
+
+Without this framework, we tend to collapse every hosted problem into one mushy feeling:
+
+> “Something in the cloud is broken.”
+
+That is not useful.
+
+This is useful:
+
+- **Build failed** → check Dockerfile, dependencies, repo state, build tooling
+- **Runtime failed** → check environment config, Atlas, startup behavior, logs
+
+That turns deployment from spooky mystery into a process we can reason about.
+
+## Do Not Solve the Wrong Problem
+
+One of the most expensive debugging habits is fixing the wrong layer.
+
+Examples:
+
+- rewriting runtime code when the image never built
+- editing the Dockerfile when the real issue is a bad `MONGO_URI`
+- blaming Atlas when the frontend bundle failed before startup
+- blaming routing when the service never became healthy
+
+First classify the failure.
+
+Then fix the layer that actually failed.
+
+⏭ **Platform Logs as Truth**
+
+Now that we know how to classify deployment failures, the next step is learning where to look for the evidence that actually matters.

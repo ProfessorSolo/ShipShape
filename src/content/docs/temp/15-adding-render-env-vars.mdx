@@ -1,0 +1,63 @@
+---
+title: "Adding Render Environment Variables"
+description: "Securely injecting database coordinates into the hosted application."
+sidebar:
+  order: 16
+  label: "Adding Render Environment Variables"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+If we launch our application right now, the build phase will succeed, the start command will fire, and then the application will immediately crash.
+
+Why? Because back in our deployment readiness checklist, we stripped out all the hardcoded configuration. We explicitly instructed Voyagers Log to look for its database connection using `process.env.MONGO_URI`. 
+
+Right now, in the pristine Render container, that variable does not exist. The application is completely blind.
+
+## Injecting the Secrets
+
+Before finalizing the web service creation, we must scroll down to the **Environment** section of the Render configuration dashboard. This is where we securely hand off our sensitive routing information.
+
+We use the dashboard UI to safely define the key-value pairs our code is expecting:
+
+- **Key:** `MONGO_URI`
+- **Value:** The fully completed `mongodb+srv://...` string we generated from MongoDB Atlas.
+
+Render will store this information securely. When the application boots, Render will inject this variable dynamically, allowing our Express server to establish the critical bridge to Atlas over the network.
+
+<NoteBox title="No PORT Required">
+  We do not need to manually configure the `PORT` environment variable. Because we are spinning up a Web Service, Render automatically generates the internal port assignment and quietly injects it as `PORT` for us. 
+</NoteBox>
+
+## Configuration Mismatches
+
+The environment variable dashboard is the most frequent source of failed deployments.
+
+<CautionBox title="Exact Matches Required">
+  The environment key must match the exact string we wrote in our Node code. If our code asks for `process.env.MONGO_URI` and we configure the dashboard variable as `MONGO_URL` or `mongo_uri`, the code will not find it and the deployment will fail. Capitalization matters entirely.
+</CautionBox>
+
+With the build verified, the start command loaded, and the exact database coordinates securely anchored in the environment parameters, the preparation phase is over. 
+
+We are finally ready to push the button.
+
+{/* T.A. Watts Image Placeholder: A diagram showing Render's environment variable UI feeding directly into the Node application process at startup, allowing it to route outwards to Atlas. */}
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/environment-variables"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Render Environment Variables Guide
+</LinkButton>
+
+### ⏭ Launching the Deployment
+
+The configuration is absolute. The cargo is loaded. Next, we kick off the actual public deployment.

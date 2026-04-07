@@ -1,0 +1,91 @@
+---
+title: 'Beyond Localhost'
+description: 'The architectural shift from local orchestration to distributed hosting. We are trading Compose aliases for DNS and public routing.'
+sidebar:
+  order: 0
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## The Comfort of the Harbor
+
+Up to now, our code has lived a very sheltered life.
+
+We built it. We wired it up with Docker Compose. We watched it behave nicely on our own machine. The browser answered at `localhost` (via port mapping from host to container), and our services simply yelled their buddy's name (like `db_service`) across the local bridge network to get a response.
+
+Awesome. But local orchestration is not hosted delivery.
+
+If our application is a ship, everything we've done so far has been in a secure, enclosed training harbor. The time has come to push our stack into the real world.
+
+## The Architectural Shift
+
+Moving an application from a local machine to the public internet completely changes the physics of how our code behaves.
+
+When we transition to a hosted environment, we don't just "run Compose somewhere else." We dismantle our comfortable local bundle and distribute the responsibilities to specialized platform providers.
+
+{/* VISUAL ANCHOR: A side-by-side diagram contrasting a single-host Docker Compose Local Network (App and DB in one box) versus the Distributed Public Cloud architecture (Render App communicating over the open internet to an Atlas DB). */}
+
+<img
+  src="/assets/lessons/04-shipping-the-stack/00-beyond-localhost.png"
+  alt="A side-by-side diagram contrasting a single-host Docker Compose Local Network (App and DB in one box) versus the Distributed Public Cloud architecture (Render App communicating over the open internet to an Atlas DB)."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1. Contrasting Local Development & Hosted Deployment_
+
+Instead of this:
+
+- **Application:** Local Docker Container
+- **Database:** Sibling MongoDB Container
+- **Network:** Isolated Docker bridge network
+- **Routing:** Handled entirely by Docker's internal DNS
+
+We shift to this:
+
+- **Application Runtime:** Hosted on Render (Platform-as-a-Service)
+- **Database Cluster:** Hosted on MongoDB Atlas (Database-as-a-Service)
+- **Network:** The open, unforgiving public internet
+- **Routing:** Real DNS resolving to public IP addresses
+
+<NoteBox title="A Change in Strategy">
+  We are no longer concerned with *if* the containers spin up locally, and start
+  thinking about *how* those containers authorize and communicate across
+  distinct geographic boundaries.
+</NoteBox>
+
+## No More Sibling `db`
+
+This is the biggest mindset shift we have to make today. When our Node app wakes up on Render, there is no MongoDB container peacefully slumbering in the bunk next to it.
+
+If we try to connect to `mongodb://db:27017` in a production environment, our app will look around the Render server, realize it has no idea what a `db` is, panic, and crash. Our database now lives miles away in an entirely separate platform.
+
+<CautionBox title="The End of Local Autonomy">
+  When we rely on managed cloud platforms, we are trading complete control of
+  the hardware for the convenience of managed execution. Render handles the OS
+  patching. Atlas handles the database backups. We govern the code and the
+  remote connection routing.
+</CautionBox>
+
+Our application logic won't change, but the deployment will. We are trading the training wheels of Docker Compose for real-world DNS and public routing.
+
+Let's open the crates and see what cargo we're shipping today.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/free"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Render: Free Tier Capabilities
+</LinkButton>
+
+### ⏭ Meet Voyager's Log
+
+Before we can set up the cloud infrastructure, we need an application to host. Time to inspect the payload.

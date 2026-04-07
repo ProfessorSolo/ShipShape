@@ -1,0 +1,326 @@
+---
+title: 'Dry Dock Drills'
+description: 'Hands-on deployment drills for practicing build, runtime, routing, and persistence troubleshooting.'
+sidebar:
+  order: 98
+  label: 'Dry Dock Drills'
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+This lab is about repetition.
+
+Not glamorous repetition.  
+Useful repetition.
+
+By now, Voyager’s Log has been:
+
+- containerized
+- connected to Atlas
+- deployed to Render
+- verified through a live public URL
+
+Lovely.
+
+Now we do what real operators do:
+
+we run drills.
+
+The goal is to strengthen your ability to identify **which deployment layer is failing** and respond with the right debugging move.
+
+---
+
+## Mission Objective
+
+Work through the drills below using your deployed Voyager’s Log app.
+
+For each drill, your job is to:
+
+1. make the change
+2. predict what kind of failure it should create
+3. deploy or test
+4. observe the failure
+5. classify the layer correctly
+6. restore the app to a healthy state
+
+You are not just fixing things.
+
+You are practicing **diagnostic discipline**.
+
+<NoteBox title="The real skill">
+The point of this lab is not memorizing specific fixes.
+
+The point is learning to ask:
+
+- Did the image build?
+- Did the runtime start?
+- Did the public route work?
+- Did the app actually persist data?
+
+</NoteBox>
+
+---
+
+## Drill 1: Break the Frontend Build
+
+Introduce a small error into the frontend code that should cause the Vite build to fail.
+
+Examples:
+
+- import a file that does not exist
+- introduce a syntax error into a component
+- reference a variable that breaks the production build
+
+### Your task
+
+- push the broken code
+- watch the Render deploy
+- identify where the failure appears
+- describe why this is a **build failure**, not a runtime failure
+
+### Success condition
+
+You can point to the failing build step and explain why the app never even reached startup.
+
+<CautionBox title="Do not overbreak it">
+Break one thing on purpose.
+
+Do not turn the repo into a flaming landfill.
+
+</CautionBox>
+
+---
+
+## Drill 2: Break Runtime Configuration
+
+Restore the frontend, then create a runtime configuration problem.
+
+Examples:
+
+- temporarily change `NODE_ENV`
+- temporarily break `MONGO_URI`
+- temporarily alter `SESSION_SECRET`
+- remove a required environment variable in Render
+
+### Your task
+
+- predict whether the image should still build
+- deploy the change
+- inspect the runtime behavior
+- classify the failure as a **runtime failure**
+
+### Success condition
+
+You can explain why the image built successfully but the application failed after startup or failed to behave correctly once running.
+
+---
+
+## Drill 3: Break External Routing
+
+Restore the runtime configuration, then create a routing or static-serving problem.
+
+Examples:
+
+- comment out the production static-serving block
+- break the catch-all route that serves `index.html`
+- point the production asset path at the wrong folder
+
+### Your task
+
+- deploy the change
+- open the public URL
+- observe what the browser gets back
+- explain why this is neither a build problem nor an Atlas problem
+
+### Success condition
+
+You can identify this as a **hosted routing/static delivery** problem and describe what layer is actually failing.
+
+---
+
+## Drill 4: Break Persistence
+
+Restore routing, then create a database behavior problem without breaking the whole app shell.
+
+Examples:
+
+- point to the wrong database name
+- break a Mongoose create operation
+- submit a form with known-invalid backend assumptions
+- introduce an error into an API handler used during submission or approval
+
+### Your task
+
+- confirm that the homepage still loads
+- test form submission or moderation
+- inspect the logs
+- verify whether the data did or did not reach Atlas
+
+### Success condition
+
+You can explain why a loaded homepage does **not** prove that persistence is working.
+
+---
+
+## Drill 5: Read the Platform Logs Like an Adult
+
+Choose one of the broken states above and diagnose it using Render logs.
+
+Your job is to collect actual evidence.
+
+### Look for signals such as:
+
+- build-step failures
+- startup exceptions
+- Atlas connection errors
+- missing environment variable behavior
+- request-handling exceptions
+- repeated restarts
+
+### Success condition
+
+You can quote or summarize the specific log evidence that identifies the failure layer.
+
+<NoteBox title="No ghost stories">
+Do not say, “Render was being weird.”
+
+Say what failed, where it failed, and what evidence proved it.
+
+</NoteBox>
+
+---
+
+## Required Deliverable
+
+Create a short deployment drill report.
+
+For each drill, include:
+
+- **What you changed**
+- **What you predicted**
+- **What actually happened**
+- **Which layer failed**
+- **What evidence confirmed it**
+- **How you fixed it**
+
+This can be submitted as:
+
+- markdown
+- plain text
+- a short PDF
+- a structured document with screenshots
+
+Keep it clear.  
+Keep it honest.  
+Keep it technical.
+
+---
+
+## Suggested Structure
+
+You may use a structure like this:
+
+```md
+## Drill 1 - Build Failure
+
+**Change made:**  
+Introduced a bad import in the frontend.
+
+**Prediction:**  
+Render build should fail during the Vite build step.
+
+**Observed result:**  
+Deploy failed during `npm run build`.
+
+**Failure layer:**  
+Build failure.
+
+**Evidence:**  
+Render build logs showed the missing import error.
+
+**Fix:**  
+Restored the correct import path.
+```
+
+---
+
+## Stretch Challenge
+
+If you want one extra rep, do this:
+
+Break the app in one way that causes a misleading symptom.
+
+For example:
+
+- the homepage loads, but submissions fail
+- the build succeeds, but the service never becomes healthy
+- the API responds, but the frontend does not load correctly
+
+Then write a short note explaining:
+
+- the visible symptom
+- the true failure layer
+- why a shallow first guess would have been wrong
+
+That is excellent practice.
+
+---
+
+## What This Lab Is Really Training
+
+This lab is not about making mistakes for fun.
+
+It is training you to think in layers:
+
+- build
+- runtime
+- routing
+- persistence
+- evidence
+
+That is how real deployment debugging stays sane.
+
+Without that structure, every failure feels like “the cloud broke.”
+
+With that structure, you can classify, investigate, and recover.
+
+That is the whole game.
+
+---
+
+## Submission Checklist
+
+Before submitting, make sure you have:
+
+- completed the drills
+- restored your app to a healthy deployed state
+- confirmed the public URL works again
+- confirmed persistence works again
+- included evidence from Render logs or Atlas where relevant
+
+<CautionBox title="End in a healthy state">
+  Do not leave your deployed app broken at the end of the lab unless your
+  instructor specifically asks for a failed-state screenshot as evidence.
+</CautionBox>
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/dev-prod-parity"
+  variant="secondary"
+  size="small"
+>
+  The Twelve-Factor App: Dev/Prod Parity
+</LinkButton>
+
+<LinkButton href="https://12factor.net/config" variant="secondary" size="small">
+  The Twelve-Factor App: Config
+</LinkButton>
+
+⏭ **The Shipping Manifest**
+
+Once the drills are done, finish the lesson with the final reference sheet: the compact operational cheat sheet for the whole deployment sequence.

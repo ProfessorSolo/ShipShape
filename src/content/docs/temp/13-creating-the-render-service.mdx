@@ -1,0 +1,58 @@
+---
+title: "Creating the Render Service"
+description: "Authorizing the platform to pull our application code from GitHub."
+sidebar:
+  order: 14
+  label: "Creating the Render Service"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We have arrived at the host platform. 
+
+Render organizes deployed applications into autonomous services. For Voyagers Log, we need to create a **Web Service**. This specific type of service is designed to receive incoming HTTP traffic, which is exactly how a user will connect to our Express application.
+
+## Authorizing the Connection
+
+Because we established GitHub as our central cargo manifest, our first step in Render is simply introducing the two platforms to each other.
+
+When we create a new Web Service, Render asks where the code lives. We establish the connection by authorizing Render to access our GitHub account.
+
+- We navigate to the Render dashboard and create a new **Web Service**.
+- We select the option to build and deploy from a **Git repository**.
+- We connect our GitHub account and search for the specific repository holding the Voyagers Log code.
+
+<NoteBox title="Selective Access">
+  When connecting GitHub to third-party services, we are typically given the option to grant access to all repositories or only specific ones. Granting access only to the repositories the platform actively needs is always the better security posture.
+</NoteBox>
+
+## Selecting the Target
+
+Once Render verifies our access, we simply select the Voyagers Log repository and proceed to the configuration phase. 
+
+At this exact moment, Render doesn't actually know what kind of application we have handed it. It sees a repository filled with files. It is up to us to provide the specific instructions—the runtime and the commands—required to turn those raw files into a functioning web application.
+
+<CautionBox title="Double Check the Repository">
+  If we have several forks or old projects, heavily verify that we have targeted the exact repository containing the deployment-ready code we prepared earlier (with the clean `start` script and dynamic port assignment).
+</CautionBox>
+
+With the repository securely bridged into Render, we can move forward and configure the execution environment.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/github"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Linking GitHub to Render
+</LinkButton>
+
+### ⏭ Configuring Build and Start Settings
+
+We have provided the code, but the host platform needs instructions on how to run it. Next, we establish our build and execution commands.

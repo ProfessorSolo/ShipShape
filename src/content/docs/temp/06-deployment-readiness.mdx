@@ -1,0 +1,53 @@
+---
+title: "Deployment Readiness"
+description: "The mandatory checklist before sending application code to a hosted platform."
+sidebar:
+  order: 7
+  label: "Deployment Readiness"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It is tempting to simply point Render at a GitHub repository, hit "Deploy," and hope the platform magically unwinds whatever local development hacks we left in the codebase.
+
+Do not do that.
+
+Before an application is permitted to leave the local dock, it must pass a pre-flight inspection. Hosted platforms are smart, but they are unforgiving of hardcoded local assumptions.
+
+## The Pre-Flight Checklist
+
+Before we log into Render or Atlas, we have to guarantee our codebase meets these four non-negotiable requirements:
+
+1. **A Clean Start Command:** The application must have a standard `start` script defined in `package.json`. 
+2. **Dynamic Port Discovery:** The application must listen on the port assigned by the host environment, not a hardcoded local favorite.
+3. **Externalized Configuration:** Database connection strings and sensitive secrets must be entirely removed from the code and transitioned to read from the environment.
+4. **No Local Sibling Assumptions:** The application must not expect a `mongodb://db` local address or a local frontend build loop to be present.
+
+<NoteBox title="The Goal is Surrendering Control">
+  In a deployed environment, the application surrenders control of its own infrastructure. It doesn't choose its IP address. It doesn't choose its port. It doesn't store its own database passwords. It simply receives those coordinates from the host environment at runtime and behaves accordingly.
+</NoteBox>
+
+<CautionBox title="The Works-On-My-Machine Fallacy">
+  "Works on my machine" is a symptom of failing this checklist. If an application runs cleanly locally but crashes on Render, it almost invariably means one of these four rules was broken. 
+</CautionBox>
+
+We are going to verify the first three programmatic rules right now, one by one, before we even think about touching the deployment trigger.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://learn.microsoft.com/en-us/dotnet/architecture/microservices/architect-microservice-container-applications/scalable-available-multi-container-microservice-applications"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Containerized Deployment Readiness
+</LinkButton>
+
+### ⏭ The Start Command
+
+First on the checklist: the application must know how to begin its own execution without a developer typing commands. Next, we check the ignition sequence.

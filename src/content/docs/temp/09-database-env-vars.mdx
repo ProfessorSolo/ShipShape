@@ -1,0 +1,68 @@
+---
+title: "Database Environment Variables"
+description: "Securing connections by externalizing sensitive configuration from application code."
+sidebar:
+  order: 10
+  label: "Database Environment Variables"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+The third and final programmatic check before we deploy is configuration hygiene. 
+
+When Voyagers Log goes live, it must connect to MongoDB Atlas. That means it needs the `mongodb+srv://` connection string we discussed previously.
+
+It is extremely tempting to simply paste that exact string directly into `server.js` or `db.js`. 
+
+```javascript
+// DO NOT DO THIS
+mongoose.connect("mongodb+srv://admin:myCoolPassword@cluster0.mongodb.net/voyagers-log");
+```
+
+## The Catastrophe of Hardcoded Secrets
+
+If we hardcode that connection string into our application, we have just coupled our live, sensitive database credentials directly to our source code. 
+
+When we push that code to GitHub, our password instantly becomes part of the permanent version-control history. Even worse, if we ever need to rotate passwords or change database clusters, we actually have to edit the source code and run a full deployment just to update a config value.
+
+<CautionBox title="A Fast Track to Compromise">
+  Scraping public GitHub repositories for hardcoded API keys and database credentials is a fully automated sport. Committing an Atlas connection string into source control is functionally equivalent to posting it on an open forum. 
+</CautionBox>
+
+## Configuration Belongs in the Environment
+
+A deployed application must expect its configuration—especially its secrets and connection strings—to be delivered securely at runtime by the host environment.
+
+We achieve this by replacing the hardcoded string with an environment variable.
+
+```javascript
+// The application expects the host to provide MONGO_URI
+mongoose.connect(process.env.MONGO_URI);
+```
+
+<NoteBox title="The Environment Boundary">
+  By relying on `process.env.MONGO_URI`, the codebase remains completely agnostic. The same code can connect to a mock database in testing, a local cluster in development, and Atlas in deployment—all without changing a single line of JavaScript.
+</NoteBox>
+
+Locally, we might use a tool like `dotenv` and a `.env` file to inject this variable. But in deployment, the `.env` file is intentionally ignored (and specifically excluded from via `.gitignore`). The actual live value will be plugged directly into the Render dashboard during setup.
+
+The application is now checklist-ready. The code has surrendered control of its port and its database credentials. It is time to get the destination infrastructure ready.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/config"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Twelve-Factor App: Configuration
+</LinkButton>
+
+### ⏭ Atlas Cluster Refresher
+
+The app is prepared, but we need the actual database target established. Next, we do a quick refresh on securing the Atlas cluster.

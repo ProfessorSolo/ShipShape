@@ -1,0 +1,64 @@
+---
+title: "Confirming Data in Atlas"
+description: "Closing the loop by verifying physical persistence in the remote database."
+sidebar:
+  order: 21
+  label: "Confirming Data in Atlas"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+It is the final phase of the deployment journey. We need to verify that the cargo we launched from the live form actually arrived at its destination.
+
+We are returning to the MongoDB Atlas dashboard.
+
+## The Final Validation Check
+
+Inside Atlas, navigate to the specific cluster we provisioned for Voyagers Log and open the **Database Deployments** view. Click the **Browse Collections** button to natively inspect the data structure inside the remote cluster.
+
+We should see:
+1. The **database name** we specified at the end of the `mongodb+srv://...` connection string.
+2. The specific **collection** our Mongoose schema defined (likely called `logs` or `reflections`).
+3. The **actual document** containing the exact text we just submitted through the live application form.
+
+<NoteBox title="Mission Accomplished">
+  When we see that data record sitting safely in Atlas, the loop is closed. The deployment is structurally verified. We have connected a front-end interface, hosted on a managed PaaS, to a managed database provider.
+</NoteBox>
+
+## Why This Loop Matters
+
+This check feels overly strict, but it establishes a critical operational habit.
+
+<CautionBox title="The Illusion of Persistence">
+  If an application misbehaves and connects to a default fallback database, or inadvertently fails over to an ephemeral file-storage layer because of a configuration glitch, the user experience will look perfect until the next redeploy completely wipes their data. 
+</CautionBox>
+
+By checking Atlas, we have proven three things:
+- The `process.env.MONGO_URI` injection worked natively in Render.
+- The credentials were correct, and IP access was permitted.
+- Persistence is completely decoupled from the application container lifecycle.
+
+We can completely delete our Render web service, spin up a new one identically, and that data will still be waiting for us safely in Atlas.
+
+That is the power of a decoupled hosted architecture.
+
+{/* T.A. Watts Image Placeholder: A sequence verifying the user form payload traveling from Render outward to MongoDB Atlas, and landing permanently in the collection UI. */}
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/atlas/atlas-ui/collections/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Managing Collections in MongoDB Atlas
+</LinkButton>
+
+### ⏭ Architectural Shift Recap
+
+We successfully completed the voyage. Next, we put our new deployment map side-by-side with our old local setup to see exactly what we learned.

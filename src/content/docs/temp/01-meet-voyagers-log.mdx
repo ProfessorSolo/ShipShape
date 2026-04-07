@@ -1,0 +1,64 @@
+---
+title: "Meet Voyagers Log"
+description: "Introducing our test subject: a practical Node application ready for deployment."
+sidebar:
+  order: 2
+  label: "Meet Voyagers Log"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+Before we start mapping out the hosted route, we need a cargo vessel. 
+
+For this deployment sequence, we are shipping **Voyagers Log**. It is a small Node and Express application where voyagers can leave reflections, course feedback, parting notes, and optional contact information. 
+
+It is intentionally straightforward, but it provides everything we need to prove an architecture works in transit:
+
+- **A functional GUI:** A real form that accepts data.
+- **A persistence requirement:** Submitted data actually has to be stored.
+- **A clear validation loop:** We can immediately check if the live app successfully writes to a remote database.
+
+## Why Not a "Hello World" Container?
+
+Deploying a single, static container that returns "Hello World" is easy. But it is also a bit of a trick.
+
+A static container doesn't rely on outside configuration. It doesn't connect to external systems. It doesn't fail when network assumptions change. 
+
+<CautionBox title="The Problem with 'Hello World'">
+  If an application does nothing, proving it successfully deployed is meaningless. A real deployment test includes verifying that the live application can actually read or write real external data.
+</CautionBox>
+
+Voyagers Log solves this. When we used it locally, it leaned on a local Docker Compose network to talk to a MongoDB container under the handy service name `db`. 
+
+In deployment, that local luxury completely vanishes. There is no `db` sibling. The app must reach outward, using a proper connection string provided securely by its new host environment.
+
+## The Deployment Blueprint
+
+To get this application successfully out of the local dock, we have to transition every part of its architecture. 
+
+It will move from a local folder to a GitHub repository, and from our local machine to a managed hosting platform. Its database connection will transition from a local container network to a managed remote cluster.
+
+<NoteBox title="A Realistic Scenario">
+  This is a highly practical, repeatable workflow. We aren't just moving files; we are shifting the application's entire operational footprint to an environment designed to serve real traffic securely.
+</NoteBox>
+
+Let's take a look at exactly what breaks—and what needs to change—when an application finally goes live.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express Routing Basics
+</LinkButton>
+
+### ⏭ Architecture in Transit
+
+Our friendly local orchestrator isn't coming with us on this voyage. Next, we untangle exactly what changes when an application shifts from local development to hosted runtime.

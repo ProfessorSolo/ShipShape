@@ -1,0 +1,241 @@
+---
+title: "Startup Logs"
+description: "Teaching the application to announce a clean startup so we can tell when it actually woke up successfully."
+sidebar:
+  order: 3
+  label: "Startup Logs"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+When a deployed app fails to start, platform dashboards often say something wonderfully vague like:
+
+```text
+Process exited
+```
+
+Very dramatic. Not especially helpful.
+
+One of the easiest ways to improve operational visibility is to have the application clearly announce when it has started successfully.
+
+That sounds tiny, and it is.
+It is also incredibly useful.
+
+## The Ignition Signal
+
+For an Express app, the most obvious startup milestone is the moment it successfully binds to a port and begins accepting traffic.
+
+That happens inside `app.listen()`.
+
+So instead of leaving that callback empty, we use it to emit a clean startup signal.
+
+Here is a simple production-aware example:
+
+```javascript
+const express = require("express");
+const app = express();
+
+const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+app.listen(PORT, () => {
+  console.log("[SYSTEM] Voyagers Log initialized successfully.");
+  console.log(`[SYSTEM] Environment: ${NODE_ENV}`);
+  console.log(`[SYSTEM] Listening on port: ${PORT}`);
+});
+```
+
+This gives us an immediate answer to a basic but important question:
+
+**did the app actually wake up and bind successfully?**
+
+If that message appears in the hosted logs, we know the process got at least that far.
+
+---
+
+## Why This Helps So Much
+
+Without an explicit startup log, a failed deployment can feel mushy and ambiguous.
+
+Did the app crash before startup?
+Did it bind to the wrong port?
+Did it fail while trying to connect to the database?
+Did the platform even run the code we think it ran?
+
+A startup log helps narrow that down immediately.
+
+<NoteBox title="The Value of Confirmation">
+  If you deploy to Render and never see the startup message, that usually tells
+  you the app died before it could finish initialization. That instantly shifts
+  your attention toward startup code, configuration, dependency setup, or syntax
+  problems rather than general platform mystery.
+</NoteBox>
+
+---
+
+## Logging the Environment on Purpose
+
+Notice that the example logs two extra pieces of information:
+
+- the environment
+- the bound port
+
+That is not accidental.
+
+### `NODE_ENV`
+
+Logging the environment helps confirm which code path the app is using.
+
+For example, if your production-only logic depends on:
+
+```javascript
+process.env.NODE_ENV === "production";
+```
+
+then seeing the current environment in the logs is a very useful sanity check.
+
+### `PORT`
+
+Logging the bound port confirms that the app accepted the platform-provided value instead of clinging to a local-only assumption.
+
+This matters because hosted platforms like Render do not care about our emotional attachment to port `3000`.
+
+They assign a port, and the app needs to cooperate.
+
+---
+
+## What This Does **Not** Prove
+
+A startup log is useful, but let’s keep it in its lane.
+
+If you see:
+
+```text
+[SYSTEM] Voyagers Log initialized successfully.
+```
+
+that does **not** automatically prove that:
+
+- requests are reaching the app
+- Atlas connectivity is healthy
+- routes are behaving correctly
+- users can successfully submit data
+
+It only proves that the app reached a successful startup milestone.
+
+That is still worth a lot.
+
+But it is only the first signal.
+
+<CautionBox title="Startup Success Is Not Full Health">
+  Do not confuse “the app started” with “the app is fully healthy.” Startup logs
+  are the first clue, not the whole investigation.
+</CautionBox>
+
+---
+
+## A Small Improvement with a Big Payoff
+
+This is one of those changes that feels almost too small to matter.
+
+It is just a few log lines.
+
+But operationally, it is a big deal because it replaces silence with evidence.
+
+Instead of wondering whether the app ever really woke up, you can check the logs and know.
+
+That is the whole theme of this lesson in miniature:
+
+take small, deliberate steps that make the application easier to understand from the outside.
+
+---
+
+## Log Carefully, Not Recklessly
+
+Startup logs are useful, but they are also a place where people sometimes get sloppy.
+
+Do **not** log secrets.
+
+That means no dumping things like:
+
+- `process.env.MONGO_URI`
+- database passwords
+- session secrets
+- API keys
+
+Logging configuration is good.
+Logging credentials is clown behavior.
+
+A safe rule of thumb is:
+
+- log the existence of important runtime state
+- log the environment
+- log the port
+- log major milestones
+- do **not** log sensitive values
+
+<NoteBox title="Good Startup Logs Confirm Without Exposing">
+  A startup log should tell you that the application is awake and what mode it
+  is in. It should not leak the exact secrets that make the application work.
+</NoteBox>
+
+---
+
+## Where This Fits in Voyagers Log
+
+For Voyagers Log specifically, this startup signal becomes much more useful once we combine it with database-aware signals.
+
+For example, imagine seeing logs like:
+
+```text
+[SYSTEM] Connected to MongoDB.
+[SYSTEM] Voyagers Log initialized successfully.
+[SYSTEM] Environment: production
+[SYSTEM] Listening on port: 10000
+```
+
+Now the app is telling us a much more complete story:
+
+- database connection succeeded
+- startup completed
+- the runtime mode is correct
+- the app is listening where the platform expects it to
+
+That is already a huge upgrade over silence.
+
+---
+
+## What Comes Next
+
+Knowing the app started is good.
+
+But a running application that never receives traffic is a very peaceful kind of broken.
+
+So the next layer of visibility is not just:
+
+- did the app wake up?
+
+It is:
+
+- what is the app actually doing once it is awake?
+
+That means request logging.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/en/starter/hello-world.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express: app.listen()
+</LinkButton>
+
+### ⏭ Request Logs
+
+Startup logs tell us the app woke up. Next, we make it visible when real traffic starts hitting the system.

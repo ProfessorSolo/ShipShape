@@ -25,46 +25,16 @@ const COURSE_MODULES = [
     directory: '03-multi-container-docker-compose',
     released: true,
   },
-  //   {
-  //     label: 'Sleek Templating with Pug',
-  //     directory: '04-sleek-templating-with-pug',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'MongoDB Document Vault',
-  //     directory: '05-mongodb-document-vault',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'Fast Flexible Mongoose ODM',
-  //     directory: '06-fast-flexible-mongoose-odm',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'Mongoose CRUD',
-  //     directory: '07-mongoose-crud',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'NoSQL Relationships',
-  //     directory: '08-nosql-relationships',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'File Uploads',
-  //     directory: '09-file-uploads',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'Authentication with Passport',
-  //     directory: '10-auth-with-passport',
-  //     released: true,
-  //   },
-  //   {
-  //     label: 'Role Based Authorization',
-  //     directory: '11-role-based-authorization',
-  //     released: true,
-  //   },
+  {
+    label: 'Shipping the Stack',
+    directory: '04-shipping-the-stack',
+    released: true,
+  },
+  {
+    label: 'Over the Horizon',
+    directory: '05-over-the-horizon',
+    released: false,
+  },
 ];
 
 // SHOW_ALL_CONTENT is TRUE in non-production (local dev / preview).

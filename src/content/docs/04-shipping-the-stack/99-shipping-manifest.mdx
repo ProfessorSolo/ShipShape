@@ -1,0 +1,358 @@
+---
+title: 'The Shipping Manifest'
+description: 'The final deployment reference sheet for building, launching, verifying, and debugging Voyager’s Log.'
+sidebar:
+  order: 99
+  label: 'Shipping Manifest'
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+This is the compact field reference for the deployment phase of Voyager’s Log.
+
+Not a full lesson.  
+Not a walkthrough.  
+A **working reference sheet**.
+
+Use it when you need to remember:
+
+- what changed between local and hosted
+- what Render needs
+- what Atlas is doing
+- what the Dockerfile is responsible for
+- how to classify deployment failures without spiraling
+
+---
+
+## Deployment Flow at a Glance
+
+| Phase                       | What happens                                           | Main question                                     |
+| :-------------------------- | :----------------------------------------------------- | :------------------------------------------------ |
+| **1. Atlas Setup**          | The database moves from local MongoDB to MongoDB Atlas | Can the app reach the hosted database?            |
+| **2. Render Service Setup** | A Web Service is created from the GitHub repo          | Can the platform build and run the app?           |
+| **3. Environment Setup**    | Runtime variables are added in Render                  | Does the deployed app have the config it needs?   |
+| **4. Image Build**          | Render builds the app from the Dockerfile              | Did the image build successfully?                 |
+| **5. Runtime Startup**      | The container starts and the app attempts to boot      | Did the app become healthy?                       |
+| **6. External Routing**     | The public URL serves the frontend                     | Does the hosted app load in a browser?            |
+| **7. Persistence Check**    | Live data moves through the app into Atlas             | Does the deployed stack actually work end to end? |
+
+---
+
+## Local vs Hosted Architecture
+
+| Local Development                  | Hosted Deployment                                   |
+| :--------------------------------- | :-------------------------------------------------- |
+| MongoDB container in Compose       | MongoDB Atlas                                       |
+| Express backend in Docker          | Express in Render                                   |
+| Vite dev server on host            | Built frontend served by Express                    |
+| Compose networking by service name | External connectivity through environment variables |
+| Local `.env` or defaults           | Render environment variables                        |
+| Files on your machine              | Files from the committed repo                       |
+
+<NoteBox title="Same app, different environment">
+Deployment did not create a totally different application.
+
+It changed how the application is built, configured, connected, and hosted.
+
+</NoteBox>
+
+---
+
+## Required Environment Variables
+
+These are the key variables for the deployed Voyager’s Log app.
+
+| Variable         | Purpose                                        | Example / Notes                                             |
+| :--------------- | :--------------------------------------------- | :---------------------------------------------------------- |
+| `MONGO_URI`      | Connects Mongoose and session storage to Atlas | Use the Atlas connection string that already worked locally |
+| `SESSION_SECRET` | Signs session data securely                    | Must be long, random, and not committed                     |
+| `NODE_ENV`       | Enables production-specific behavior           | Set to `production`                                         |
+| `PORT`           | Platform-provided runtime port                 | **Do not set manually in Render**                           |
+
+---
+
+## Dockerfile Responsibilities
+
+Our production Dockerfile does three important jobs:
+
+| Responsibility               | What it means                                      |
+| :--------------------------- | :------------------------------------------------- |
+| **Build the frontend**       | Run the Vite production build                      |
+| **Package the backend**      | Install only the backend runtime dependencies      |
+| **Assemble the final image** | Copy the built frontend into the runtime container |
+
+### Conceptual flow
+
+```dockerfile
+# Stage 1: build frontend
+RUN npm run build --prefix client
+
+# Stage 2: run app
+COPY --from=builder /app/client/dist ./client/dist
+CMD ["node", "server/index.js"]
+```
+
+That means the final container contains:
+
+- the Express server
+- the backend dependencies
+- the compiled frontend assets
+
+It does **not** contain a live Vite dev server.
+
+---
+
+## Express Production Responsibilities
+
+In deployment, Express does more than just serve API routes.
+
+It also needs to serve the compiled frontend.
+
+### Production responsibilities
+
+- serve static files from `client/dist`
+- return `index.html` for the app shell
+- expose the API routes
+- listen on `process.env.PORT`
+- bind to `0.0.0.0`
+
+### Conceptual shape
+
+```js
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
+
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(distPath));
+
+  app.get('/{*splat}', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
+app.listen(PORT, HOST, () => {
+  console.log(`Voyager's Log API listening on port ${PORT}`);
+});
+```
+
+<CautionBox title="Classic gremlin">
+  If `NODE_ENV=production` is missing, the app may boot successfully but fail to
+  serve the frontend correctly.
+</CautionBox>
+
+---
+
+## Render Setup Defaults for This Project
+
+| Setting             | Value / Guidance                             |
+| :------------------ | :------------------------------------------- |
+| **Service Type**    | Web Service                                  |
+| **Runtime**         | Docker                                       |
+| **Repo Access**     | Connect GitHub account                       |
+| **Repo Visibility** | Private is fine                              |
+| **Root Directory**  | Leave blank if app is at repo root           |
+| **Dockerfile Path** | `./Dockerfile` if Dockerfile is at repo root |
+| **Branch**          | Your deployment branch, usually `main`       |
+| **PORT**            | Let Render provide it automatically          |
+
+---
+
+## Atlas Responsibilities
+
+Atlas is now the production database.
+
+That means it is responsible for:
+
+- storing voyage entries
+- storing user data
+- handling the deployed app’s reads and writes
+- replacing the old local MongoDB container
+
+### Atlas verification path
+
+When persistence is working, you should be able to:
+
+1. submit a voyage entry in the live app
+2. log in as admin
+3. approve the entry
+4. see it appear in the public feed
+5. confirm the document in Atlas
+
+That is the end-to-end proof.
+
+---
+
+## Healthy Deployment Checklist
+
+Use this when a deploy is supposed to be working.
+
+### Build layer
+
+- repo pushed to GitHub
+- Dockerfile exists in expected path
+- frontend build succeeds
+- final image is assembled
+
+### Runtime layer
+
+- `MONGO_URI` is valid
+- `SESSION_SECRET` exists
+- `NODE_ENV=production`
+- app binds to `process.env.PORT`
+- app binds to `0.0.0.0`
+
+### Routing layer
+
+- public Render URL opens
+- frontend loads
+- no `Cannot GET /`
+- no missing static asset failures
+
+### Persistence layer
+
+- form submission works
+- moderation workflow works
+- Atlas documents are created or updated correctly
+
+---
+
+## Failure Classification Cheatsheet
+
+When something breaks, do **not** say only:
+
+> “deployment failed”
+
+Classify it.
+
+| Failure Type            | Meaning                                                                   | Common Causes                                                                          |
+| :---------------------- | :------------------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
+| **Build Failure**       | The image never finished building                                         | bad Dockerfile path, failed `npm install`, failed Vite build, missing committed files  |
+| **Runtime Failure**     | The image built, but the app failed to start or stay healthy              | bad env vars, Atlas connection failure, startup crash, bad port binding                |
+| **Routing Failure**     | The app is running, but the browser is not getting the frontend correctly | missing static-serving logic, wrong `dist` path, missing production mode               |
+| **Persistence Failure** | The frontend loads, but the data flow fails                               | broken API handler, bad Mongoose logic, Atlas read/write issues, session/auth problems |
+
+---
+
+## Two-Question Triage
+
+When a deploy fails, ask these in order:
+
+### 1) Did the image build successfully?
+
+- **No** → build failure
+- **Yes** → go to question 2
+
+### 2) Did the app start and behave like a healthy service?
+
+- **No** → runtime failure
+- **Yes, but browser is wrong** → routing issue
+- **Yes, but data flow is broken** → persistence issue
+
+That simple.
+
+---
+
+## Logs to Check
+
+| Log Type         | Use it for                                                                     |
+| :--------------- | :----------------------------------------------------------------------------- |
+| **Build Logs**   | Docker steps, package installs, Vite build, image assembly                     |
+| **Runtime Logs** | startup messages, port binding, Atlas connection, exceptions, request failures |
+
+### Mental model
+
+- **Build logs** tell you whether the platform packaged the app
+- **Runtime logs** tell you whether the deployed app is actually functioning
+
+<NoteBox title="Remote terminal mindset">
+Render logs are basically the deployed version of your terminal output.
+
+Once the app is hosted, that is the terminal that matters most.
+
+</NoteBox>
+
+---
+
+## Common Symptoms and Likely Layers
+
+| Symptom                                           | Likely Layer                 |
+| :------------------------------------------------ | :--------------------------- |
+| Deploy fails during `npm run build`               | Build                        |
+| Render service never becomes healthy              | Runtime                      |
+| Public URL shows `Cannot GET /`                   | Routing                      |
+| Homepage loads but submission fails               | Persistence                  |
+| Login fails unexpectedly                          | Persistence / runtime config |
+| Atlas shows no new document after form submission | Persistence                  |
+| Build succeeds, but app crashes on startup        | Runtime                      |
+
+---
+
+## Core Production Mental Shifts
+
+| Local Assumption                              | Production Reality                                            |
+| :-------------------------------------------- | :------------------------------------------------------------ |
+| “Port 3000 is the app port”                   | The platform provides the runtime port                        |
+| “The DB is at `db`”                           | The DB is reached through `MONGO_URI`                         |
+| “Vite serves the frontend”                    | Express serves built frontend assets                          |
+| “My local files are the source of truth”      | The committed repo is the source of truth                     |
+| “If it works locally, deployment should work” | Hosted runtime has different config, networking, and behavior |
+
+---
+
+## Final Operational Summary
+
+Voyager’s Log now works like this:
+
+1. GitHub provides the source
+2. Render builds the Docker image
+3. Render starts the container
+4. Express boots in hosted runtime
+5. Express serves the API and built frontend
+6. Mongoose connects to Atlas
+7. Users interact with the live deployed app
+
+That is the operational picture.
+
+---
+
+## Pocket Version
+
+If you remember nothing else, remember this:
+
+- **Build** asks: can the platform package the app?
+- **Runtime** asks: can the platform run the app?
+- **Routing** asks: does the browser get the frontend correctly?
+- **Persistence** asks: does the live app actually move data through the stack?
+
+That is the whole deployment diagnostic map.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="/assets/lessons/04-shipping-the-stack/Beyond_Localhost.pdf"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Beyond Localhost - Study Guide
+</LinkButton>
+
+<LinkButton
+  href="https://github.com/ProfessorSolo/ShipShape-04-02-VoyagersLog.git"
+  icon="external"
+  variant="primary"
+  target="_blank"
+>
+  Complete Remotely Deployed Voyagers Log Demo Repo
+</LinkButton>
+
+---
+
+⏭ **Over the Horizon**
+
+We’ve shipped the stack. Next, we move past deployment itself and start looking at what happens once an application is live: visibility, operational signals, and how to read the system once it leaves the harbor.

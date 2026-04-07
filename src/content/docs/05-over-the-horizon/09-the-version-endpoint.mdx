@@ -1,0 +1,263 @@
+---
+title: "The Version Endpoint"
+description: "Giving the application a simple way to identify exactly which release is running."
+sidebar:
+  order: 9
+  label: "The Version Endpoint"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+A heartbeat endpoint answers one useful question:
+
+**is the app alive?**
+
+Good.
+
+But once deployments start happening regularly, another question shows up almost immediately:
+
+**what version of the app is actually running right now?**
+
+That question matters more than people expect.
+
+If you deploy multiple times in a day and someone says:
+
+- “I think the fix is live”
+- “I’m still seeing the old behavior”
+- “That bug only started after the latest deploy”
+
+then “the app is healthy” is not enough.
+
+We also need the application to identify itself.
+
+## Why This Matters
+
+As soon as a team starts deploying more than once in a blue moon, ambiguity creeps in fast.
+
+Questions start popping up like:
+
+- did the new deployment actually finish?
+- is the hosted app running the latest build?
+- is the browser showing stale assets?
+- are we debugging the current version or yesterday’s version?
+
+A version endpoint gives us a direct answer instead of forcing us into vibes, guesswork, and dramatic finger-pointing.
+
+That makes it a very small feature with a surprisingly large payoff.
+
+---
+
+## A Simple `/version` Route
+
+Just like the heartbeat route, the version route should be small and focused.
+
+Its job is not to explain the entire internals of the application.
+
+Its job is to identify the currently running release in a way that is useful to the team.
+
+A simple Express version route can look like this:
+
+```javascript
+app.get("/version", (req, res) => {
+  res.status(200).json({
+    app: "voyagers-log",
+    release: process.env.APP_VERSION || "unknown",
+  });
+});
+```
+
+Now a request to:
+
+```text
+/version
+```
+
+returns a small payload that tells us which release the app believes it is running.
+
+That is exactly the kind of operational clue we want.
+
+<NoteBox title="Operational Identity">
+  A version endpoint gives the app a way to answer a very practical support
+  question: “which build am I looking at right now?” That can save a lot of
+  confusion during fast-moving deploy cycles.
+</NoteBox>
+
+---
+
+## Why Use an Environment Variable
+
+Notice that the route does **not** hardcode the version directly into the source code.
+
+Instead, it reads:
+
+```javascript
+process.env.APP_VERSION;
+```
+
+That is the cleaner pattern.
+
+Why?
+
+Because version identity is really deployment metadata.
+
+It is something the environment or deployment pipeline can provide at runtime, rather than something we manually edit into the code every time we ship a change.
+
+That makes the endpoint more flexible and less annoying to maintain.
+
+---
+
+## What `APP_VERSION` Might Contain
+
+The value does not have to be fancy.
+
+It just needs to be meaningful to the people supporting the application.
+
+For example, `APP_VERSION` might be:
+
+- a semantic version like `v1.2.0`
+- a short Git commit hash like `a1b2c3d`
+- a release label like `render-deploy-2026-04-01`
+
+Any of those can work.
+
+The goal is not to impress the machine.
+The goal is to reduce human confusion.
+
+---
+
+## What This Helps Us Answer
+
+A version endpoint becomes useful any time deployment ambiguity appears.
+
+For example:
+
+- “Did today’s hotfix actually reach production?”
+- “Are we still hitting the previous release?”
+- “Did Render redeploy the latest commit yet?”
+- “Is this screenshot from the current app or an older build?”
+
+Without a version endpoint, those questions often lead to annoying detective work.
+
+With one, the workflow becomes much simpler:
+
+1. hit `/version`
+2. read the release identifier
+3. compare it to the release you expected
+
+That is wonderfully boring.
+
+And boring is excellent in operations.
+
+<CautionBox title="Do Not Turn This into an Information Dump">
+  A version endpoint should return a small tracking value that is meaningful to
+  the team. Do not use it as an excuse to dump internal dependency versions,
+  framework details, secrets, or environment metadata that the public does not
+  need to see.
+</CautionBox>
+
+---
+
+## What It Does **Not** Prove
+
+A version endpoint is very useful, but let’s keep it honest.
+
+If `/version` returns the expected release string, that tells us:
+
+- the app is reachable
+- the route is working
+- the deployment identity looks correct
+
+It does **not** automatically prove that:
+
+- every feature is behaving correctly
+- the frontend assets are fresh in the browser cache
+- Atlas is healthy
+- every route in the app is functioning properly
+
+So just like the heartbeat route, this endpoint answers a specific question.
+
+It does not answer all of them.
+
+That is fine.
+Small, focused signals are exactly what we want.
+
+---
+
+## A Nice Pair: `/health` and `/version`
+
+At this point, we now have two tiny operational endpoints that work really well together.
+
+### `/health`
+
+Answers:
+
+- is the app alive and responding?
+
+### `/version`
+
+Answers:
+
+- which release is actually running?
+
+Those are two of the most practical questions you can ask a live service.
+
+And they are both answered with tiny, very manageable bits of code.
+
+That is a great trade.
+
+---
+
+## Where This Fits in the Bigger Picture
+
+So far, our visibility story looks like this:
+
+- startup logs tell us the app woke up
+- request logs tell us traffic is arriving
+- error logs tell us what failed
+- `/health` tells us whether the app is alive right now
+- `/version` tells us which release is running
+
+That is a very respectable first layer of production awareness.
+
+Not a giant monitoring empire.
+Not observability theater.
+Just a set of signals that make the app much easier to understand and support.
+
+<NoteBox title="Small Signals, Big Clarity">
+  None of these additions are complicated. That is part of the point. Production
+  awareness often begins with small, deliberate signals that reduce confusion
+  rather than giant systems that try to solve everything at once.
+</NoteBox>
+
+---
+
+## Why This Is a Good Final-Lesson Habit
+
+This page is quietly about something bigger than just one route.
+
+It is about teaching the application to carry a little more operational context with it.
+
+That is a habit worth keeping.
+
+Because the more a live application can answer small practical questions directly, the less time humans waste trying to reverse-engineer the obvious during a problem.
+
+That is real engineering maturity.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://semver.org/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Semantic Versioning
+</LinkButton>
+
+### ⏭ Deployment History
+
+Knowing what version is live is useful. Next, we zoom out one level further and connect application behavior to deployment history so we can answer another critical question: what changed?

@@ -1,0 +1,56 @@
+---
+title: "Visiting the Live App"
+description: "Confirming that the deployed application is publicly available and responding to traffic."
+sidebar:
+  order: 18
+  label: "Visiting the Live App"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+If the Render dashboard build log finishes with a success message, the deployment pipeline has done its job. 
+
+Now, we get the payoff. 
+
+At the top of our Render Web Service dashboard, we will find a generated URL (something like `voyagers-log-xyz.onrender.com`). Clicking that link takes us out of the engine room and walks us right up to the front door of our live application.
+
+## The First Visual Check
+
+Opening the URL should display the Voyagers Log homepage. 
+
+This is an important psychological milestone. Our application is no longer running on `localhost:3000`. We aren't testing it over our own internal Docker network. We are viewing the application exactly as anyone else on the public internet would view it.
+
+<CautionBox title="The HTTPS Baseline">
+  Notice the protocol on the URL. Render (like almost all modern PaaS providers) automatically provisions and manages an SSL certificate for our service. The site is served over `https://` by default without us having to configure Nginx or Let's Encrypt manually.
+</CautionBox>
+
+<NoteBox title="A Partial Win">
+  A loading homepage proves that the `start` script worked, the port bound correctly, and Render successfully routed internet traffic into our container. This is a massive victory for deployment configuration.
+</NoteBox>
+
+## Don't Declare Victory Yet
+
+Seeing the UI is satisfying, but it can also be deceptive. 
+
+If the homepage of Voyagers Log is mostly static HTML served by Express, all we have proven is that Node is capable of serving a file. We have not actually proven that the application works as a complete system. 
+
+An application is only as resilient as its weakest architectural link. Right now, what we really need to know is whether our environmental variables successfully forged the link to Atlas.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  How the Web Works
+</LinkButton>
+
+### ⏭ Verifying the Database Connection
+
+A loading page is adorable, but it doesn't mean the engine is fully connected to the propeller. Next, we test the database linkage.

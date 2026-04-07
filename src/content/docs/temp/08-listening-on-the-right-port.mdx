@@ -1,0 +1,73 @@
+---
+title: "Listening on the Right Port"
+description: "Understanding dynamically assigned ports and process.env.PORT."
+sidebar:
+  order: 9
+  label: "Listening on the Right Port"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+If there is one trap that ensnares nearly every developer on their first deployment, it is the hardcoded application port.
+
+Locally, we likely wrote something perfectly innocent that looks like this:
+
+```javascript
+const PORT = 3000;
+
+app.listen(PORT, () => {
+    console.log(`Voyagers Log running on port ${PORT}`);
+});
+```
+
+This works beautifully on our laptop, because we control the machine and port `3000` is probably open.
+
+## The Reality of Hosted Ports
+
+When we deploy to Render, we are no longer in control of the infrastructure. Render runs thousands of applications. It uses a very sophisticated load balancer to route public internet traffic directly into our container.
+
+To make that routing work, Render assigns our application a specific internal port dynamically at startup. It passes this port number to our application via an environment variable called `PORT`.
+
+If our application stubbornly insists on listening to port `3000` while Render is trying to send traffic to port `10000`, our deployment will appear to succeed—but every public request will simply time out in silence.
+
+<CautionBox title="The Silent Failure">
+  Hardcoding a port during deployment rarely crashes the app. It just causes the app to listen in an empty room while real traffic piles up at the actual door. It is a frustrating, invisible failure.
+</CautionBox>
+
+## Surrendering Control with process.env.PORT
+
+To pass the deployment checklist, the application must be modified to accept whatever port the host environment provides, while falling back to a local default if no environment variable is present.
+
+```javascript
+// Look for the platform's port, fallback to local 3000
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Voyagers Log running on port ${PORT}`);
+});
+```
+
+<NoteBox title="The Fallback Operator">
+  The `||` (OR) operator is brilliant here. On our laptop, `process.env.PORT` is `undefined`, so it falls back to `3000`. On Render, `process.env.PORT` exists (e.g., `10000`), so it binds dynamically. One codebase, two environments.
+</NoteBox>
+
+With dynamic routing established, the application can now successfully receive traffic. But the application still needs to know where to send its data.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://nodejs.org/api/process.html#processenv"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Node.js process.env Documentation
+</LinkButton>
+
+### ⏭ Database Environment Variables
+
+Hardcoding a database connection string is a fast track to a security incident. Next, we move the database routing into the environment.

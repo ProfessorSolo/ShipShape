@@ -1,0 +1,327 @@
+---
+title: "The Cargo: Voyager's Log"
+description: 'Introducing the application we will build, run locally with Docker Compose, and prepare for launch.'
+sidebar:
+  order: 1
+---
+
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Inspecting the Manifest
+
+Before we start wiring services together, we need to be very clear about what we are actually building.
+
+Our cargo for this lesson is **Voyager’s Log** — a small full-stack application where travelers can submit a name and a message into a shared log system.
+
+At first glance, this sounds suspiciously like “just a form and a database,” and yes... that is exactly why it works so well for this lesson.
+
+The app is simple enough that the business logic does not steal the spotlight, but real enough that it gives us a proper multi-service stack to assemble, run, and eventually ship.
+
+This is not an overstuffed enterprise opera.  
+It is a clean deployment training vessel.
+
+---
+
+## What the App Does
+
+Voyager’s Log supports two different usage paths:
+
+### Public Visitors
+
+Any visitor can:
+
+- open the front end
+- read published voyage entries
+- submit a new voyage entry
+
+Public users do **not** publish directly to the live feed. Their submissions are stored first for review.
+
+### Admin Users
+
+An authenticated admin can:
+
+- log in
+- review submitted entries
+- approve entries for publication
+- reject or hide entries that should not appear publicly
+
+This gives the app a simple but important moderation workflow.
+
+<NoteBox title="Why We Are Adding Moderation">
+  If every public submission were instantly published, we would just have a
+  glorified guestbook. By adding authentication and approval, the application
+  becomes a more realistic example of how separate concerns emerge across
+  services, routes, and data states.
+</NoteBox>
+
+---
+
+## Core Feature Set
+
+By the end of the lesson sequence, Voyager’s Log will support the following features:
+
+### Public Features
+
+- display all approved voyage entries
+- submit a new entry with:
+  - voyager name
+  - message
+
+### Admin Features
+
+- log in through a protected authentication flow
+- view pending entries
+- approve entries
+- hide or reject entries
+- review the published state of the log
+
+### System Features
+
+- MongoDB-backed persistence
+- Express API routes for log operations
+- authentication using Passport.js
+- Vite-powered front end
+- Tailwind CSS styling
+- local orchestration using Docker Compose
+
+---
+
+## Application Rules
+
+To keep the build focused, we are using a deliberately small ruleset.
+
+### Entry Rules
+
+Each voyage entry will contain:
+
+- `voyagerName`
+- `message`
+- `status`
+- `createdAt`
+
+A new public submission should be created with a status of:
+
+- `pending`
+
+Only entries marked:
+
+- `approved`
+
+should appear in the public feed.
+
+### Admin Rules
+
+We only need a very small admin system for this lesson.
+
+For now:
+
+- authentication is for admins only
+- public users do not create accounts
+- admin users log in and manage submission review
+
+This keeps the auth layer small and practical instead of letting it run off and start its own side quest.
+
+---
+
+## Planned Data Shapes
+
+Our initial `Log` model will look roughly like this:
+
+```js
+{
+  voyagerName: String,
+  message: String,
+  status: "pending" | "approved" | "hidden",
+  createdAt: Date
+}
+```
+
+Our admin user model will stay intentionally lightweight:
+
+```js
+{
+  username: String,
+  passwordHash: String,
+  role: "admin"
+}
+```
+
+We are not building a giant permissions matrix here.  
+One small locked bridge is plenty.
+
+---
+
+## The Stack
+
+Voyager’s Log is a **multi-service full-stack application** made of distinct parts.
+
+### MongoDB
+
+MongoDB stores:
+
+- voyage entries
+- admin user records
+
+It is our persistence layer.
+
+### Express API
+
+The Express server handles:
+
+- API routes
+- database interaction through Mongoose
+- submission processing
+- authentication and protected admin operations
+
+It is the backend service layer.
+
+### Passport.js
+
+Passport gives us a clean authentication structure for admin access.
+
+We will use it to:
+
+- validate admin credentials
+- establish authenticated sessions
+- protect review and moderation routes
+
+### Vite Front End
+
+The front end will be built with Vite.
+
+This gives us:
+
+- a modern development workflow
+- fast local development
+- a production build step for the client application
+
+### Tailwind CSS
+
+Tailwind will handle interface styling.
+
+That means we can move quickly without writing a heroic amount of custom CSS just to make a form stop looking tragic.
+
+### Docker Compose
+
+Docker Compose will orchestrate the local environment.
+
+It will allow us to run:
+
+- the database service
+- the API service
+- the front-end workflow
+
+as a coordinated local stack.
+
+---
+
+## Local-First Build Strategy
+
+We are **not** starting with deployment.
+
+We are starting by building the app in a local, containerized environment first.
+
+That matters.
+
+Before an app can survive on a hosted platform, it needs to prove that:
+
+- its services can run independently
+- its services can communicate over a network
+- its configuration is environment-aware
+- its data can persist across container restarts
+- its frontend and backend responsibilities are cleanly separated
+
+So our plan is:
+
+1. define the app and its responsibilities
+2. stand up MongoDB as a local service
+3. build the Express API service
+4. add Passport authentication and moderation logic
+5. build the Vite + Tailwind front end
+6. run the stack locally with Docker Compose
+7. prepare it for deployment
+
+<CautionBox title="Do Not Skip to Deployment Theater">
+  If we jump straight to hosted deployment before the services are properly
+  structured locally, every later problem becomes harder to diagnose. Local
+  orchestration is where we earn our confidence.
+</CautionBox>
+
+---
+
+## High-Level Request Flow
+
+Once the application is assembled, the request flow will look like this:
+
+### Public Submission Flow
+
+1. a user opens the front end
+2. the front end requests approved entries from the API
+3. the API reads approved entries from MongoDB
+4. the front end renders the published log
+5. the user submits a new entry
+6. the API saves that entry as `pending`
+
+### Admin Review Flow
+
+1. an admin logs in
+2. Passport authenticates the credentials
+3. the admin accesses protected review routes
+4. the API fetches pending entries from MongoDB
+5. the admin approves or hides an entry
+6. approved entries become visible to the public feed
+
+That is the whole ship.
+
+Small enough to reason about.  
+Real enough to matter.
+
+---
+
+## Directory Shape We Are Working Toward
+
+As the lesson unfolds, the project will settle into a structure roughly like this:
+
+```text
+voyagers-log/
+├── compose.yaml
+├── server/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── index.js
+│   ├── models/
+│   ├── config/
+│   └── middleware/
+└── client/
+    ├── package.json
+    ├── vite.config.js
+    ├── src/
+    └── public/
+```
+
+We are not building all of that on this page.  
+This page is the manifest, not the assembly deck.
+
+---
+
+## What Comes Next
+
+Now that the app has a clear shape, the next step is to start building the stack from the bottom up.
+
+We begin with the most foundational service in the convoy:
+
+**the local MongoDB database container.**
+
+That means the next page will focus on:
+
+- defining the database service
+- adding it to Docker Compose
+- creating persistence with a volume
+- verifying that the service is alive and reachable
+
+<NoteBox title="Keep the Mission Straight">
+  The point of this lesson sequence is not to admire isolated code snippets. The
+  point is to understand how a modern full-stack application is composed from
+  cooperating services and prepared to leave the dock.
+</NoteBox>

@@ -1,0 +1,216 @@
+---
+title: 'Launching the Build'
+description: 'Watching Render build the Docker image and learning how to read the deploy logs.'
+sidebar:
+  order: 12
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Watching Render Do the Work
+
+Now that the environment variables are in place, Render has enough information to attempt a real deployment.
+
+At this stage, the platform will:
+
+1. fetch the repository
+2. read the root `Dockerfile`
+3. build the image
+4. prepare to start the container
+
+This is no longer happening in our local terminal.  
+It is happening on Render’s infrastructure.
+
+So the main thing we need to watch now is the **deploy log output**.
+
+## Open the Deploy Logs
+
+In our Render Web Service:
+
+1. open the service
+2. go to **Events** or the current deploy entry
+3. open the active deploy logs
+
+That log stream is our source of truth.
+
+<NoteBox title="This page is about the build phase">
+  We are not testing browser behavior yet. We are not testing Atlas writes yet.
+  Right now, we are only checking whether Render can successfully build the
+  image defined by the repo.
+</NoteBox>
+
+## What We Expect to See
+
+Because Voyager’s Log uses a **root multi-stage Dockerfile**, the build logs should reflect the same two-stage flow we designed earlier:
+
+1. **builder stage** for the frontend
+2. **runtime stage** for the final app image
+
+That means the logs should roughly show this sequence:
+
+1. Render fetches the repo
+2. Docker detects the root `Dockerfile`
+3. frontend dependencies install
+4. Vite builds the frontend
+5. backend dependencies install
+6. the final runtime image is assembled
+
+That sequence matters. We are not hoping. We are verifying the deployment blueprint step by step.
+
+## Stage 1: Frontend Build
+
+The first major phase is the **builder stage**.
+
+This is where Docker should:
+
+- install frontend dependencies
+- run the Vite production build
+- generate `client/dist`
+
+In the logs, the important proof is that Vite actually completes the build.
+
+You want to see evidence in this shape:
+
+```bash
+COPY client/package*.json ./client/
+RUN npm install --prefix client
+COPY client/ ./client/
+RUN npm run build --prefix client
+
+> client@1.0.0 build
+> vite build
+vite v5.x.x building for production...
+✓ modules transformed.
+dist/index.html
+dist/assets/...
+```
+
+If you see Vite complete and `dist/index.html` appear, that means the frontend build stage did its job.
+
+Without that, Express would have nothing useful to serve in production.
+
+## Stage 2: Runtime Image Assembly
+
+Once the builder stage succeeds, Docker moves into the **runtime stage**.
+
+This is the leaner final image that will actually run the application.
+
+In our Dockerfile, this stage should:
+
+- install backend dependencies
+- copy the server source
+- copy the compiled frontend assets from the builder stage
+
+That means the logs should reflect commands in this shape:
+
+```dockerfile
+COPY server/package*.json ./server/
+RUN npm install --omit=dev --prefix server
+COPY server/ ./server/
+COPY --from=builder /app/client/dist ./client/dist
+```
+
+This is the handoff from:
+
+**compile the app**  
+to  
+**assemble the app that will run**
+
+That distinction matters.
+
+## What Build Success Actually Means
+
+A successful Docker build means something important:
+
+- Docker understood the instructions
+- dependencies installed
+- the frontend compiled
+- the final image was assembled
+
+That is real progress.
+
+But it does **not** yet prove that:
+
+- the Node server started
+- Atlas connected successfully
+- the correct port was bound
+- the live app serves traffic correctly
+
+So keep these two checkpoints separate:
+
+### Checkpoint 1: Build Success
+
+Did Docker build the image successfully?
+
+### Checkpoint 2: Runtime Success
+
+Did the app actually start and behave like a healthy web service?
+
+This page only covers the first one.
+
+<CautionBox title="Build success is not app success">
+  A green build tells you the image was packaged successfully. It does not tell
+  you whether the running application is healthy yet.
+</CautionBox>
+
+## What to Look For in the Logs
+
+As you scan the build logs, here are the main signals.
+
+### Good signs
+
+- repository fetched successfully
+- Dockerfile detected
+- frontend dependencies installed
+- Vite build completed
+- backend dependencies installed
+- image finished building without errors
+
+### Warning signs
+
+- package install failures
+- missing files referenced by `COPY`
+- frontend build errors
+- path mismatches
+- Dockerfile instruction failures
+
+If the build fails here, the container never even reaches startup.
+
+That means this is still a **build pipeline problem**, not yet a routing problem, browser problem, or Atlas problem.
+
+## Stay in the Current Layer
+
+This is one of the most important deployment habits to build:
+
+If the image has not built successfully yet, do **not** jump ahead and start guessing about:
+
+- route handling
+- `Cannot GET /`
+- browser assets
+- API responses
+- database reads and writes
+
+Those are later layers.
+
+First get the image built.  
+Then debug startup.  
+Then verify routing.  
+Then verify persistence.
+
+That order keeps our troubleshooting sane.
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/reference/dockerfile/"
+  variant="secondary"
+  size="small"
+>
+  Docker Docs: Dockerfile Reference
+</LinkButton>
+
+⏭ **The Deployment Handover**
+
+Once the image build completes, the next question is whether the container actually starts successfully and becomes a healthy service.

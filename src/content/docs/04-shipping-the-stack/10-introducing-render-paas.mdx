@@ -1,0 +1,164 @@
+---
+title: 'Introducing Render (PaaS)'
+description: 'Connecting Voyager’s Log to a hosted runtime and preparing the first deployment.'
+sidebar:
+  order: 10
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Meeting the Hosted Runtime
+
+So far, we have already moved one part of Voyager’s Log into the cloud:
+
+- MongoDB Atlas now handles persistence
+- our app still runs locally
+- the repo now contains a production-ready Dockerfile
+
+The next step is to move the **application runtime** itself off our machine and onto a hosted platform.
+
+For this lesson, we are using **Render**.
+
+## What Render Gives Us
+
+Render is a **Platform-as-a-Service (PaaS)**. In plain terms, it gives us a hosted place to run a web app without making us manage a raw Linux server ourselves.
+
+In our context, that means Render can:
+
+- pull the app directly from GitHub
+- build our Docker image from the repo
+- run the container as a public web service
+- give us a live HTTPS URL on the internet
+- handle the hosted runtime so we can focus on the app
+
+That is exactly the handoff we want right now:  
+**from “runs on my machine” to “runs on a hosted platform.”**
+
+<NoteBox title="Why Render works well for this lesson">
+  Render offers a free web service tier that is good for classroom deployment,
+  demos, and testing the hosted workflow. It is not meant to be a heavy-duty
+  production environment, but it is perfect for proving that our full stack can
+  build, boot, and serve traffic from the cloud.
+</NoteBox>
+
+## Why We Are Using a Web Service
+
+Voyager’s Log is shipping as **one containerized application**.
+
+Our production image includes:
+
+- the Express server
+- the backend dependencies
+- the compiled Vite frontend
+
+That means this is **not** a separate frontend deploy plus a separate backend deploy.
+
+It is one hosted app, so on Render it belongs in a **Web Service**.
+
+## Before You Open Render
+
+Make sure the repository is fully pushed to GitHub.
+
+That includes:
+
+- `client/`
+- `server/`
+- the root `Dockerfile`
+- the root `.dockerignore`
+- any deployment-related code changes already made for Atlas and production mode
+
+<CautionBox title="Repository reality check">
+  Render deploys from the connected Git branch, not from your laptop. If the
+  file is only local, Render cannot use it.
+</CautionBox>
+
+## Initial Setup in Render
+
+Inside the Render dashboard:
+
+1. Click **New +**
+2. Choose **Web Service**
+3. Connect your **GitHub account** if needed
+4. Select the Voyager’s Log repository
+5. Choose a service name
+6. Choose a region
+7. Continue with the Docker-based setup
+
+Because the repo contains a root `Dockerfile`, Render should recognize this app as a Docker deployment target.
+
+## Setup Choices That Matter
+
+For this project, the important setup choices are simple:
+
+### Service Name
+
+Pick something clean and readable, such as:
+
+- `voyagers-log`
+- `shipshape-voyagers-log`
+
+This becomes part of the default Render URL.
+
+### Root Directory
+
+Leave this **blank** if the project lives at the root of the repo.
+
+Only set a root directory if the deployable app lives inside a subfolder.
+
+### Dockerfile Path
+
+Use the path to the Dockerfile in the repo.
+
+If it is in the repo root, that will usually be:
+
+`./Dockerfile`
+
+### Branch
+
+Choose the branch Render should deploy from, usually your main working branch for the lesson.
+
+## What Happens Next
+
+Once the service is created, Render is ready to do four things:
+
+1. fetch the repository
+2. build the Docker image
+3. run the container
+4. expose the app at a public URL
+
+But not quite yet.
+
+Before the app can start successfully, Render still needs the runtime values our server expects, such as the Atlas connection string and session secret.
+
+That comes next.
+
+<NoteBox title="This page is only the handoff">
+  This page is about creating the hosted service. The next page is where we
+  supply the environment variables that let the app actually boot.
+</NoteBox>
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/your-first-deploy"
+  variant="secondary"
+  size="small"
+>
+  Render Docs: Your First Deploy
+</LinkButton>
+
+---
+
+<LinkButton
+  href="https://render.com/docs/web-services"
+  variant="secondary"
+  size="small"
+>
+  Render Docs: Web Services
+</LinkButton>
+
+⏭ **Supplying the Environment**
+
+Now that the hosted service exists, the next step is to provide the runtime variables it needs in order to start successfully.

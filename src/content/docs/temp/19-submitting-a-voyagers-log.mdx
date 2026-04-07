@@ -1,0 +1,59 @@
+---
+title: "Submitting a Voyagers Log"
+description: "Using the live, deployed application to generate user interaction data."
+sidebar:
+  order: 20
+  label: "Submitting a Voyagers Log"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+To prove our deployment pathway is solid, we need to generate real traffic.
+
+We are going to author a live entry using the public URL of Voyagers Log.
+
+## Creating the Record
+
+On the deployed application, navigate to the submission form. 
+
+Fill out the fields as if we were a real user stepping off a voyage:
+- Leave a reflection or a primary takeaway.
+- Add an optional parting note.
+- Submit the form.
+
+When we click submit, we are firing a `POST` request to the application. At that moment, Render must pass the payload to Express, and Express must successfully hand the payload over the internet to the MongoDB Atlas cluster.
+
+<NoteBox title="The Feedback Loop">
+  If the application returns a success message or redirects we gracefully to a confirmation page, the connection string worked. The backend successfully authenticated with the remote database.
+</NoteBox>
+
+<CautionBox title="Handling Application Timeouts">
+  If the application hangs, spins endlessly, or throws an HTTP 500 server error, the database linkage is broken. This almost always indicates a typo in the `MONGO_URI` environment variable, or an IP whitelisting error in the Atlas permissions. 
+</CautionBox>
+
+## One More Step
+
+If the application behaved correctly, we have cleared the hardest hurdle. We have proven that the application layer is successfully communicating with the database layer.
+
+However, a truly paranoid operator does not just trust the application UI. The application may be successfully reporting "Saved!" while secretly dumping the data into a temporary memory cache because of a degraded connection state.
+
+To consider this ship truly launched, we need to see the cargo sitting in port with our own eyes.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  MDN: The HTTP POST Method
+</LinkButton>
+
+### ⏭ Confirming Data in Atlas
+
+Trusting the front-end validation is nice, but verifying the backend is better. Next, we confirm the data physically landed in Atlas.

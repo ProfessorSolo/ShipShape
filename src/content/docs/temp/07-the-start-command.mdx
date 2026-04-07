@@ -1,0 +1,63 @@
+---
+title: "The Start Command"
+description: "Why a clean production start script is critical for hosted applications."
+sidebar:
+  order: 8
+  label: "The Start Command"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+When we run an application locally, we probably use a development script like `npm run dev`. That script usually triggers a tool like `nodemon` or `ts-node-dev`, which watches our files and restarts the server every time we hit save.
+
+That is perfect for local development. It is catastrophic for production deployment.
+
+## The Production Ignition Sequence
+
+Render is essentially a sophisticated Linux environment. When it finishes unpacking our code, it needs exactly one standard, reliable command to start the application process and keep it running.
+
+Render will default to looking for `npm start`.
+
+We must ensure that our `package.json` contains a clean, production-targeted `start` script that runs the application directly, without any development watchers attached.
+
+```json
+{
+  "name": "voyagers-log",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js" 
+  }
+}
+```
+
+<NoteBox title="Why Node Directly?">
+  In deployment, the code shouldn't change. If the code isn't changing, a file-watcher like `nodemon` is a waste of memory and adds an unnecessary layer of potential failure. `node server.js` is pure, direct execution.
+</NoteBox>
+
+<CautionBox title="Missing Start Scripts">
+  If we forget to define a `start` script, Render will typically throw a generic `Command not found` error and refuse to start the container. The platform is not going to guess how to run our application.
+</CautionBox>
+
+Providing a clean `start` script satisfies the first requirement on our deployment checklist. It tells the host exactly how to turn the engine over. 
+
+But once the engine is running, it needs to know where to listen for traffic.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.npmjs.com/cli/v10/commands/npm-start"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  NPM Start Documentation
+</LinkButton>
+
+### ⏭ Listening on the Right Port
+
+If we hardcode our local favorite port into our deployed application, the host will simply ignore we. Next, we explore dynamic port assignment.

@@ -1,0 +1,63 @@
+---
+title: "Launching the Deployment"
+description: "Executing the deployment workflow and watching the live build logs."
+sidebar:
+  order: 17
+  label: "Launching the Deployment"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+We have executed the full pre-deployment setup. The repository is mapped, our instructions for `npm install` and `npm start` are verified, and the Atlas connection string is securely locked into the environment configuration.
+
+Click "Create Web Service" at the bottom of the Render dashboard.
+
+## Watching the Pipeline Fire
+
+At this precise moment, we move from being an active configurator to being an active observer. 
+
+Render immediately shifts into its internal deployment sequence. Unlike our local `docker-compose up` command, we don't see raw terminal output directly on our command line. Instead, Render displays a live deployment log in its dashboard. 
+
+This log is not just a progress bar—it is our primary diagnostic tool.
+
+We will see Render execute exactly the phases we outlined:
+
+1. **Provisioning:** Spinning up an isolated container.
+2. **Cloning:** Pulling our configured codebase securely from GitHub.
+3. **Execution (Build):** Running our exact `npm install` command to fetch our dependencies.
+4. **Execution (Start):** Running `npm start` to fire the Node engine.
+
+<NoteBox title="The Diagnostic Dashboard">
+  If we made a mistake—a typo regarding our start command, or a missing semicolon in our code—the build log is where we will catch it. Do not ignore the logs while the deployment runs; watch how the platform interprets our instructions.
+</NoteBox>
+
+## Waiting for the Green Signal
+
+When the log finishes the build phase, we should see the familiar output from our Node script verifying the server has bound to the local port.
+
+Shortly after, if the application stabilizes, Render will declare the deployment **Live**.
+
+<CautionBox title="Patience in Transit">
+  Free-tier instances often take an extra moment to spin up and route traffic. If the deployment is marked live but the URL hesitates for a few seconds on the first ping, this is simply the host waking the hardware up. 
+</CautionBox>
+
+With the host reporting a successful build, the application has officially reached its destination. Now, we just have to prove that it survived the trip.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://12factor.net/logs"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Twelve-Factor App: Logs as Event Streams
+</LinkButton>
+
+### ⏭ Visiting the Live App
+
+A successful build log is meaningless if the front door is locked. Next, we verify the public URL.

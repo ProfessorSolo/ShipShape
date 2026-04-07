@@ -1,0 +1,509 @@
+---
+title: 'Multi-Stage Dockerfile'
+description: "Packaging Voyager's Log for deployment by building the Vite frontend and serving it from the same container as the Express server."
+sidebar:
+  order: 8
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Building a Production Image
+
+Up to this point, our local setup has been intentionally split:
+
+- MongoDB in Docker
+- Express in Docker
+- Vite running natively on the host during development
+
+That was the right move for local learning.
+
+But production is a different story.
+
+We do **not** want to deploy a Vite dev server.
+
+We do **not** want a container bloated with build tools it no longer needs at runtime.
+
+And we do **not** want to manually glue together separate frontend and backend deployment stories for this app.
+
+---
+
+## The Production Image Strategy
+
+### Included
+
+- Express server code
+- backend production dependencies
+- compiled frontend assets
+
+### Not Included
+
+- Vite dev server
+- frontend source build tooling in the runtime stage
+- unnecessary development baggage
+
+That keeps our production image smaller and more focused.
+
+Not microscopic. Not magical. Just appropriately trimmed.
+
+---
+
+## Root Level Dockerfile
+
+Earlier in the lesson, we created a `server/Dockerfile` so Docker Compose could build and run the API service locally.
+
+That file was fine for the local backend container.
+
+Now we want a **different Dockerfile** with a different purpose:
+
+- the old one was for the **local API service**
+- this new one is for the **full production application image**
+
+That means this new Dockerfile belongs at the **root of the project**, because it needs access to both:
+
+- `server/`
+- `client/`
+
+<NoteBox title="Two Dockerfiles, Two Jobs">
+  It is completely normal for local development and production deployment to use
+  different container strategies. Our earlier API-only Dockerfile helped Compose
+  run the backend. This new root Dockerfile packages the full app for
+  deployment.
+
+  <p>Our existing Dockerfile can stay where it is.  It won't interfere.</p>
+</NoteBox>
+
+---
+
+## What a Multi-Stage Build Does
+
+A multi-stage build lets us use one temporary stage to **build** the frontend, and a second lighter stage to **run** the final application.
+
+That means:
+
+### Builder Stage
+
+- install frontend dependencies
+- run the Vite build
+- produce `client/dist`
+
+### Runtime Stage
+
+- install backend dependencies only
+- copy the Express server code
+- copy the already-built frontend assets
+- start the Node server
+
+This way our final image gets the compiled frontend, without the toolchain baggage.
+
+---
+
+## Create a Root `Dockerfile`
+
+At the root of the project, create a new file named:
+
+```text
+Dockerfile
+```
+
+Add this:
+
+```dockerfile
+# ------ STAGE 1: BUILD THE FRONTEND ------
+FROM node:20-slim AS builder
+
+WORKDIR /app
+
+# Install frontend dependencies
+COPY client/package*.json ./client/
+RUN npm install --prefix client
+
+# Copy frontend source
+COPY client/ ./client/
+
+# Build the Vite frontend
+RUN npm run build --prefix client
+
+
+# ------ STAGE 2: RUN THE APP ------
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install backend dependencies only
+COPY server/package*.json ./server/
+RUN npm install --omit=dev --prefix server
+
+# Copy backend source
+COPY server/ ./server/
+
+# Copy compiled frontend assets from the builder stage
+COPY --from=builder /app/client/dist ./client/dist
+
+# The app listens on a dynamic host-provided port at runtime
+EXPOSE 3000
+
+CMD ["node", "server/index.js"]
+```
+
+This is our production image blueprint.
+
+Clean. Focused. No extra passengers.
+
+---
+
+## Stage 1: Build the Frontend
+
+The first stage is named `builder`:
+
+```dockerfile
+FROM node:20-slim AS builder
+```
+
+We use it to compile the Vite app.
+
+### Install frontend dependencies
+
+```dockerfile
+COPY client/package*.json ./client/
+RUN npm install --prefix client
+```
+
+We copy the frontend package metadata first so Docker can cache dependency installation more effectively.
+
+### Copy frontend source
+
+```dockerfile
+COPY client/ ./client/
+```
+
+Now the build stage has the actual client code.
+
+### Build the frontend
+
+```dockerfile
+RUN npm run build --prefix client
+```
+
+This generates:
+
+```text
+client/dist
+```
+
+That folder is the whole reason this stage exists.
+
+Once the build is done, the final image does **not** need Vite, Tailwind’s build tooling, or the frontend source dependencies anymore.
+
+---
+
+## Why `--prefix` Is Useful Here
+
+We are not using a root `package.json`, so commands need to target the correct subfolder.
+
+That is what `--prefix` does.
+
+For example:
+
+```dockerfile
+RUN npm install --prefix client
+```
+
+means:
+
+- run `npm install`
+- but do it inside the `client` directory
+
+Likewise:
+
+```dockerfile
+RUN npm install --omit=dev --prefix server
+```
+
+means:
+
+- install the backend dependencies
+- inside the `server` directory
+- excluding development-only packages
+
+It is a tidy way to work with a split project structure without awkwardly bouncing around with multiple `WORKDIR` changes.
+
+<NoteBox title="No Root Package Required">
+  Since Voyager's Log uses separate `client` and `server` package files,
+  `--prefix` gives us a clean way to install and build each side without
+  pretending everything lives in one root-level Node project.
+</NoteBox>
+
+---
+
+## Stage 2: Build the Runtime Image
+
+The second stage is the actual production runtime image:
+
+```dockerfile
+FROM node:20-alpine
+```
+
+This image is lighter than the builder stage and only contains what the running app needs.
+
+### Install backend dependencies
+
+```dockerfile
+COPY server/package*.json ./server/
+RUN npm install --omit=dev --prefix server
+```
+
+This installs the server dependencies only.
+
+We do **not** install frontend build dependencies here, because the frontend has already been compiled.
+
+### Copy backend source
+
+```dockerfile
+COPY server/ ./server/
+```
+
+Now the Express app is in place.
+
+### Copy compiled frontend assets from the builder stage
+
+```dockerfile
+COPY --from=builder /app/client/dist ./client/dist
+```
+
+This is the most important line in the file.
+
+It reaches into the earlier build stage, grabs the compiled static frontend assets, and places them into the runtime image.
+
+That means the final container includes:
+
+- backend code in `server/`
+- built frontend assets in `client/dist`
+
+And because Page 07 taught Express how to serve `client/dist` in production, the runtime image now has everything it needs.
+
+<CautionBox title="The Final Image Does Not Need Vite">
+  The runtime container serves compiled frontend files. It does not run the Vite
+  dev server. That is a development tool, not part of the production runtime.
+</CautionBox>
+
+---
+
+## Why This Works
+
+The server is already set up to serve the compiled frontend in production:
+
+```javascript
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../client/dist');
+
+  app.use(express.static(distPath));
+
+  app.get('/{*splat}', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+```
+
+This Dockerfile makes sure that those compiled frontend assets are actually present inside the final image.
+
+So the two pieces work together:
+
+- the server knows how to serve `client/dist`
+- the Dockerfile makes sure `client/dist` exists in the runtime image
+
+That is the handoff.
+
+Without the server logic, the image would not know how to serve the frontend.  
+Without this Dockerfile, the server would have nothing to serve.
+
+---
+
+## Add a Root `.dockerignore`
+
+Because this new Dockerfile builds from the project root, we should also create a root `.dockerignore`.
+
+At the root of the project, add:
+
+```dockerignore
+.git
+.gitignore
+.env
+client/node_modules
+server/node_modules
+client/dist
+```
+
+This helps keep the build context smaller and cleaner.
+
+It prevents Docker from shoveling unnecessary local clutter into the build process.
+
+---
+
+## Building the Image Locally
+
+To test the root Dockerfile locally, from the project root run:
+
+```bash
+docker build -t voyagers-log-production .
+```
+
+That builds the full production-style image.
+
+We do not need to fully switch our local workflow over to this image yet, but it is useful to understand that this image is now the deployable artifact.
+
+---
+
+## Testing the Production Image Locally
+
+For local testing we need to use a second environment file just for the production image.
+
+Why?
+
+Our Compose setup uses:
+
+```env
+MONGO_URI=mongodb://db:27017/voyagers_log
+```
+
+That works because `db` is the Mongo service name inside the Compose network.
+
+But if we run the production image directly with `docker run`, there is no Compose network, so `db` will not exist as a hostname.
+
+### Recommended Setup
+
+Keep:
+
+- `.env` for Docker Compose
+- `.env.prod` for local production-image testing
+
+Example:
+
+```env
+MONGO_URI=mongodb://host.docker.internal:27017/voyagers_log
+PORT=3000
+SESSION_SECRET=super-secret-dev-key-change-this
+ADMIN_USERNAME=notmyname
+ADMIN_PASSWORD=youhadbetterbeusingstrongpasswordsbynow
+```
+
+This lets us test the production image locally without changing the existing Compose setup.
+
+It also keeps local secrets out of the the Docker image itself.
+
+<CautionBox title="Do Not Let Environment Files Leak">
+Files like `.env`, `.env.prod`, and `.env.local` contain secrets.
+
+We must **always** ensure that they are **never** committed to Git nor copied into a Docker image build by accident.
+
+A safe pattern in both .gitignore and .dockerignore is:
+
+`.env*`
+
+`!.env.example`
+
+Github's Node.js .gitignore template includes this already, but we need to be sure to add it to .dockerignore ourselves
+
+</CautionBox>
+
+### Local Production Needs a DB
+
+Running the production image locally does **not** automatically give it a MongoDB instance.
+
+If we test the image with `docker run`, make sure MongoDB is already running somewhere the container can reach.
+
+For this project, the easiest option is usually to start just the database service:
+
+`docker compose up -d db`
+
+Then the production container can connect using the `MONGO_URI` value from your `.env.prod` file.
+
+### Run it!!
+
+Finally, we can run our production image locally, with our pseudo-production environment variables, like this:
+
+```bash
+docker run --rm --name voyagers-log-prod -p 3000:3000 --env-file .env.prod -e NODE_ENV=production voyagers-log-production
+```
+
+---
+
+## Current Project Structure
+
+Our project now looks roughly like this:
+
+```text
+voyagers-log/
+├── compose.yaml
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+├── .dockerignore
+├── .env
+├── .env.prod
+├── server/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── index.js
+│   ├── config/
+│   ├── middleware/
+│   └── models/
+└── client/
+    ├── package.json
+    ├── package-lock.json
+    ├── vite.config.js
+    ├── index.html
+    └── src/
+```
+
+Notice what is **not** there:
+
+- no root `package.json`
+
+That matters.
+
+Our dependencies still live separately in:
+
+- `server/package.json`
+- `client/package.json`
+
+So our Dockerfile needs to respect that structure instead of pretending we built a monorepo package setup we never actually introduced.
+
+---
+
+## What We Have Accomplished
+
+Voyagers Log now has a production-oriented container strategy.
+
+We have:
+
+- kept the local API-only Docker setup for Compose where it made sense
+- introduced a root production Dockerfile for the full app
+- compiled the Vite frontend in a builder stage
+- copied only the built frontend assets into the runtime image
+- installed only backend dependencies in the final container
+- aligned the image with the Express production serving logic from the previous page
+
+That is a serious upgrade.
+
+The app is no longer just “something we can run locally.”
+
+It is now something we can package cleanly for a real platform.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://docs.docker.com/build/building/multi-stage/"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Docker Docs: Multi-Stage Builds
+</LinkButton>
+
+### ⏭ Data Gets a Cloud
+
+Time to move our data from MongoDB in a container to MongoDB Atlas in the Cloud

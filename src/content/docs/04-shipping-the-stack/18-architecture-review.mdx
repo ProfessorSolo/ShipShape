@@ -1,0 +1,199 @@
+---
+title: 'Architecture Review'
+description: 'Comparing the local Compose-based version of Voyager’s Log with the hosted deployment architecture.'
+sidebar:
+  order: 18
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+
+## Before and After
+
+Voyager’s Log is still the same application, but the environment around it changed quite a bit.
+
+This page is just a quick architecture check:
+
+- what the app looked like locally
+- what it looks like after deployment
+- what changed
+- what stayed the same
+
+<img
+  src="/assets/lessons/04-shipping-the-stack/18-architecture-review.png"
+  alt="A side-by-side diagram contrasting a single-host Docker Compose Local Network (App and DB in one box) versus the Distributed Public Cloud architecture (Render App communicating over the open internet to an Atlas DB)."
+  width="1600"
+  loading="lazy"
+/>
+
+_Figure 1. Before and After Deployment_
+
+## Local Architecture
+
+In the local version, the app was split across a few familiar pieces:
+
+- MongoDB running in Docker
+- Express running in Docker
+- Vite running as a local dev server
+
+### Local request flow
+
+1. the browser loaded the frontend from Vite
+2. Vite proxied `/api` requests to Express
+3. Express talked to MongoDB through the Compose network
+
+The database connection looked like this:
+
+```txt
+mongodb://db:27017/voyagers_log
+```
+
+That worked because Docker Compose gave us:
+
+- service discovery by name
+- an internal network
+- predictable local orchestration
+
+<NoteBox title="Why this setup worked well">
+  The local stack was great for development because each part was easy to run,
+  inspect, and reset.
+</NoteBox>
+
+## Hosted Architecture
+
+In the hosted version, the shape is simpler from the outside but more production-like underneath.
+
+Now we have:
+
+- GitHub as the deployment source
+- Render running the app container
+- MongoDB Atlas as the hosted database
+- Express serving both the API and the frontend
+
+### Hosted request flow
+
+1. Render builds the app from the repo
+2. the Dockerfile builds the frontend
+3. the final container includes the Express app and built frontend
+4. the browser loads the frontend from Express
+5. Express talks to Atlas using `process.env.MONGO_URI`
+
+In production, the built frontend is served from:
+
+```txt
+client/dist
+```
+
+And the database connection is no longer a Compose service name. It now comes from configuration:
+
+```js
+process.env.MONGO_URI;
+```
+
+## The Biggest Changes
+
+### 1) The database moved out of the local stack
+
+Locally, MongoDB lived beside the app in Compose.
+
+In deployment, MongoDB became an external managed service through Atlas.
+
+### 2) Vite stopped being a runtime server
+
+Locally, Vite actively served the frontend.
+
+In deployment, Vite only builds the frontend. Express serves the finished files.
+
+### 3) Configuration matters more
+
+Locally, defaults and shortcuts were easier to get away with.
+
+In deployment, the app depends on correct runtime configuration like:
+
+- `MONGO_URI`
+- `SESSION_SECRET`
+- `NODE_ENV`
+- `PORT`
+
+### 4) GitHub became the source of truth
+
+Locally, the app ran from whatever existed on your machine.
+
+In deployment, the app runs from the committed repository state.
+
+## Local vs Hosted
+
+| Local                           | Hosted                           |
+| :------------------------------ | :------------------------------- |
+| MongoDB container               | MongoDB Atlas                    |
+| Express in Docker               | Express in Render                |
+| Vite dev server                 | Built frontend served by Express |
+| Compose service name networking | Environment-based connectivity   |
+| Local files                     | GitHub repo as deployment source |
+
+## What Stayed the Same
+
+Even though the infrastructure changed, the app itself did not become a different project.
+
+Voyager’s Log is still:
+
+- a public submission app
+- an admin-moderated publishing app
+- an Express + MongoDB application
+- a frontend talking to backend API routes
+
+The data model is also still the same:
+
+- voyage entries
+- users
+- moderation states such as `pending`, `approved`, and `hidden`
+
+And the core request flow is still familiar:
+
+1. the user interacts with the frontend
+2. the frontend sends a request to the backend
+3. the backend reads or writes data
+4. the frontend updates based on the response
+
+## The Main Lesson
+
+Deployment did **not** require rebuilding the app from scratch.
+
+What changed was how the app was:
+
+- built
+- packaged
+- configured
+- connected
+- hosted
+
+That is the big architectural lesson here.
+
+You are not making a separate “production app.”
+
+You are preparing the same app to run outside your laptop.
+
+## Final Takeaway
+
+The local version taught us how the parts fit together.
+
+The hosted version taught us how those same parts behave in a real deployment environment.
+
+Both mattered.
+
+That is the real shift in this lesson:
+from **local stack assembly** to **hosted system thinking**.
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://aws.amazon.com/what-is/distributed-computing/"
+  variant="secondary"
+  size="small"
+>
+  AWS: What Is Distributed Computing?
+</LinkButton>
+
+⏭ **Dry Dock Drills**
+
+Now that the deployment path is complete, the next step is practice: breaking, fixing, and re-shipping the system on purpose.

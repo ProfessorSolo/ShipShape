@@ -1,0 +1,313 @@
+---
+title: "Dockside Drills"
+description: "Optional final exercises to reinforce production awareness, operational visibility, and support-minded thinking."
+sidebar:
+  order: 98
+  label: "Dockside Drills"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+The core lesson is complete.
+
+Now comes the part where we make sure the ideas actually stick.
+
+These drills are optional, but they are excellent final reps for the end of the course. They focus less on “can you deploy?” and more on:
+
+- can you make a live app easier to understand?
+- can you spot bad operational patterns quickly?
+- can you add small support-minded improvements without overengineering the whole thing?
+
+Think of these as final dry runs for the habits we want to leave with.
+
+<NoteBox title="Keep the Scope Small">
+  None of these drills are meant to become giant side projects. The point is to
+  strengthen production-awareness instincts with small, deliberate changes.
+</NoteBox>
+
+---
+
+## Drill 1 — Maintenance: Add a Tiny Beacon
+
+**Objective:** Add the smallest possible operational health signal.
+
+### Scenario
+
+You have an Express application that starts and serves routes, but there is no clean way to ask:
+
+> “Are you alive right now?”
+
+### What to do
+
+Add a dedicated route at:
+
+```text
+/ping
+```
+
+It should return a small JSON response such as:
+
+```json
+{ "status": "alive" }
+```
+
+Keep it fast and simple.
+
+### Expected outcome
+
+You should end up with a small `app.get()` route that:
+
+- responds immediately
+- does not depend on heavy logic
+- gives operators a basic liveness signal
+
+### Student-to-AI prompt
+
+<NoteBox title="Student-to-AI Prompt">
+  I want to add the smallest possible health-style route to an Express app. Show
+  me the minimal code for a `/ping` endpoint that returns a simple JSON
+  response, and explain why this kind of route is useful in a deployed
+  application.
+</NoteBox>
+
+---
+
+## Drill 2 — Custom Job: Fail Loudly, Not Rudely
+
+**Objective:** Improve operational visibility around a failing route.
+
+### Scenario
+
+A route catches an error and returns a generic `500` message to the user, but logs nothing useful for the developer or operator.
+
+```javascript
+app.post("/checkout", async (req, res) => {
+  try {
+    await processPayment(req.body);
+    res.status(200).send("Success.");
+  } catch (error) {
+    res.status(500).send("Something went wrong with the payment.");
+  }
+});
+```
+
+### What to do
+
+Update the `catch` block so it:
+
+- logs a clear error message
+- includes the underlying `error.message`
+- still returns a safe, generic message to the user
+
+### Expected outcome
+
+You should end up with a route that separates:
+
+- **operator-facing detail** in the logs
+- **user-facing messaging** in the response
+
+That is exactly the habit we want.
+
+### Student-to-AI prompt
+
+<NoteBox title="Student-to-AI Prompt">
+  I have an Express route with a try/catch block. I want the user to see a safe
+  generic error message, but I want the server logs to include the actual
+  failure details. Show me a clean pattern for doing both at once.
+</NoteBox>
+
+---
+
+## Drill 3 — Solo Special: The Hanging Middleware Trap
+
+**Objective:** Diagnose one of the most common Express middleware mistakes.
+
+### Scenario
+
+You add global request logging middleware. The logs look great, but suddenly every request hangs forever.
+
+Here is the code:
+
+```javascript
+app.use((req, res) => {
+  const time = new Date().toISOString();
+  console.log(`[${time}] Traffic spotted: ${req.method} ${req.url}`);
+});
+```
+
+### What to do
+
+Identify what is missing and fix it.
+
+### Expected outcome
+
+You should recognize that the middleware intercepted the request but never passed control onward.
+
+The fix is to:
+
+- include `next` in the middleware signature
+- call `next()` after logging
+
+### Student-to-AI prompt
+
+<CautionBox title="Student-to-AI Prompt">
+  I wrote an Express `app.use()` middleware to log requests, and now every route
+  hangs forever. The logging works, but the responses never complete. Help me
+  spot what I forgot and explain why the whole app appears frozen.
+</CautionBox>
+
+---
+
+## Drill 4 — Add a Better Heartbeat
+
+**Objective:** Make a health-style endpoint a little more informative without making it heavy.
+
+### Scenario
+
+A route like `/health` is useful, but `{ "status": "healthy" }` might be a bit too bare.
+
+### What to do
+
+Expand your heartbeat route so it safely returns a little more context, such as:
+
+- uptime
+- current environment
+- timestamp
+
+Keep it lightweight. Do **not** turn it into a dependency stress test.
+
+### Expected outcome
+
+You should end up with a route that is still fast, but more helpful for quick operational sanity checks.
+
+### Student-to-AI prompt
+
+<NoteBox title="Student-to-AI Prompt">
+  I want my Express `/health` endpoint to be a little more useful than just `{ "status": "healthy" }`, but I do not want to make it slow or overly complicated. What fields would be reasonable to include?
+</NoteBox>
+
+---
+
+## Drill 5 — Give the App an Identity
+
+**Objective:** Reduce release confusion after multiple deploys.
+
+### Scenario
+
+You deploy several times in one afternoon. A teammate asks:
+
+> “Which version is actually live right now?”
+
+### What to do
+
+Add a `/version` route that returns a small release identifier from an environment variable like:
+
+```text
+APP_VERSION
+```
+
+### Expected outcome
+
+You should end up with a route that helps answer:
+
+- what version is currently running?
+- did the expected release actually make it to the hosted app?
+
+### Student-to-AI prompt
+
+<NoteBox title="Student-to-AI Prompt">
+  I want my deployed Express app to expose a `/version` endpoint using an
+  environment variable like `APP_VERSION`. Show me a clean way to implement it
+  and explain why this is useful during rapid deployment cycles.
+</NoteBox>
+
+---
+
+## Drill 6 — Practice Reading the Signal
+
+**Objective:** Learn to interpret what different operational clues actually mean.
+
+### Scenario
+
+Imagine the following observations:
+
+- the startup log appears normally
+- `/health` returns `200 OK`
+- a `POST` request shows up in the request logs
+- but the route still returns a `500`
+
+### What to do
+
+Explain what those signals tell you, and where you would investigate next.
+
+### Expected outcome
+
+You should be able to reason that:
+
+- the app started
+- the route is reachable
+- the request reached the server
+- the failure is likely happening deeper inside route handling or a dependency interaction
+
+This is less about coding and more about thinking like an operator.
+
+### Student-to-AI prompt
+
+<NoteBox title="Student-to-AI Prompt">
+  My startup logs look healthy, my `/health` route returns `200`, and I can see
+  the incoming request in the logs, but the user still gets a `500` error. Help
+  me reason through what that narrows down and what layer I should investigate
+  next.
+</NoteBox>
+
+---
+
+## Suggested Order
+
+If you want a good progression through the drills, try them in this order:
+
+1. Add a tiny beacon
+2. Fail loudly, not rudely
+3. Fix the hanging middleware trap
+4. Improve the heartbeat
+5. Add the version endpoint
+6. Practice interpreting the combined signals
+
+That order moves from small implementation changes into stronger operational reasoning.
+
+---
+
+## Final Thought
+
+This final lesson was never about turning you into a full-time SRE in a single afternoon.
+
+It was about teaching one very practical idea:
+
+**once software is live, supportability matters.**
+
+These drills reinforce that idea by asking you to make the application:
+
+- a little clearer
+- a little easier to inspect
+- a little easier to trust
+- and a lot less silent
+  when something goes wrong.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/en/guide/error-handling.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express: Error Handling
+</LinkButton>
+
+### ⏭ Shipping Manifest
+
+The drills are complete. All that remains is the quick-reference manifest: a compact operational codex for the road.

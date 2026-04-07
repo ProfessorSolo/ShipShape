@@ -1,0 +1,66 @@
+---
+title: "Configuring Build and Start Settings"
+description: "Instructing the host platform on how to construct and execute our Node application."
+sidebar:
+  order: 15
+  label: "Configuring Build and Start Settings"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+With our repository selected, Render presents us with a configuration panel. We need to assign a name to our service, select an appropriate geographic region for hosting, and most crucially, provide the explicit instructions required to run our Node application.
+
+Render distinguishes between two fundamental lifecycle phases: the **Build** phase and the **Start** phase. Blurring these two together is a common deployment error.
+
+## The Build Command
+
+The Build Command runs exactly once during the deployment cycle. When Render detects new code on GitHub, it pulls it down and executes this command to prepare the environment.
+
+For a Node application like Voyagers Log, the only preparation required is ensuring our third-party dependencies are installed. We achieve this by telling Render to run:
+
+```bash
+npm install
+```
+
+This ensures the container reads our `package.json` file and downloads all the required libraries (like Express and Mongoose) into a fresh `node_modules` directory inside our hosted environment.
+
+<NoteBox title="Why We Excluded node_modules">
+  This is precisely why we aggressively kept `node_modules` out of our GitHub repository. The host platform installs dependencies natively suited for its own underlying Linux architecture during the build phase.
+</NoteBox>
+
+## The Start Command
+
+Once the build finishes successfully, Render moves to the execution phase. The Start Command is the instruction used to actually boot up the application. If the container ever crashes or restarts, this is the command Render will use to start it back up.
+
+Because we did the preparation work earlier, we simply point Render at the custom script we created in our `package.json`:
+
+```bash
+npm start
+```
+
+Render will execute `npm start`, which in turn triggers `node server.js`, bypassing any development watchers and launching our pure, direct application process.
+
+<CautionBox title="Start vs Build Confusion">
+  Do not combine these steps into one command. If we try to run both `npm install` and `npm start` simultaneously in the Start command, our application will waste precious time re-installing dependencies every time the server needs to reboot. Keep the build separate from the execution.
+</CautionBox>
+
+Our runtime configuration is locked. But the application logic still requires critical contextual data—like where to find the database—in order to survive startup.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://render.com/docs/node-version"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Specifying Node Versions on Render
+</LinkButton>
+
+### ⏭ Adding Render Environment Variables
+
+The application needs its secrets injected securely before launch. Next, we supply the environmental configuration.

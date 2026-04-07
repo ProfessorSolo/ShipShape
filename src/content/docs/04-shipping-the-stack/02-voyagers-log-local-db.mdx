@@ -1,0 +1,169 @@
+---
+title: 'Service A: Local DB'
+description: "Running MongoDB 8.0 locally as a Dockerized service for Voyager's Log."
+sidebar:
+  order: 2
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Launching the First Vessel
+
+Our first service is the database.
+
+Before the API can save a single voyage entry, we need a MongoDB instance running in our local Docker environment. We are going to run it as a containerized service using **Docker Compose**.
+
+This gives us a cleaner local setup, a repeatable environment, and a database service.
+
+For this lesson, we will use:
+
+- **MongoDB 8.0**
+- a named Docker volume for persistence
+- a service name the rest of the stack can address over the Compose network
+
+---
+
+## Creating the Compose File
+
+At the root of the project, create a file named `compose.yaml`.
+
+Our first version will only define the database service.
+
+```yaml
+services:
+  db:
+    image: mongo:8.0
+    container_name: voyagers-log-db
+    ports:
+      - '27017:27017'
+    volumes:
+      - voyagers_log_data:/data/db
+
+volumes:
+  voyagers_log_data:
+```
+
+This gives us:
+
+- a service named `db`
+- a container named `voyagers-log-db`
+- port mapping from the host to the container
+- a named volume for persistent MongoDB data
+
+---
+
+## Breaking Down the Compose Definition
+
+```yaml
+image: mongo:8.0
+```
+
+This tells Docker to use the MongoDB 8.0 image for the service. No custom Dockerfile is needed. We are using the official image directly.
+
+```yaml
+container_name: voyagers-log-db
+```
+
+This gives the container a predictable human-friendly name when we inspect it locally. Nice for debugging.
+
+```yaml
+ports:
+  - '27017:27017'
+```
+
+This maps:
+
+- port `27017` on your machine
+- to port `27017` inside the MongoDB container
+
+```yaml
+volumes:
+  - voyagers_log_data:/data/db
+```
+
+MongoDB stores its database files inside the container at `/data/db` and ensures the data survives even if the container is removed and recreated.
+
+---
+
+## Starting the Database Service
+
+From the project root, run:
+
+```bash
+docker compose up -d
+```
+
+If all goes well, Docker will download the MongoDB image if needed and bring the service online.
+
+---
+
+## Verifying That the Container Is Running
+
+To confirm that the service is up, run:
+
+```bash
+docker compose ps
+```
+
+We should see the `db` service listed as running.
+
+We can also check the logs:
+
+```bash
+docker compose logs db
+```
+
+This lets us inspect MongoDB startup output and verify that the service initialized cleanly.
+
+To follow the logs live:
+
+```bash
+docker compose logs -f db
+```
+
+---
+
+## Verifying the Volume Exists
+
+To inspect our volumes:
+
+```bash
+docker volume ls
+```
+
+We should see something like:
+
+```text
+voyagers-log_voyagers_log_data
+```
+
+The exact name may include the Compose project prefix, but the important part is that the named volume exists and is attached to the MongoDB service.
+
+---
+
+## What We Have Accomplished
+
+We now have the first vessel in the convoy:
+
+- MongoDB 8.0 running in Docker
+- a named volume for persistence
+- a service name the rest of the stack can target
+- a clean Compose-based local database setup
+
+No API yet.  
+No frontend yet.  
+Just the foundation.
+
+<CautionBox title="The Database Is Running, But the App Still Does Nothing">
+  A healthy database container is necessary, but it is not the application. The
+  next step is to give the stack a backend service that can actually speak to
+  it.
+</CautionBox>
+
+---
+
+### ⏭ Drydock the API
+
+Our database service is afloat. Let's build the API service that connects to it, locally.

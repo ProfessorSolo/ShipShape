@@ -1,0 +1,497 @@
+---
+title: 'Service B: Local API'
+description: "Building the Express API service for Voyager's Log and connecting it to the MongoDB container over the Docker Compose network."
+sidebar:
+  order: 3
+---
+
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Adding the API Vessel
+
+Our database is up, but right now it is just sitting there being available. Not especially useful.
+
+Next we need a backend service that can:
+
+- connect to MongoDB
+- accept voyage submissions
+- return stored entries
+- run as its own container in the Compose stack
+
+That service will be our **Express API** using **Mongoose**.
+
+No frontend yet. No auth yet. Just a clean local API service talking to the database container.
+
+---
+
+## The Server Folder
+
+At the root of the project, create a `server` folder.
+
+Our backend structure will look like this:
+
+```text
+server/
+├── Dockerfile
+├── package.json
+├── .dockerignore
+├── index.js
+└── models/
+    └── Log.js
+```
+
+We are keeping the first pass intentionally lean.
+
+---
+
+## Initializing the Node Project
+
+Move into the `server` folder and initialize a Node project:
+
+```bash
+npm init -y
+```
+
+Now install the dependencies:
+
+```bash
+npm install express mongoose
+```
+
+That gives us:
+
+- **Express** for routing and JSON handling
+- **Mongoose** for talking to MongoDB
+
+At this stage, we do not need Passport yet. That mutiny arrives on the next page.
+
+---
+
+## Updating `package.json`
+
+Replace the generated `package.json` with this:
+
+```json
+{
+  "name": "voyagers-log-api",
+  "version": "1.0.0",
+  "description": "Express API for Voyager's Log",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.4.1"
+  }
+}
+```
+
+Your exact installed versions may differ a little. That is fine.
+
+---
+
+## Creating the Log Model
+
+Inside `server/models`, create `Log.js`.
+
+```javascript
+const mongoose = require('mongoose');
+
+const logSchema = new mongoose.Schema({
+  voyagerName: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  message: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'hidden'],
+    default: 'pending',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+module.exports = mongoose.model('Log', logSchema);
+```
+
+A couple of things matter here:
+
+- new submissions default to `pending`
+- only approved entries will eventually show up on the public-facing side
+- the model already anticipates the moderation flow we are adding later
+
+<NoteBox title="We Are Building Ahead Slightly on Purpose">
+  Even before authentication exists, the data model already includes `status`.
+  That keeps us from building a throwaway version now and awkwardly reshaping
+  the database later.
+</NoteBox>
+
+---
+
+## Creating the API Server
+
+Now create `server/index.js`.
+
+```javascript
+const express = require('express');
+const mongoose = require('mongoose');
+const Log = require('./models/Log');
+
+const app = express();
+app.use(express.json());
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+  });
+
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'voyagers-log-api' });
+});
+
+app.get('/api/voyages', async (req, res) => {
+  try {
+    const logs = await Log.find({ status: 'approved' }).sort({ createdAt: -1 });
+    res.json(logs);
+  } catch (error) {
+    console.error('Error fetching voyages:', error);
+    res.status(500).json({ error: 'Failed to fetch voyage entries' });
+  }
+});
+
+app.post('/api/voyages', async (req, res) => {
+  try {
+    const { voyagerName, message } = req.body;
+
+    if (!voyagerName || !message) {
+      return res.status(400).json({
+        error: 'voyagerName and message are required',
+      });
+    }
+
+    const newLog = await Log.create({
+      voyagerName,
+      message,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Voyage entry submitted for review',
+      log: newLog,
+    });
+  } catch (error) {
+    console.error('Error creating voyage entry:', error);
+    res.status(500).json({ error: 'Failed to create voyage entry' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Voyager's Log API listening on port ${process.env.PORT}`);
+});
+```
+
+This gives us three useful routes right away:
+
+- `GET /api/health`
+- `GET /api/voyages`
+- `POST /api/voyages`
+
+The `GET /api/voyages` route only returns entries where `status` is `approved`.
+
+That means if we post new entries right now, they will be saved, but they will not show up in the public feed yet.
+
+---
+
+## Creating the API Dockerfile
+
+Inside the `server` folder, create a `Dockerfile`:
+
+```dockerfile
+FROM node:20-slim
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+Quick review: This Dockerfile:
+
+- starts from a Node base image
+- sets a working directory
+- copies package metadata first
+- installs dependencies
+- copies the rest of the source code
+- indicates that we'll expose port `3000`
+- runs the API with `npm start`
+
+Nice and clean. No backflips.
+
+---
+
+## Creating `.env`
+
+Our API is going to need secrets - and also configuration that changes once we deploy.
+
+You know the .env routine, but remember: we're using Docker Compose to orchestrate our containers, so put the .env at the root of the project (not in the server folder).
+
+It should look like:
+
+```bash
+MONGO_URI='mongodb://db:27017/voyagers_log'
+PORT=3000
+SESSION_SECRET='super-secret-dev-key-that-you-promise-to-change'
+ADMIN_USERNAME='chewbacca'
+ADMIN_PASSWORD='P4ssw0rdIsNotASecurePassword'
+```
+
+---
+
+## Creating `.dockerignore`
+
+Also create `server/.dockerignore`:
+
+```text
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.env
+```
+
+This keeps unnecessary files out of the image build context.
+
+That means:
+
+- smaller builds
+- fewer weird surprises
+- less accidental cargo dragged into the container
+
+---
+
+## Updating `compose.yaml`
+
+Now that the API exists, update the root `compose.yaml` so it includes both services.
+
+```yaml
+services:
+  db:
+    image: mongo:8.0
+    container_name: voyagers-log-db
+    ports:
+      - '27017:27017'
+    volumes:
+      - voyagers_log_data:/data/db
+
+  api:
+    build: ./server
+    container_name: voyagers-log-api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - db
+    environment:
+      MONGO_URI: ${MONGO_URI}
+      PORT: ${PORT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+volumes:
+  voyagers_log_data:
+```
+
+This adds an `api` service that:
+
+- builds from the `server` folder
+- exposes port `3000`
+- waits for the `db` service to start first
+
+<NoteBox title="About `depends_on`">
+  `depends_on` controls startup order, not true application readiness. It tells
+  Compose to start the database container before the API container, but it does
+  not guarantee MongoDB is fully ready to accept connections the instant Express
+  starts. For this lesson, that is acceptable.
+</NoteBox>
+
+---
+
+## Building and Starting the Stack
+
+From the project root, run:
+
+```bash
+docker compose up --build -d
+```
+
+This tells Compose to:
+
+- build the API image
+- create the API container
+- start both the `db` and `api` services
+- run everything in detached mode
+
+If the db was already running from the previous page, this command will extend the stack and rebuild as needed.
+
+---
+
+## Checking That Both Services Are Running
+
+Run:
+
+```bash
+docker compose ps
+```
+
+We should now see both:
+
+- `db`
+- `api`
+
+listed as running services.
+
+To inspect the API logs:
+
+```bash
+docker compose logs api
+```
+
+To follow them live:
+
+```bash
+docker compose logs -f api
+```
+
+We are looking for output that confirms:
+
+- Express started
+- Mongoose connected successfully
+
+Something like this:
+
+```text
+Connected to MongoDB
+Voyager's Log API listening on port 3000
+```
+
+---
+
+## Testing the Health Route
+
+Open a browser or use a tool like `curl` to test the API.
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+You should get a response like:
+
+```json
+{ "ok": true, "service": "voyagers-log-api" }
+```
+
+If that works, the API container is alive and reachable from our host machine.
+
+---
+
+## Testing Voyage Submission
+
+Now test the public submission route:
+
+```bash
+curl -X POST http://localhost:3000/api/voyages \
+  -H "Content-Type: application/json" \
+  -d '{"voyagerName":"Captain Solo","message":"Docked safely at station zero."}'
+```
+
+We should get back a success response with the created document.
+
+```json
+{
+  "success": true,
+  "message": "Voyage entry submitted for review",
+  "log": {
+    "_id": "...",
+    "voyagerName": "Captain Solo",
+    "message": "Docked safely at station zero.",
+    "status": "pending",
+    "createdAt": "...",
+    "__v": 0
+  }
+}
+```
+
+Notice that the new entry was created with:
+
+```json
+"status": "pending"
+```
+
+That is exactly what we want.
+
+---
+
+## Testing the Public Feed Route
+
+Now request the public feed:
+
+```bash
+curl http://localhost:3000/api/voyages
+```
+
+Right now, it should return:
+
+```json
+[]
+```
+
+That is because the route only returns entries where:
+
+```text
+status === "approved"
+```
+
+---
+
+## Current Project Shape
+
+At this point, your project should look roughly like this:
+
+```text
+voyagers-log/
+├── compose.yaml
+├── .env
+├── server/
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   ├── package.json
+│   ├── index.js
+│   └── models/
+│       └── Log.js
+```
+
+---
+
+### ⏭ Secure the Bridge
+
+We don't want scoundrels messing with our log book. Let's secure it with a simple auth layer.

@@ -1,0 +1,201 @@
+---
+title: 'Verifying Distributed Persistence'
+description: 'Submitting real data through the live app and confirming that it is actually stored in MongoDB Atlas.'
+sidebar:
+  order: 15
+---
+
+import { LinkButton } from '@astrojs/starlight/components';
+import NoteBox from '../../../components/NoteBox.astro';
+import CautionBox from '../../../components/CautionBox.astro';
+
+## Time to Prove the Stack
+
+A deployed homepage is nice.
+
+A deployed homepage that can actually move data through the full stack is better.
+
+Up to this point, we have already verified that:
+
+- the image builds on Render
+- the runtime starts successfully
+- the public URL loads the frontend
+
+Now we test the part that matters most:
+
+**can the live application read from and write to the hosted database?**
+
+That is the real full-stack checkpoint.
+
+## The Test We Are Running
+
+Open the live Voyager’s Log app at its Render URL.
+
+Now submit a real voyage entry through the public interface.
+
+For example:
+
+- **Voyager Name:** Captain Solo
+- **Message:** Engaging the distributed stack.
+
+Then submit the form.
+
+This is no longer a local test. The browser is now talking to the deployed app, and the deployed app is now talking to the real hosted database.
+
+## What Just Happened
+
+When you submit that form, the deployed request path looks like this:
+
+1. the browser sends a request to the live app
+2. Render routes that request to the running container
+3. Express receives the request and handles the route
+4. Mongoose uses `MONGO_URI` to talk to Atlas
+5. the app responds back to the browser
+
+That is the deployed request path in action.
+
+It is no longer hypothetical. It is live.
+
+<NoteBox title="This is the full deployed flow">
+  At this point, the frontend, hosted runtime, API logic, environment
+  configuration, and managed database are all participating in the same request
+  cycle. That is the real proof of deployment.
+</NoteBox>
+
+## What Success Looks Like
+
+After submitting an entry, you want to see evidence that the system behaved correctly.
+
+Depending on how your moderation flow is implemented, that may mean:
+
+- the app confirms the entry was submitted for review
+- the entry appears in the pending queue after admin login
+- once approved, the entry appears in the public feed
+
+The exact UI behavior can vary a bit.
+
+What matters is this:
+
+- a success message is encouraging
+- persisted data is proof
+
+## Complete the Moderation Loop
+
+Because Voyager’s Log uses moderated publishing, a new public entry should **not** immediately appear in the approved public feed.
+
+That is correct behavior.
+
+To complete the real test:
+
+1. submit a new public entry
+2. log in as admin
+3. open the pending review queue
+4. approve the new entry
+5. verify that it appears in the public feed
+
+If that whole loop works on the deployed app, then the hosted stack is functioning end to end.
+
+That proves:
+
+- public form submission works
+- the deployed API is reachable
+- Atlas writes are working
+- admin authentication is working
+- moderation updates are working
+- Atlas reads are working
+- the frontend is reflecting live data correctly
+
+<CautionBox title="A working homepage is not the same as a working app">
+  A page can load perfectly while every API request fails. This page is where we
+  prove the application can actually do its job.
+</CautionBox>
+
+## Confirm It in Atlas
+
+The browser is one source of evidence.
+
+MongoDB Atlas is the stronger one.
+
+To verify the data directly:
+
+1. open your MongoDB Atlas dashboard
+2. go to your cluster
+3. open **Browse Collections**
+4. open the `voyagers_log` database
+5. inspect the collection storing voyage entries
+
+You should be able to find the document you just submitted.
+
+That is the most grounded confirmation in the whole workflow.
+
+It proves the data was not merely displayed nicely. It was actually written to the database.
+
+## What This Atlas Check Proves
+
+If the submitted entry appears in Atlas, then all of these pieces worked together:
+
+- the live frontend sent the request
+- the hosted Express server received it
+- the request body was parsed correctly
+- the Mongoose model was used correctly
+- the Atlas connection string worked
+- the database credentials worked
+- network access allowed the request
+- the document was written successfully
+
+That is a serious amount of infrastructure and application behavior confirmed by one small test.
+
+## If the Submission Fails
+
+If the live app loads but submission or approval fails, the likely problem is no longer static routing.
+
+At this stage, the usual suspects are:
+
+- broken API route handling
+- invalid `MONGO_URI`
+- Atlas access or credential issues
+- missing session behavior
+- frontend requests not behaving as expected in production
+- server-side errors during create or update operations
+
+This is now a live application behavior problem, not a simple homepage-loading problem.
+
+That is annoying progress, but it is still progress.
+
+## The Verification Chain
+
+By now, the deployment checks should feel layered:
+
+- **Page 12:** Did the image build?
+- **Page 13:** Did the runtime start?
+- **Page 14:** Did the public URL serve the frontend?
+- **This page:** Can the live app actually move real data through the full stack?
+
+That order is deliberate. It keeps us from debugging everything at once.
+
+## What We Have Accomplished
+
+At this point, we have verified that Voyager’s Log can:
+
+- accept real user input through the deployed frontend
+- process the request in the hosted Express app
+- write data to MongoDB Atlas
+- retrieve and display persisted data through the deployment
+
+That means the app is not just visible on the internet.
+
+It is operational on the internet.
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://www.mongodb.com/docs/manual/core/document/"
+  variant="secondary"
+  size="small"
+>
+  MongoDB Docs: Documents
+</LinkButton>
+
+⏭ **When Deploys Fail**
+
+Next, we look at how to diagnose deployment failures without mixing build, runtime, routing, and persistence problems into one blurry mess.
