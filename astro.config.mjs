@@ -33,7 +33,7 @@ const COURSE_MODULES = [
   {
     label: 'Over the Horizon',
     directory: '05-over-the-horizon',
-    released: false,
+    released: true,
   },
 ];
 
