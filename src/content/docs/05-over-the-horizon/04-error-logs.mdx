@@ -2,7 +2,7 @@
 title: "Error Logs"
 description: "Why failing clearly and usefully is one of the most important favors an application can do for the humans supporting it."
 sidebar:
-  order: 5
+  order: 4
   label: "Error Logs"
 ---
 
@@ -54,22 +54,27 @@ When we know an operation is risky, we should wrap it deliberately.
 
 A database write is a perfect example.
 
-Here is a clean route handler with explicit error logging:
+Right now in `server/index.js`, our `POST /api/voyages` route handles errors decently, but we can upgrade its format to match the rest of our system logs:
 
 ```javascript
-app.post("/api/log", async (req, res) => {
+app.post('/api/voyages', async (req, res) => {
   try {
-    const entry = new Log(req.body);
-    await entry.save();
+    const { voyagerName, message } = req.body;
 
-    res.status(201).send("Log saved.");
+    if (!voyagerName || !message) {
+      return res.status(400).json({ error: 'voyagerName and message are required' });
+    }
+
+    const newLog = await Log.create({ voyagerName, message });
+
+    res.status(201).json({ success: true, message: 'Voyage entry submitted for review', log: newLog });
   } catch (error) {
     const timestamp = new Date().toISOString();
 
-    console.error(`[${timestamp}] [ERROR] Failed to save Voyagers Log entry.`);
-    console.error(`[${timestamp}] [REASON] ${error.message}`);
+    console.error(`[${timestamp}] [SYSTEM] [ERROR] Failed to create voyage entry.`);
+    console.error(`[${timestamp}] [SYSTEM] [REASON] ${error.message}`);
 
-    res.status(500).send("Unable to save entry at this time.");
+    res.status(500).json({ error: 'Failed to create voyage entry' });
   }
 });
 ```
@@ -97,8 +102,8 @@ That is much more useful.
 Notice the use of markers like:
 
 ```text
-[ERROR]
-[REASON]
+[SYSTEM] [ERROR]
+[SYSTEM] [REASON]
 ```
 
 That is not just aesthetic fussiness.
@@ -118,6 +123,14 @@ Tiny habit. Big payoff.
 
 ## Log More for Ourselves, Less for the User
 
+<img
+  src="/assets/lessons/05-over-the-horizon/error-logs-two-faced-response.png"
+  alt="A split screen technical diagram showing a chaotic server stack trace on the left and a safe sanitized JSON response on the right."
+  width="1600"
+  loading="lazy"
+/>
+_Fig 1. The Two-Faced Response: Chaos in the logs, calm in the UI._
+
 One of the most important habits in production-aware software is understanding that:
 
 - internal logs are for operators
@@ -128,13 +141,13 @@ Those are not the same audience.
 In the example above, the logs include the actual error message:
 
 ```javascript
-console.error(`[${timestamp}] [REASON] ${error.message}`);
+console.error(`[${timestamp}] [SYSTEM] [REASON] ${error.message}`);
 ```
 
-But the user gets a much more generic response:
+But the user gets a much more generic JSON response:
 
 ```javascript
-res.status(500).send("Unable to save entry at this time.");
+res.status(500).json({ error: 'Failed to create voyage entry' });
 ```
 
 That is intentional.

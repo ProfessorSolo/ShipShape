@@ -2,7 +2,7 @@
 title: "Logs vs Monitoring"
 description: "Understanding the difference between event-level evidence and broader service health signals."
 sidebar:
-  order: 7
+  order: 6
   label: "Logs vs Monitoring"
 ---
 
@@ -21,6 +21,14 @@ They are not the same thing.
 And mixing them up leads to a lot of confused debugging.
 
 ## Two Different Questions
+
+<img
+  src="/assets/lessons/05-over-the-horizon/logs-vs-monitoring-macro-micro.png"
+  alt="A clean technical diagram split horizontally. The top half shows 'Monitoring' as high-level dashboard gauges and a heartbeat line. The bottom half shows 'Logs' as a magnifying glass zooming into a dense, text-heavy terminal output."
+  width="1600"
+  loading="lazy"
+/>
+_Fig 1. Monitoring reveals the high-level health of the system; Logs provide the low-level evidence._
 
 A useful way to separate them is this:
 
@@ -199,11 +207,11 @@ We are learning the distinction before we go trying to build the whole observabi
 
 ## Why This Distinction Matters
 
-If students do not separate logs from monitoring, a few bad habits show up fast.
+If we do not explicitly separate logs from monitoring, a few bad habits tend to show up fast.
 
-They start expecting logs to do everything.
-They start treating random platform graphs like detailed diagnostics.
-They do not know whether they need:
+We start expecting logs to do everything.
+We start treating random platform graphs like detailed diagnostic evidence.
+We lose track of whether we need:
 
 - a specific event trail
   or
@@ -227,12 +235,12 @@ Now that we understand this distinction, we can add more intentional operational
 Not giant enterprise monitoring.
 Just small, focused signals that help answer quick health-style questions.
 
-That is where endpoints like a heartbeat route start becoming useful.
+You may have noticed that we actually already included a small `/api/health` endpoint in Voyagers Log.
 
-They are not full monitoring systems.
-But they are a very practical first monitoring-style signal.
+It is not a full enterprise monitoring system.
+But it is a very practical, concrete first monitoring-style signal.
 
-And that is exactly the kind of next step we want.
+Now that we understand the difference between logging and monitoring, it is time to take a closer look at that endpoint, improve it, and figure out how we actually use it in the wild.
 
 ---
 
@@ -249,4 +257,4 @@ And that is exactly the kind of next step we want.
 
 ### ⏭ The Heartbeat Endpoint
 
-Logs help us understand what happened. Next, we add a tiny operational endpoint whose job is simpler: answer whether the app is alive right now.
+Logs help us understand what happened. Next, we revisit the `/api/health` route we already put in place, upgrade its signals, and learn how to actually hit it.

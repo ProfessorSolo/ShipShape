@@ -2,7 +2,7 @@
 title: "The Version Endpoint"
 description: "Giving the application a simple way to identify exactly which release is running."
 sidebar:
-  order: 9
+  order: 8
   label: "The Version Endpoint"
 ---
 
@@ -49,81 +49,50 @@ That makes it a very small feature with a surprisingly large payoff.
 
 ---
 
-## A Simple `/version` Route
+## Adding the `/api/version` Route
 
-Just like the heartbeat route, the version route should be small and focused.
+Just like the heartbeat route, the version route should be small and focused. 
 
-Its job is not to explain the entire internals of the application.
-
-Its job is to identify the currently running release in a way that is useful to the team.
-
-A simple Express version route can look like this:
+Let's add one to Voyagers Log right now. Open `server/index.js` and add this code exactly below our `/api/health` route: 
 
 ```javascript
-app.get("/version", (req, res) => {
-  res.status(200).json({
-    app: "voyagers-log",
-    release: process.env.APP_VERSION || "unknown",
+app.get('/api/version', (req, res) => {
+  res.json({
+    app: 'voyagers-log-api',
+    release: process.env.RENDER_GIT_COMMIT || 'local-dev',
   });
 });
 ```
 
-Now a request to:
-
-```text
-/version
-```
-
-returns a small payload that tells us which release the app believes it is running.
+Now if we hit `/api/version`, the API returns a tiny payload telling us which release the app believes it is running. 
 
 That is exactly the kind of operational clue we want.
 
 <NoteBox title="Operational Identity">
-  A version endpoint gives the app a way to answer a very practical support
-  question: “which build am I looking at right now?” That can save a lot of
-  confusion during fast-moving deploy cycles.
+  A version endpoint gives the app a way to quietly answer a very practical support question: “which build am I looking at right now?” That saves a massive amount of confusion during fast-moving deploy cycles.
 </NoteBox>
 
 ---
 
-## Why Use an Environment Variable
+## The Magic of Render Variables
 
-Notice that the route does **not** hardcode the version directly into the source code.
+Notice that the route does **not** hardcode a version number (`v1.4.2`) into the source code.
 
 Instead, it reads:
 
 ```javascript
-process.env.APP_VERSION;
+process.env.RENDER_GIT_COMMIT
 ```
-
-That is the cleaner pattern.
 
 Why?
 
-Because version identity is really deployment metadata.
+Because version identity is deployment metadata. Hardcoding it requires making an intentional code edit just to update a version string, which developers invariably forget to do. 
 
-It is something the environment or deployment pipeline can provide at runtime, rather than something we manually edit into the code every time we ship a change.
+Instead, we lean on the platform. Render automatically injects the `RENDER_GIT_COMMIT` environment variable into every web service it builds. This means the deployed application always knows exactly which Git commit triggered its build. 
 
-That makes the endpoint more flexible and less annoying to maintain.
+If we run the app locally, that variable is `undefined`, so our code gracefully falls back to the `'local-dev'` string.
 
----
-
-## What `APP_VERSION` Might Contain
-
-The value does not have to be fancy.
-
-It just needs to be meaningful to the people supporting the application.
-
-For example, `APP_VERSION` might be:
-
-- a semantic version like `v1.2.0`
-- a short Git commit hash like `a1b2c3d`
-- a release label like `render-deploy-2026-04-01`
-
-Any of those can work.
-
-The goal is not to impress the machine.
-The goal is to reduce human confusion.
+That makes this endpoint completely maintenance-free while providing perfect traceability back to our GitHub history.
 
 ---
 
@@ -233,17 +202,23 @@ Just a set of signals that make the app much easier to understand and support.
 
 ---
 
-## Why This Is a Good Final-Lesson Habit
+## The Missing Half: Release Change Logs
 
-This page is quietly about something bigger than just one route.
+There is one catch with using a Git commit hash like `a1b2c3d` as your version identifier:
 
-It is about teaching the application to carry a little more operational context with it.
+**To a human, it is just a random string of characters.**
 
-That is a habit worth keeping.
+If a user complains that "the new dark mode is broken," hitting the `/api/version` endpoint to discover the app is running commit `a1b2c3d` only helps if you know *what* was shipped in that commit.
 
-Because the more a live application can answer small practical questions directly, the less time humans waste trying to reverse-engineer the obvious during a problem.
+This is why operational visibility extends beyond the codebase and into genuine team communication. A Git commit hash is only useful when tied to a closely managed **Change Log** or GitHub Release.
 
-That is real engineering maturity.
+A `CHANGELOG.md` in your repository—or an automated release draft in GitHub—is where we translate Git commits into human context:
+
+- **Added:** Dark Mode toggle
+- **Fixed:** Database timeout on the Voyage submission form
+- **Changed:** Updated Tailwind config for primary colors
+
+When we combine a version endpoint returning `a1b2c3d` with a Change Log that says *"Commit `a1b2c3d` introduced Dark Mode,"* we close the operational loop. We have absolute certainty about what code is running *and* exactly what features that code contains.
 
 ---
 

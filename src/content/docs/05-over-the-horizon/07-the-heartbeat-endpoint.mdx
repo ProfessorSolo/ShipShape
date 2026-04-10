@@ -2,7 +2,7 @@
 title: "The Heartbeat Endpoint"
 description: "Adding a tiny operational route that answers the simplest production question: is the application alive right now?"
 sidebar:
-  order: 8
+  order: 7
   label: "The Heartbeat Endpoint"
 ---
 
@@ -48,26 +48,19 @@ A very useful one.
 
 ---
 
-## A Simple Example
+## The Existing Voyager Health Route
 
-In Express, a basic heartbeat route can be as small as this:
+We actually already placed a tiny heartbeat route in Voyagers Log during the initial build.
+
+If you open `server/index.js`, just before the main API routes, you will see this:
 
 ```javascript
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "healthy",
-    uptime: process.uptime(),
-  });
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'voyagers-log-api' });
 });
 ```
 
-Now, if we visit:
-
-```text
-/health
-```
-
-or hit it from the terminal with `curl`, the app returns a small JSON response that confirms:
+If we hit `/api/health` from the terminal with `curl` or open it in a browser window, the app returns a tiny JSON object that confirms:
 
 - the Node process is alive
 - the Express router is responding
@@ -76,9 +69,7 @@ or hit it from the terminal with `curl`, the app returns a small JSON response t
 That is already a very useful signal.
 
 <NoteBox title="A Tiny Route with a Big Job">
-  A heartbeat endpoint is simple on purpose. Its job is not to explain
-  everything about the system. Its job is to answer one fast, important
-  question: is the app up and responding?
+  A heartbeat endpoint is simple on purpose. Its job is not to explain everything about the system. Its job is to answer one fast, important question: is the app up and responding?
 </NoteBox>
 
 ---
@@ -167,55 +158,51 @@ If a heartbeat route takes a long time to respond, that is usually a sign that s
 
 ---
 
-## Useful Output Without Overdoing It
+## Simple vs. Expanded Output
 
-A small payload like this is fine:
+A common question is whether a heartbeat endpoint should just return a tiny `{ ok: true }` signal, or if it should expand its output to include more diagnostic data. 
+
+In our demo, we kept it extremely minimal: 
 
 ```javascript
-{
-  status: 'healthy',
-  uptime: process.uptime()
+{ 
+  ok: true, 
+  service: 'voyagers-log-api' 
 }
 ```
 
-That gives us a little context without turning the route into a diagnostics dump.
+This is often perfectly adequate for basic automated uptime checks. A platform just needs a 200 OK status code and a predictable response to verify the app hasn't crashed.
 
-You might also reasonably include small, safe fields like:
+However, many professional applications expand the payload slightly to add context without turning the route into a giant diagnostics dump. For example, adding `uptime: process.uptime()` or grabbing the current environment string can be immensely helpful for operators reading the output manually. 
 
-- current environment
-- app name
-- timestamp
-
-But keep it restrained.
-
-A heartbeat endpoint is not the place to dump internal secrets, config values, or a thousand lines of runtime state.
+The rule of thumb: keep it restrained. A heartbeat endpoint is an operational signal, not a place to dump internal secrets, database connection strings, or a thousand lines of runtime state.
 
 ---
 
-## Why Platforms Care About This Too
+## Hitting the Endpoint Externally
 
-This route is not just useful for humans.
+<img
+  src="/assets/lessons/05-over-the-horizon/heartbeat-external-vs-local.png"
+  alt="A clean technical diagram showing a successful local health check inside the server boundary compared to a failed external health check pinging a broken routing node."
+  width="1600"
+  loading="lazy"
+/>
+_Fig 1. A local check only proves the app is properly running; an external check proves the app is actually reachable._
 
-Platforms and orchestration systems often care about health-style endpoints too.
+This route is not just useful for humans clicking around in a browser. 
 
-A host can periodically hit a route like `/health` to answer questions such as:
+The main purpose of a health endpoint is to be pinged by an **external system** to verify the service is still up and reachable from the outside world. 
 
-- is the app responding?
-- should traffic still be sent here?
-- does this container need to be restarted?
+Think about it: if the Node server is technically running, but Render's routing layer crashes and inbound traffic drops, a local check (like SSHing into the box and running `curl localhost:3000/api/health`) might succeed, tricking you into thinking everything is fine. 
 
-That means a small operational route like this can become part of a much bigger platform story.
+But if an external service (like UptimeRobot, Render's built-in health checks, or Datadog) pings `https://voyagers-log.onrender.com/api/health` from across the internet, the failing request will correctly alert you that the application is unreachable to users.
 
-We do not need to go full Kubernetes opera here to appreciate the point.
+That means a small operational route like this becomes part of a much bigger platform story.
 
-The point is simple:
-
-**small, predictable health signals are useful to both humans and infrastructure.**
+**Small, predictable health signals are useful precisely because automated external systems can rely on them.**
 
 <NoteBox title="A First Step Toward Self-Healing Systems">
-  Once a platform can ask an app “are you alive?” on a regular basis, it becomes
-  much easier to detect dead processes and respond automatically. That is one of
-  the first small steps toward more resilient hosting.
+  Once a hosting platform can ask an app “are you alive?” by pinging its health endpoint on a regular basis, it becomes much easier to detect dead processes and restart them automatically.
 </NoteBox>
 
 ---

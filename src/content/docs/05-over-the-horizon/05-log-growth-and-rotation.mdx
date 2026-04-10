@@ -2,7 +2,7 @@
 title: "When Logs Start Piling Up"
 description: "Why useful logs still need limits, and why unmanaged log growth becomes its own operational problem."
 sidebar:
-  order: 6
+  order: 5
   label: "When Logs Start Piling Up"
 ---
 
@@ -92,19 +92,49 @@ In practice, there are two broad ways people deal with log growth.
 
 ### 1. Log Rotation
 
+<img
+  src="/assets/lessons/05-over-the-horizon/log-growth-rotation-timeline.png"
+  alt="A clean technical diagram showing a massive red output.log file being sliced by a cron job into small daily compressed cyan blocks."
+  width="1600"
+  loading="lazy"
+/>
+_Fig 1. Rotation solves accumulation by turning monolithic unstructured text into organized daily archives._
+
 Log rotation means:
 
 - write logs to a file for a while
-- once the file gets too large, archive it
-- start a fresh file
+- periodically copy that file into an archive
+- clear the active file so it starts fresh
 - eventually delete old archives according to retention rules
 
 This keeps any one log file from growing forever.
 
-It is a simple but important concept.
+If we were managing our own server, we might write a simple Node script like this to copy our hypothetical `app.log` file. We could then schedule this script to run automatically every night at midnight using a system `cron` job:
 
-You do not need to become a Linux log-management wizard for this course.
-You just need to understand the operational principle:
+```javascript
+const fs = require('fs');
+const path = require('path');
+
+const logPath = path.join(__dirname, 'app.log');
+
+// Only rotate if the log file actually exists
+if (fs.existsSync(logPath)) {
+  const dateStr = new Date().toISOString().split('T')[0]; // e.g. 2026-04-09
+  const archivePath = path.join(__dirname, `app-${dateStr}.log`);
+
+  // Copy the active log to the archive file
+  fs.copyFileSync(logPath, archivePath);
+
+  // Truncate (empty) the active log file so it starts fresh
+  fs.truncateSync(logPath, 0);
+
+  console.log(`[SYSTEM] Rotated logs to ${archivePath}`);
+}
+```
+
+Once you have daily rotation working, a common next step is compression. You would not necessarily need a new tool—the same script (or a separate weekly task) could easily be expanded to take last week's daily archived logs and compress them into `.zip` or `.gz` batches to radically reduce disk usage.
+
+You do not need to become a Linux wizard for this course. You just need to understand the operational principle: 
 
 **logs need lifecycle management too.**
 

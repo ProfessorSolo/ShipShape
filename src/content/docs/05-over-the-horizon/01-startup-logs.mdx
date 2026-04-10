@@ -1,0 +1,184 @@
+---
+title: "Start the Startup Logs"
+description: "Teaching the application to announce a clean startup so we can tell when it actually woke up successfully."
+sidebar:
+  order: 1
+  label: "Start the Startup Logs"
+---
+
+import { LinkButton } from "@astrojs/starlight/components";
+import NoteBox from "../../../components/NoteBox.astro";
+import CautionBox from "../../../components/CautionBox.astro";
+
+When a deployed app fails to start, platform dashboards often say something wonderfully vague like:
+
+```text
+Process exited
+```
+
+Very dramatic. Not especially helpful.
+
+One of the easiest ways to improve operational visibility is to have the application clearly announce when it has started successfully. That sounds tiny, and it is. It is also incredibly useful.
+
+## The Ignition Signal
+
+For our Express backend, the most obvious startup milestone is the moment it successfully connects to the database, binds to a port, and begins accepting traffic.
+
+Right now, in the `server/index.js` file of Voyagers Log, our `mongoose.connect` and `app.listen` calls look like this:
+
+```javascript
+mongoose.connect(MONGO_URI).then(() => {
+  console.log("Connected to MongoDB");
+  seedAdminUser();
+});
+// ... catch block omitted ...
+
+// ... further down ...
+
+app.listen(PORT, HOST, () => {
+  console.log(`Voyager's Log API listening on port ${PORT}`);
+});
+```
+
+These are fine for local development, but in a remote environment, we want to establish a more distinct, scannable pattern. We want to be able to look at thousands of lines of logs and instantly spot where the app woke up.
+
+Let's update those log statements to use a consistent `[SYSTEM]` prefix, and let's add the current environment mode so we never have to guess which `.env` values Render actually loaded.
+
+Update your `app.listen` block to look like this:
+
+```javascript
+app.listen(PORT, HOST, () => {
+  console.log("[SYSTEM] Voyagers Log initialized successfully.");
+  console.log(`[SYSTEM] Environment: ${process.env.NODE_ENV || "development"}`);
+  console.log(`[SYSTEM] Listening on port: ${PORT}`);
+});
+```
+
+And let's update our MongoDB connection success message to match:
+
+```javascript
+mongoose.connect(MONGO_URI).then(() => {
+  console.log("[SYSTEM] Connected to MongoDB.");
+  seedAdminUser();
+});
+```
+
+This gives us an immediate answer to a basic but important question: **did the app actually wake up, connect to Atlas, and bind successfully?**
+
+---
+
+## Why This Helps So Much
+
+Without an explicit startup log sequence, a failed deployment can feel mushy and ambiguous.
+
+Did the app crash before startup?
+Did it bind to the wrong port?
+Did it fail while trying to connect to the database?
+
+A consistent startup log helps narrow that down immediately.
+
+<NoteBox title="The Value of Confirmation">
+  If we deploy to Render and never see the startup messages, that usually tells
+  us the app died before it could finish initialization. That instantly shifts
+  our attention toward startup code, configuration, dependency setup, or syntax
+  problems rather than general platform mystery.
+</NoteBox>
+
+---
+
+## Logging the Environment on Purpose
+
+Notice that we added the environment string to the new startup logs:
+
+```javascript
+console.log(`[SYSTEM] Environment: ${process.env.NODE_ENV || "development"}`);
+```
+
+That is not accidental. Logging the environment helps confirm which code path the app is using. For example, our Vite frontend asset-serving logic only runs when:
+
+```javascript
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(distPath));
+  // ...
+```
+
+Seeing `[SYSTEM] Environment: production` in the logs is an instant sanity check that those static files are actually being served. We also confirm that the app accepted the platform-provided `PORT` instead of clinging to a local-only assumption.
+
+---
+
+## What This Does **Not** Prove
+
+A startup log is useful, but let’s keep it in its lane.
+
+If we see our new `[SYSTEM]` logs appear on Render, that does **not** automatically prove that:
+
+- requests are securely reaching the app
+- our forms are behaving correctly
+- users can successfully submit data
+
+It only proves that the app reached a successful startup milestone. That is a massive step forward, but it is only the first signal.
+
+<CautionBox title="Startup Success Is Not Full Health">
+  Do not confuse “the app started” with “the app is fully healthy.” Startup logs
+  are the first clue, not the whole investigation.
+</CautionBox>
+
+---
+
+## Log Carefully, Not Recklessly
+
+Startup logs are useful, but they are also a place where people sometimes get sloppy.
+
+Do **not** log secrets.
+
+That means no dumping things like:
+
+- `process.env.MONGO_URI`
+- database passwords
+- session secrets
+- API keys
+
+A safe rule of thumb is:
+
+- log the existence of important runtime state
+- log the environment
+- log the port
+- log major milestones
+- do **not** log sensitive values
+
+---
+
+## A Small Improvement with a Big Payoff
+
+When Voyagers Log restarts on Render, our operational story now looks like this:
+
+```text
+[SYSTEM] Connected to MongoDB.
+[SYSTEM] Voyagers Log initialized successfully.
+[SYSTEM] Environment: production
+[SYSTEM] Listening on port: 10000
+```
+
+That tells a complete story: the database connection succeeded, startup completed, the runtime mode is correct, and the app is listening where the platform expects it to.
+
+Knowing the app started is good. But a running application that never receives traffic is a very peaceful kind of broken. So the next layer of visibility is not just _"did the app wake up?"_, but _"what is the app actually doing once it is awake?"_
+
+That means request logging.
+
+---
+
+## Extra Bits & Bytes
+
+<LinkButton
+  href="https://expressjs.com/en/starter/hello-world.html"
+  icon="external"
+  variant="secondary"
+  target="_blank"
+>
+  Express: app.listen()
+</LinkButton>
+
+### ⏭ Request Logs
+
+Startup logs tell us the app woke up. Next, we make it visible when real traffic starts hitting the system.

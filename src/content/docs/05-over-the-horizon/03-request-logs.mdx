@@ -53,29 +53,34 @@ That is operationally useful information.
 
 ---
 
-## A Simple Global Middleware Logger
+## A Global Middleware Logger
 
 In Express, the cleanest way to log incoming traffic is with middleware.
 
 A small middleware function can intercept every request, log a few structural details, and then pass control onward.
 
-Here is a simple example:
+In Voyagers Log, we want to place this logger *before* our API routes, but *after* the initial parser middleware.
+
+Open `server/index.js` and inject this simple logging block right before the first route (`/api/health`):
 
 ```javascript
-const express = require("express");
-const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
+// ... Mongoose, Session, and Passport middleware ...
+app.use(passport.session());
+
+// --- INJECT REQUEST LOGGER HERE ---
 app.use((req, res, next) => {
   const timestamp = new Date().toISOString();
-
-  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
-
+  console.log(`[${timestamp}] [SYSTEM] [REQUEST] ${req.method} ${req.originalUrl}`);
   next();
 });
+// ----------------------------------
 
-// routes go below...
-app.post("/api/log", (req, res) => {
-  res.send("Log accepted.");
+// Existing routes follow below
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, service: 'voyagers-log-api' });
 });
 ```
 
@@ -91,6 +96,10 @@ Simple. Cheap. Very useful.
   handler logic deeper in the app.
 </NoteBox>
 
+<NoteBox title="Why Aren't We Using Morgan?">
+  In professional environments, you will often see third-party libraries like `morgan` used for request logging. While `morgan` is excellent, leaning on a black box at this stage hides the plumbing. By writing our own four-line logging middleware, we see exactly how the Express request pipeline works, what the request object contains, and where these logs actually originate.
+</NoteBox>
+
 ---
 
 ## What This Log Tells Us
@@ -98,7 +107,7 @@ Simple. Cheap. Very useful.
 A line like this:
 
 ```text
-[2026-04-01T18:12:34.000Z] POST /api/voyages
+[2026-04-01T18:12:34.000Z] [SYSTEM] [REQUEST] POST /api/voyages
 ```
 
 tells us at least three important things:

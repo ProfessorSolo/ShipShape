@@ -2,7 +2,7 @@
 title: "Deployment History"
 description: "Using deployment timelines to connect production behavior to recent changes instead of guessing blindly."
 sidebar:
-  order: 10
+  order: 9
   label: "Deployment History"
 ---
 
@@ -126,11 +126,11 @@ That is much more grounded.
 
 ## Rollback Is Not Failure
 
-Once students start thinking in deployment timelines, another very important idea becomes much easier to introduce:
+Once we start thinking in deployment timelines, another very important idea becomes much easier to accept:
 
 **rollback is normal.**
 
-If a new release goes live and clearly correlates with widespread problems, the first priority is not heroic live surgery.
+If a new release goes live and clearly correlates with widespread problems, our first priority is not heroic live surgery.
 
 The first priority is to reduce harm.
 
@@ -197,31 +197,24 @@ They reduce uncertainty at the moments when uncertainty is most annoying.
 
 ---
 
-## What This Page Is Really Teaching
+## Investigation, Not Superstition
 
-This page is not just about clicking around in a platform dashboard.
+Connecting behavior to change over time is one of the most important operational habits we can practice.
 
-It is about teaching students to connect behavior to change over time.
-
-That is one of the most important habits in production support.
-
-Instead of asking:
+When something breaks, instead of asking:
 
 - what random thing could be wrong?
 
-we start asking:
+we should immediately start asking:
 
 - what changed?
 - when did it change?
-- how closely does that line up with the failure?
+- how closely does that timeline align with the failure?
 
-That shift turns debugging into investigation instead of superstition.
+That shift turns debugging into an investigation instead of technical superstition.
 
 <NoteBox title="Operations Is Often Timeline Work">
-  A surprising amount of production debugging comes down to reconstructing a
-  timeline: what was healthy, what changed, when it changed, and what happened
-  immediately after. Deployment history is one of the clearest timeline tools we
-  have.
+  A surprising amount of production debugging comes down to reconstructing a timeline: exactly what was healthy, what was changed, when it changed, and what happened immediately after. The platform's deployment history is one of the clearest timeline tools we have.
 </NoteBox>
 
 ---
